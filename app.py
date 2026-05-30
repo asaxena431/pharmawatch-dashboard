@@ -97,12 +97,23 @@ def get_fda_label(drug_name):
             "to report", "contact ", "call ", "fda at ", "1-800", "www.",
             "postmarketing", "the following", "table ", "clinical trial",
             "in clinical", "adverse reactions reported", "because these reactions",
-            "voluntarily reported", "cannot be reliably", "adverse reaction reporting"
+            "voluntarily reported", "cannot be reliably", "adverse reaction reporting",
+            "were white", "were black", "were female", "were male", "were hispanic",
+            "were asian", "% white", "% black", "% female", "% male", "% hispanic",
+            "% asian", "median age", "mean age", "age range", "years of age",
+            "patients were", "subjects were", "participants were", "n =", "n=",
+            "placebo", "treatment group", "study population", "enrolled",
+            "randomized", "double-blind", "open-label", "most common",
+            "incidence of", "occurred in", "reported in", "observed in",
+            "compared to", "compared with", "versus", "vs.", "per 100",
+            "rate of", "frequency of", "proportion of"
         ]
         ar_list = [
             i.strip() for i in items
             if len(i.strip()) > 5
             and not any(bp in i.lower() for bp in BOILERPLATE)
+            and not re.search(r'\d+\s*%', i)   # remove any sentence with a percentage
+            and not re.match(r'^[\d\s,\.]+$', i.strip())  # remove pure numeric entries
         ]
 
     return {
