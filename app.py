@@ -218,7 +218,7 @@ def build_full_comparison(narrative_reactions, label, faers_reactions):
     rows = {}  # key = normalized reaction name
 
     def _label_sections(keywords):
-        """Return list of matched FDA label section tags for given keywords."""
+        """Return Adverse Reactions and/or Warning tags."""
         sections = []
         for a in ar_list:
             if any(kw in a.lower() for kw in keywords):
@@ -226,8 +226,9 @@ def build_full_comparison(narrative_reactions, label, faers_reactions):
                 break
         for c, t in warnings.items():
             if any(kw in t.lower() for kw in keywords):
-                sections.append(f"⚠ Warning: {c}")
-        return list(dict.fromkeys(sections))  # dedupe, preserve order
+                sections.append("Warning")
+                break
+        return sections
 
     def _add(reaction_name, severity=None, onset=None, outcome="unknown",
              in_narrative=False, in_label=False, faers_count=0, label_sections=None):
@@ -275,10 +276,8 @@ def build_full_comparison(narrative_reactions, label, faers_reactions):
         kws = [w for w in key.split() if len(w) > 3]
         fmatch = next((fk for fk in faers_map if all(kw in fk for kw in kws)), None) if kws else None
         fc = faers_map.get(fmatch, 0) if fmatch else 0
-        sections = ["Adverse Reactions"]
-        warn_secs = [f"⚠ Warning: {c}" for c, t in warnings.items() if any(kw in t.lower() for kw in kws)]
-        sections = list(dict.fromkeys(sections + warn_secs))
-        _add(term, in_label=True, faers_count=fc, label_sections=sections)
+        warn_tag = ["Warning"] if any(any(kw in t.lower() for kw in kws) for t in warnings.values()) else []
+        _add(term, in_label=True, faers_count=fc, label_sections=list(dict.fromkeys(["Adverse Reactions"] + warn_tag)))
 
     # 3. FAERS top-50 reactions
     for fterm, fcount in list(faers_map.items())[:50]:
