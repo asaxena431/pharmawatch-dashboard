@@ -92,7 +92,18 @@ def get_fda_label(drug_name):
     ar_list = None
     if ar_raw:
         items = re.split(r'\.\s+(?=[A-Z])|;\s*', ar_raw.strip())
-        ar_list = [i.strip() for i in items if len(i.strip()) > 5]
+        # Filter out boilerplate non-reaction sentences
+        BOILERPLATE = [
+            "to report", "contact ", "call ", "fda at ", "1-800", "www.",
+            "postmarketing", "the following", "table ", "clinical trial",
+            "in clinical", "adverse reactions reported", "because these reactions",
+            "voluntarily reported", "cannot be reliably", "adverse reaction reporting"
+        ]
+        ar_list = [
+            i.strip() for i in items
+            if len(i.strip()) > 5
+            and not any(bp in i.lower() for bp in BOILERPLATE)
+        ]
 
     return {
         "brand_name":     openfda.get("brand_name", ["N/A"]),
@@ -209,13 +220,13 @@ def build_full_comparison(narrative_reactions, label, faers_reactions):
     def _label_sections(keywords):
         """Return list of matched FDA label section tags for given keywords."""
         sections = []
-        for c, t in warnings.items():
-            if any(kw in t.lower() for kw in keywords):
-                sections.append(f"⚠ Warning: {c}")
         for a in ar_list:
             if any(kw in a.lower() for kw in keywords):
                 sections.append("Adverse Reactions")
                 break
+        for c, t in warnings.items():
+            if any(kw in t.lower() for kw in keywords):
+                sections.append(f"⚠ Warning: {c}")
         return list(dict.fromkeys(sections))  # dedupe, preserve order
 
     def _add(reaction_name, severity=None, onset=None, outcome="unknown",
@@ -264,9 +275,10 @@ def build_full_comparison(narrative_reactions, label, faers_reactions):
         kws = [w for w in key.split() if len(w) > 3]
         fmatch = next((fk for fk in faers_map if all(kw in fk for kw in kws)), None) if kws else None
         fc = faers_map.get(fmatch, 0) if fmatch else 0
+        sections = ["Adverse Reactions"]
         warn_secs = [f"⚠ Warning: {c}" for c, t in warnings.items() if any(kw in t.lower() for kw in kws)]
-        sections = warn_secs + ["Adverse Reactions"]
-        _add(term, in_label=True, faers_count=fc, label_sections=list(dict.fromkeys(sections)))
+        sections = list(dict.fromkeys(sections + warn_secs))
+        _add(term, in_label=True, faers_count=fc, label_sections=sections)
 
     # 3. FAERS top-50 reactions
     for fterm, fcount in list(faers_map.items())[:50]:
