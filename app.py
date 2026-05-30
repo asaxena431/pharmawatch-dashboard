@@ -1,0 +1,558 @@
+from flask import Flask, render_template, request, jsonify
+import requests
+import json
+import re
+import spacy
+import os
+try:
+    from openai import OpenAI
+    OPENAI_AVAILABLE = True
+except ImportError:
+    OPENAI_AVAILABLE = False
+
+app = Flask(__name__)
+
+# ── spaCy ────────────────────────────────────────────────────────────────────
+_nlp = None
+def get_nlp():
+    global _nlp
+    if _nlp is None:
+        _nlp = spacy.load("en_core_web_sm", exclude=["parser", "senter"])
+    return _nlp
+
+# ── Shared lists ─────────────────────────────────────────────────────────────
+KNOWN_DRUGS = [
+    "tylenol","acetaminophen","lipitor","atorvastatin","amoxicillin","ibuprofen",
+    "advil","motrin","warfarin","coumadin","aspirin","metformin","lisinopril",
+    "omeprazole","metoprolol","amlodipine","albuterol","prednisone","gabapentin",
+    "hydrocodone","oxycodone","morphine","citalopram","sertraline","fluoxetine",
+    "simvastatin","levothyroxine","azithromycin","ciprofloxacin","doxycycline",
+    "penicillin","cephalexin","clindamycin","vancomycin","lorazepam","diazepam",
+    "alprazolam","zolpidem","quetiapine","risperidone","olanzapine","haloperidol",
+    "insulin","methotrexate"
+]
+
+KNOWN_REACTIONS = [
+    "nausea","vomiting","diarrhea","diarrhoea","headache","dizziness","fatigue",
+    "rash","itching","pruritus","liver damage","hepatotoxicity","myalgia",
+    "muscle weakness","muscle pain","elevated liver enzymes","elevated alt",
+    "elevated ast","elevated ck","jaundice","abdominal pain","chest pain",
+    "shortness of breath","dyspnea","dyspnoea","anaphylaxis","urticaria",
+    "angioedema","stevens-johnson syndrome","toxic epidermal necrolysis",
+    "renal failure","kidney failure","seizure","confusion","hallucination",
+    "insomnia","depression","anxiety","palpitations","tachycardia","bradycardia",
+    "hypertension","hypotension","bleeding","bruising","thrombosis","stroke",
+    "myocardial infarction","heart attack","back pain","joint pain","arthralgia",
+    "swelling","edema","fever","pyrexia","chills","night sweats","weight gain",
+    "weight loss","hair loss","alopecia","blurred vision","tinnitus","hearing loss",
+    "blistering","mucosal involvement","muscle spasm","myopathy","rhabdomyolysis",
+    "pancreatitis","peripheral neuropathy"
+]
+
+DOSE_PATTERN     = re.compile(r'\b(\d+\.?\d*\s*(?:mg|mcg|ug|g|ml|units?|IU|mEq)(?:\s*/\s*(?:day|daily|kg|dose))?)\b', re.IGNORECASE)
+SEVERITY_PATTERN = re.compile(r'\b(mild|moderate|severe|serious|fatal|life[\s-]threatening)\b', re.IGNORECASE)
+OUTCOME_PATTERN  = re.compile(r'\b(resolv\w+|recover\w+|discharged|improved|died|fatal|death|ongoing|persistent|hospitali\w+)\b', re.IGNORECASE)
+AGE_PATTERN      = re.compile(r'\b(\d+)[\s-]*(year|yr)s?[\s-]*old\b', re.IGNORECASE)
+SEX_PATTERN      = re.compile(r'\b(male|female|man|woman|boy|girl)\b', re.IGNORECASE)
+CAUSALITY_PATTERN= re.compile(r'\b(probable|possible|unlikely|definite|suspected|associated with|caused by)\b', re.IGNORECASE)
+
+WARNING_KEYWORDS = [
+    "Liver warning","Allergy alert","Do not use","Ask a doctor before use",
+    "Ask a doctor or pharmacist before use","Stop use and ask a doctor",
+    "Overdose warning","Keep out of reach","If pregnant or breast-feeding",
+    "When using this product","Sore throat warning","Stomach bleeding warning",
+    "Heart attack and stroke warning","Warnings"
+]
+
+# ── Core functions ────────────────────────────────────────────────────────────
+def get_fda_label(drug_name):
+    r = requests.get("https://api.fda.gov/drug/label.json",
+                     params={"search": f'openfda.brand_name:"{drug_name}"', "limit": 1})
+    data = r.json()
+    if "results" not in data:
+        return None
+    label = data["results"][0]
+    openfda = label.get("openfda", {})
+
+    # Parse warnings into sections
+    warnings_raw = label.get("warnings", [None])[0]
+    warnings_structured = {}
+    if warnings_raw:
+        pattern = '|'.join(re.escape(k) for k in WARNING_KEYWORDS)
+        parts = re.split(f'({pattern})', warnings_raw.strip())
+        current_key = "general"
+        buffer = []
+        for part in parts:
+            part = part.strip()
+            if not part:
+                continue
+            if re.fullmatch(pattern, part, re.IGNORECASE):
+                if buffer:
+                    warnings_structured[current_key] = " ".join(buffer).strip()
+                    buffer = []
+                current_key = part
+            else:
+                buffer.append(part)
+        if buffer:
+            warnings_structured[current_key] = " ".join(buffer).strip()
+        warnings_structured.pop("general", None)
+
+    ar_raw = label.get("adverse_reactions", [None])[0]
+    ar_list = None
+    if ar_raw:
+        items = re.split(r'\.\s+(?=[A-Z])|;\s*', ar_raw.strip())
+        ar_list = [i.strip() for i in items if len(i.strip()) > 5]
+
+    return {
+        "brand_name":     openfda.get("brand_name", ["N/A"]),
+        "generic_name":   openfda.get("generic_name", ["N/A"]),
+        "manufacturer":   openfda.get("manufacturer_name", ["N/A"]),
+        "route":          openfda.get("route", ["N/A"]),
+        "product_type":   openfda.get("product_type", ["N/A"]),
+        "adverse_reactions": ar_list,
+        "warnings":       warnings_structured,
+        "boxed_warning":  label.get("boxed_warning", [None])[0],
+        "contraindications": label.get("contraindications", [None])[0],
+        "drug_interactions": label.get("drug_interactions", [None])[0],
+        "indications":    label.get("indications_and_usage", [None])[0],
+        "dosage":         label.get("dosage_and_administration", [None])[0],
+    }
+
+
+def get_faers_reactions(drug_name, limit=500):
+    url = f"https://api.fda.gov/drug/event.json?search=patient.drug.medicinalproduct:{drug_name.upper()}&count=patient.reaction.reactionmeddrapt.exact&limit={limit}"
+    r = requests.get(url)
+    data = r.json()
+    if "results" in data:
+        return [{"reaction": i["term"], "count": i["count"]} for i in data["results"]]
+    return []
+
+
+def extract_from_narrative(text):
+    text_lower = text.lower()
+    drugs, reactions = [], []
+
+    for drug in KNOWN_DRUGS:
+        if drug in text_lower:
+            m = re.search(re.escape(drug), text_lower)
+            dose = None
+            if m:
+                ctx = text[max(0, m.start()-10):m.end()+60]
+                dm = DOSE_PATTERN.search(ctx)
+                dose = dm.group(0) if dm else None
+            drugs.append({"name": drug, "dose": dose})
+
+    for reaction in KNOWN_REACTIONS:
+        if reaction in text_lower:
+            m = re.search(re.escape(reaction), text_lower)
+            severity, onset, outcome = None, None, "unknown"
+            if m:
+                ctx = text[max(0, m.start()-30):m.end()+80]
+                sm = SEVERITY_PATTERN.search(ctx)
+                om = OUTCOME_PATTERN.search(ctx)
+                severity = sm.group(0).lower() if sm else None
+                outcome  = om.group(0).lower() if om else "unknown"
+                ons_m = re.search(r'after\s+([\w\s]+?)(?:,|\.|\s+(?:he|she|the|patient))', ctx, re.IGNORECASE)
+                onset = ons_m.group(1).strip() if ons_m else None
+            reactions.append({"reaction": reaction, "severity": severity, "onset": onset, "outcome": outcome})
+
+    age_m  = AGE_PATTERN.search(text)
+    sex_m  = SEX_PATTERN.search(text)
+    caus_m = CAUSALITY_PATTERN.search(text)
+    sev_m  = SEVERITY_PATTERN.search(text)
+
+    return {
+        "drugs": drugs,
+        "reactions": reactions,
+        "patient": {"age": age_m.group(1) if age_m else None,
+                    "sex": sex_m.group(0).lower() if sex_m else None},
+        "causality":        caus_m.group(0).lower() if caus_m else "unassessable",
+        "overall_severity": sev_m.group(0).lower() if sev_m else None,
+    }
+
+
+def compare_narrative_vs_faers(narrative_reactions, faers_reactions):
+    faers_map = {r["reaction"].lower(): r["count"] for r in faers_reactions}
+    in_faers, not_in_faers = [], []
+
+    for r in narrative_reactions:
+        term = r["reaction"].lower()
+        keywords = [kw for kw in term.replace("-", " ").split() if len(kw) > 3]
+        match = term if term in faers_map else None
+        if not match:
+            match = next((fk for fk in faers_map if all(kw in fk for kw in keywords)), None)
+
+        entry = {**r,
+                 "faers_matched_term": match,
+                 "faers_report_count": faers_map.get(match, 0) if match else 0}
+        (in_faers if match else not_in_faers).append(entry)
+
+    return {"in_faers": in_faers, "not_in_faers": not_in_faers}
+
+
+def compare_narrative_vs_label(narrative_reactions, label):
+    warnings = label.get("warnings") or {}
+    ar_list  = label.get("adverse_reactions") or []
+    results = []
+
+    for r in narrative_reactions:
+        keywords = r["reaction"].lower().split()
+        matched_cats = [c for c, t in warnings.items() if any(kw in t.lower() for kw in keywords)]
+        matched_ar   = [a for a in ar_list if any(kw in a.lower() for kw in keywords)]
+        found = bool(matched_cats or matched_ar)
+        results.append({**r,
+                        "found_in_label": found,
+                        "matched_warning_sections": matched_cats,
+                        "matched_adverse_reactions": matched_ar})
+    return results
+
+
+def build_full_comparison(narrative_reactions, label, faers_reactions):
+    """Union all reactions from all 4 sources into one master list."""
+    warnings = label.get("warnings") or {} if label else {}
+    ar_list  = label.get("adverse_reactions") or [] if label else []
+    faers_map = {r["reaction"].lower(): r["count"] for r in faers_reactions}
+
+    rows = {}  # key = normalized reaction name
+
+    def _add(reaction_name, severity=None, onset=None, outcome="unknown",
+             in_narrative=False, in_label=False, faers_count=0):
+        key = reaction_name.lower().strip()
+        if key not in rows:
+            rows[key] = {
+                "reaction":     reaction_name,
+                "severity":     severity,
+                "onset":        onset,
+                "outcome":      outcome,
+                "in_narrative": in_narrative,
+                "found_in_label": in_label,
+                "faers_count":  faers_count,
+            }
+        else:
+            # Merge: keep the richest data
+            if severity:    rows[key]["severity"]     = severity
+            if onset:       rows[key]["onset"]        = onset
+            if outcome != "unknown": rows[key]["outcome"] = outcome
+            if in_narrative: rows[key]["in_narrative"] = True
+            if in_label:     rows[key]["found_in_label"] = True
+            if faers_count:  rows[key]["faers_count"]  = faers_count
+
+    # 1. Narrative reactions
+    for r in narrative_reactions:
+        key = r["reaction"].lower().strip()
+        keywords = key.split()
+        # Check label
+        matched_cats = [c for c, t in warnings.items() if any(kw in t.lower() for kw in keywords)]
+        matched_ar   = [a for a in ar_list if any(kw in a.lower() for kw in keywords)]
+        in_label = bool(matched_cats or matched_ar)
+        # Check FAERS
+        fmatch = key if key in faers_map else next(
+            (fk for fk in faers_map if all(kw in fk for kw in keywords if len(kw) > 3)), None)
+        fc = faers_map.get(fmatch, 0) if fmatch else 0
+        _add(r["reaction"], r.get("severity"), r.get("onset"), r.get("outcome","unknown"),
+             in_narrative=True, in_label=in_label, faers_count=fc)
+
+    # 2. FDA label adverse reactions not yet in rows
+    for ar in ar_list:
+        # Extract a short reaction term from the label sentence
+        term = ar.strip()
+        if len(term) > 60:
+            term = term[:60].rsplit(' ', 1)[0]  # truncate long sentences
+        key = term.lower()
+        kws = [w for w in key.split() if len(w) > 3]
+        fmatch = next((fk for fk in faers_map if all(kw in fk for kw in kws)), None) if kws else None
+        fc = faers_map.get(fmatch, 0) if fmatch else 0
+        _add(term, in_label=True, faers_count=fc)
+
+    # 3. FAERS top-50 reactions not yet in rows
+    for fterm, fcount in list(faers_map.items())[:50]:
+        _add(fterm, in_label=any(fterm in a.lower() for a in ar_list), faers_count=fcount)
+
+    return list(rows.values())
+
+
+def calculate_confidence(extracted):
+    score = 0
+    drugs     = extracted.get("drugs", [])
+    reactions = extracted.get("reactions", [])
+
+    if drugs:     score += 15
+    if any(d.get("dose") for d in drugs): score += 10
+    if reactions: score += 15
+    if any(r.get("severity") for r in reactions): score += 8
+    if any(r.get("onset") for r in reactions):    score += 4
+    if any(r.get("outcome","unknown") != "unknown" for r in reactions): score += 3
+    if extracted.get("patient", {}).get("age"):  score += 10
+    if extracted.get("patient", {}).get("sex"):  score += 10
+    if extracted.get("causality","unassessable") != "unassessable": score += 10
+    if extracted.get("overall_severity"): score += 10
+    if score >= 80: verdict, needs_gpt = "HIGH", False
+    elif score >= 50: verdict, needs_gpt = "MEDIUM", True
+    else: verdict, needs_gpt = "LOW", True
+
+    return {"score": score, "max": 100, "verdict": verdict, "needs_gpt": needs_gpt}
+
+
+# ── medspaCy extraction (rule-based) ────────────────────────────────────────
+def extract_medspacy(text):
+    """Full rule-based extraction using spaCy NER + regex patterns."""
+    nlp = get_nlp()
+    doc = nlp(text)
+    text_lower = text.lower()
+    drugs, reactions = [], []
+
+    for drug in KNOWN_DRUGS:
+        if drug in text_lower:
+            m = re.search(re.escape(drug), text_lower)
+            dose = route = indication = None
+            if m:
+                ctx = text[max(0, m.start()-10):m.end()+80]
+                dm = DOSE_PATTERN.search(ctx)
+                rm = re.search(r'\b(oral(?:ly)?|IV|intravenous(?:ly)?|IM|subcutaneous(?:ly)?|SC|topical(?:ly)?|inhaled?)\b', ctx, re.IGNORECASE)
+                im = re.search(r'for\s+([\w\s]+?)(?:\.|,|;|$)', ctx, re.IGNORECASE)
+                dose       = dm.group(0) if dm else None
+                route      = rm.group(0).lower() if rm else None
+                indication = im.group(1).strip() if im else None
+            drugs.append({"name": drug, "dose": dose, "route": route, "indication": indication})
+
+    for ent in doc.ents:
+        if ent.label_ in ("PRODUCT", "ORG", "CHEMICAL") and ent.text.lower() not in KNOWN_DRUGS:
+            drugs.append({"name": ent.text, "dose": None, "route": None, "indication": None})
+
+    for reaction in KNOWN_REACTIONS:
+        if reaction in text_lower:
+            m = re.search(re.escape(reaction), text_lower)
+            severity = onset = None
+            outcome = "unknown"
+            if m:
+                ctx = text[max(0, m.start()-30):m.end()+80]
+                sm  = SEVERITY_PATTERN.search(ctx)
+                om  = OUTCOME_PATTERN.search(ctx)
+                ons = re.search(r'after\s+([\w\s]+?)(?:,|\.|\s+(?:he|she|the|patient))', ctx, re.IGNORECASE)
+                severity = sm.group(0).lower() if sm else None
+                outcome  = om.group(0).lower() if om else "unknown"
+                onset    = ons.group(1).strip() if ons else None
+            reactions.append({"reaction": reaction, "severity": severity, "onset": onset, "outcome": outcome})
+
+    age_m  = AGE_PATTERN.search(text)
+    sex_m  = SEX_PATTERN.search(text)
+    caus_m = CAUSALITY_PATTERN.search(text)
+    sev_m  = SEVERITY_PATTERN.search(text)
+
+    return {
+        "drugs":    drugs,
+        "reactions": reactions,
+        "patient":  {"age": age_m.group(1) if age_m else None,
+                     "sex": sex_m.group(0).lower() if sex_m else None,
+                     "relevant_history": None},
+        "causality":        caus_m.group(0).lower() if caus_m else "unassessable",
+        "overall_severity": sev_m.group(0).lower() if sev_m else None,
+        "notes": f"Extracted using medspaCy rule-based NER. {len(drugs)} drug(s), {len(reactions)} reaction(s) found."
+    }
+
+
+# ── GPT-4 extraction ─────────────────────────────────────────────────────────
+GPT_SYSTEM = """You are a clinical pharmacovigilance expert.
+Extract all drugs and adverse reactions from the clinical narrative.
+Return ONLY valid JSON:
+{
+  "drugs": [{"name": "", "dose": null, "route": null, "indication": null}],
+  "reactions": [{"reaction": "", "severity": null, "onset": null, "outcome": "unknown"}],
+  "patient": {"age": null, "sex": null, "relevant_history": null},
+  "causality": null,
+  "overall_severity": null,
+  "notes": ""
+}"""
+
+def extract_gpt(text):
+    """GPT-4o extraction via OpenAI API."""
+    api_key = os.environ.get("OPENAI_API_KEY")
+    if not api_key or not OPENAI_AVAILABLE:
+        return None
+    client = OpenAI(api_key=api_key)
+    resp = client.chat.completions.create(
+        model="gpt-4o",
+        messages=[
+            {"role": "system", "content": GPT_SYSTEM},
+            {"role": "user",   "content": f"Clinical Narrative:\n\n{text}"}
+        ],
+        temperature=0,
+        response_format={"type": "json_object"}
+    )
+    return json.loads(resp.choices[0].message.content)
+
+
+# ── Diff two extractions ──────────────────────────────────────────────────────
+def diff_extractions(ms, gpt):
+    if not gpt:
+        return None
+    ms_drugs     = {d["name"].lower() for d in ms.get("drugs", [])}
+    gpt_drugs    = {d["name"].lower() for d in gpt.get("drugs", [])}
+    ms_reactions = {r["reaction"].lower() for r in ms.get("reactions", [])}
+    gpt_reactions= {r["reaction"].lower() for r in gpt.get("reactions", [])}
+
+    reaction_detail_gaps = []
+    for gr in gpt.get("reactions", []):
+        for mr in ms.get("reactions", []):
+            if gr["reaction"].lower() == mr["reaction"].lower():
+                gaps = {}
+                for field in ["severity", "onset", "outcome"]:
+                    if mr.get(field) in (None, "unknown") and gr.get(field) not in (None, "unknown"):
+                        gaps[field] = {"medspacy": mr.get(field), "gpt": gr.get(field)}
+                if gaps:
+                    reaction_detail_gaps.append({"reaction": gr["reaction"], "gaps": gaps})
+
+    field_gaps = {}
+    for field in ["causality", "overall_severity"]:
+        mv, gv = ms.get(field), gpt.get(field)
+        if mv != gv:
+            field_gaps[field] = {"medspacy": mv, "gpt": gv}
+
+    patient_gaps = {}
+    for key in ["age", "sex", "relevant_history"]:
+        mv = ms.get("patient", {}).get(key)
+        gv = gpt.get("patient", {}).get(key)
+        if mv != gv:
+            patient_gaps[key] = {"medspacy": mv, "gpt": gv}
+
+    return {
+        "drugs_only_in_gpt":       sorted(gpt_drugs - ms_drugs),
+        "drugs_only_in_medspacy":  sorted(ms_drugs - gpt_drugs),
+        "reactions_only_in_gpt":   sorted(gpt_reactions - ms_reactions),
+        "reactions_only_in_medspacy": sorted(ms_reactions - gpt_reactions),
+        "reaction_detail_gaps":    reaction_detail_gaps,
+        "field_gaps":              field_gaps,
+        "patient_gaps":            patient_gaps,
+        "summary": {
+            "drugs_gpt_missed_by_medspacy":     len(gpt_drugs - ms_drugs),
+            "reactions_gpt_missed_by_medspacy": len(gpt_reactions - ms_reactions),
+            "total_gaps": len(field_gaps) + len(patient_gaps) + len(reaction_detail_gaps)
+        }
+    }
+
+
+# ── Routes ────────────────────────────────────────────────────────────────────
+@app.route("/")
+def index():
+    from flask import make_response
+    resp = make_response(render_template("index.html"))
+    resp.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+    resp.headers["Pragma"]        = "no-cache"
+    resp.headers["Expires"]       = "0"
+    return resp
+
+
+@app.route("/api/fda-label", methods=["POST"])
+def api_fda_label():
+    drug = request.json.get("drug_name", "").strip()
+    if not drug:
+        return jsonify({"error": "Drug name required"}), 400
+    label = get_fda_label(drug)
+    if not label:
+        return jsonify({"error": f"No FDA label found for '{drug}'"}), 404
+    return jsonify(label)
+
+
+@app.route("/api/faers", methods=["POST"])
+def api_faers():
+    drug = request.json.get("drug_name", "").strip()
+    if not drug:
+        return jsonify({"error": "Drug name required"}), 400
+    reactions = get_faers_reactions(drug)
+    return jsonify({"drug": drug, "reactions": reactions, "total": len(reactions)})
+
+
+@app.route("/api/analyze-narrative", methods=["POST"])
+def api_analyze_narrative():
+    data      = request.json
+    narrative = data.get("narrative", "").strip()
+    drug_name = data.get("drug_name", "").strip()
+
+    if not narrative:
+        return jsonify({"error": "Narrative text required"}), 400
+
+    extracted   = extract_from_narrative(narrative)
+    confidence  = calculate_confidence(extracted)
+    label       = get_fda_label(drug_name) if drug_name else None
+    faers       = get_faers_reactions(drug_name) if drug_name else []
+
+    label_comparison = compare_narrative_vs_label(extracted["reactions"], label) if label else []
+    faers_comparison = compare_narrative_vs_faers(extracted["reactions"], faers) if faers else {}
+    full_rows        = build_full_comparison(extracted["reactions"], label or {}, faers)
+
+    return jsonify({
+        "extracted":         extracted,
+        "confidence":        confidence,
+        "label_comparison":  label_comparison,
+        "faers_comparison":  faers_comparison,
+        "full_rows":         full_rows,
+        "novel_reactions":   faers_comparison.get("not_in_faers", []),
+        "label_gaps": [r for r in label_comparison if not r.get("found_in_label")],
+    })
+
+
+@app.route("/api/compare-engines", methods=["POST"])
+def api_compare_engines():
+    """Run medspaCy + GPT-4 on same narrative and return side-by-side diff."""
+    data      = request.json
+    narrative = data.get("narrative", "").strip()
+    drug_name = data.get("drug_name", "").strip()
+
+    if not narrative:
+        return jsonify({"error": "Narrative text required"}), 400
+
+    ms_result  = extract_medspacy(narrative)
+    gpt_result = extract_gpt(narrative)
+    diff       = diff_extractions(ms_result, gpt_result)
+
+    ms_conf  = calculate_confidence(ms_result)
+    gpt_conf = calculate_confidence(gpt_result) if gpt_result else None
+
+    # If GPT ran, merge missing fields back for richer comparison report
+    merged = ms_result.copy()
+    if gpt_result and diff:
+        extra_reactions = [r for r in gpt_result.get("reactions", [])
+                           if r["reaction"].lower() in diff["reactions_only_in_gpt"]]
+        merged["reactions"] = ms_result["reactions"] + extra_reactions
+        extra_drugs = [d for d in gpt_result.get("drugs", [])
+                       if d["name"].lower() in diff["drugs_only_in_gpt"]]
+        merged["drugs"] = ms_result["drugs"] + extra_drugs
+        if not merged.get("causality") or merged["causality"] == "unassessable":
+            merged["causality"] = gpt_result.get("causality") or "unassessable"
+        if not merged.get("overall_severity"):
+            merged["overall_severity"] = gpt_result.get("overall_severity")
+        if not merged.get("patient", {}).get("relevant_history"):
+            merged.setdefault("patient", {})["relevant_history"] = \
+                gpt_result.get("patient", {}).get("relevant_history")
+
+    label = get_fda_label(drug_name) if drug_name else None
+    faers = get_faers_reactions(drug_name) if drug_name else []
+    label_comparison = compare_narrative_vs_label(merged["reactions"], label) if label else []
+    faers_comparison = compare_narrative_vs_faers(merged["reactions"], faers) if faers else {}
+    full_rows        = build_full_comparison(merged["reactions"], label or {}, faers)
+
+    return jsonify({
+        "medspacy":          ms_result,
+        "medspacy_confidence": ms_conf,
+        "gpt":               gpt_result,
+        "gpt_confidence":    gpt_conf,
+        "gpt_available":     bool(os.environ.get("OPENAI_API_KEY") and OPENAI_AVAILABLE),
+        "diff":              diff,
+        "merged":            merged,
+        "label_comparison":  label_comparison,
+        "faers_comparison":  faers_comparison,
+        "full_rows":         full_rows,
+        "label_gaps":        [r for r in label_comparison if not r.get("found_in_label")],
+        "novel_reactions":   faers_comparison.get("not_in_faers", []),
+    })
+
+
+@app.route("/api/check-openai", methods=["GET"])
+def api_check_openai():
+    available = bool(os.environ.get("OPENAI_API_KEY") and OPENAI_AVAILABLE)
+    return jsonify({"available": available})
+
+
+if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 5050))
+    app.run(debug=False, host="0.0.0.0", port=port)
