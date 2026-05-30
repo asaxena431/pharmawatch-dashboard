@@ -2,7 +2,6 @@ from flask import Flask, render_template, request, jsonify
 import requests
 import json
 import re
-import spacy
 import os
 try:
     from openai import OpenAI
@@ -11,14 +10,6 @@ except ImportError:
     OPENAI_AVAILABLE = False
 
 app = Flask(__name__)
-
-# ── spaCy ────────────────────────────────────────────────────────────────────
-_nlp = None
-def get_nlp():
-    global _nlp
-    if _nlp is None:
-        _nlp = spacy.load("en_core_web_sm", exclude=["parser", "senter"])
-    return _nlp
 
 # ── Shared lists ─────────────────────────────────────────────────────────────
 KNOWN_DRUGS = [
