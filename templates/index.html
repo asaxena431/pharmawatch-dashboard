@@ -864,7 +864,15 @@
           ${r.severity ? `<span class="ml-1 text-xs text-slate-500">(${r.severity})</span>` : ''}
           ${r.onset    ? `<div class="text-xs text-slate-600">onset: ${r.onset}</div>` : ''}
         </td>
-        <td class="py-2 pr-3 text-center">${ck(inFDA)}</td>
+        <td class="py-2 pr-3 text-center align-top">
+          ${inFDA ? `<span class="text-green-400 font-bold">✓</span>` : `<span class="text-slate-700">✗</span>`}
+          ${inFDA && r.label_sections && r.label_sections.length ? `<div class="mt-1 space-y-0.5">
+            ${r.label_sections.map(s => s.startsWith('⚠')
+              ? `<span class="block text-xs px-1.5 py-0.5 rounded bg-yellow-900/40 text-yellow-300 whitespace-nowrap">${s}</span>`
+              : `<span class="block text-xs px-1.5 py-0.5 rounded bg-blue-900/40 text-blue-300 whitespace-nowrap">${s}</span>`
+            ).join('')}
+          </div>` : ''}
+        </td>
         <td class="py-2 pr-3 text-center">${inFAERS ? `<span class="text-green-400 font-bold">✓</span>` : `<span class="text-slate-700">✗</span>`}</td>
         <td class="py-2 pr-3 text-center">${r.in_narrative ? ck(inMs || msReactions.size === 0) : `<span class="text-slate-700">—</span>`}</td>
         <td class="py-2 pr-3 text-center">${r.in_narrative ? ck(inGpt) : `<span class="text-slate-700">—</span>`}</td>

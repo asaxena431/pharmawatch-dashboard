@@ -206,58 +206,73 @@ def build_full_comparison(narrative_reactions, label, faers_reactions):
 
     rows = {}  # key = normalized reaction name
 
+    def _label_sections(keywords):
+        """Return list of matched FDA label section tags for given keywords."""
+        sections = []
+        for c, t in warnings.items():
+            if any(kw in t.lower() for kw in keywords):
+                sections.append(f"⚠ Warning: {c}")
+        for a in ar_list:
+            if any(kw in a.lower() for kw in keywords):
+                sections.append("Adverse Reactions")
+                break
+        return list(dict.fromkeys(sections))  # dedupe, preserve order
+
     def _add(reaction_name, severity=None, onset=None, outcome="unknown",
-             in_narrative=False, in_label=False, faers_count=0):
+             in_narrative=False, in_label=False, faers_count=0, label_sections=None):
         key = reaction_name.lower().strip()
         if key not in rows:
             rows[key] = {
-                "reaction":     reaction_name,
-                "severity":     severity,
-                "onset":        onset,
-                "outcome":      outcome,
-                "in_narrative": in_narrative,
+                "reaction":       reaction_name,
+                "severity":       severity,
+                "onset":          onset,
+                "outcome":        outcome,
+                "in_narrative":   in_narrative,
                 "found_in_label": in_label,
-                "faers_count":  faers_count,
+                "faers_count":    faers_count,
+                "label_sections": label_sections or [],
             }
         else:
-            # Merge: keep the richest data
-            if severity:    rows[key]["severity"]     = severity
-            if onset:       rows[key]["onset"]        = onset
+            if severity:      rows[key]["severity"]       = severity
+            if onset:         rows[key]["onset"]          = onset
             if outcome != "unknown": rows[key]["outcome"] = outcome
-            if in_narrative: rows[key]["in_narrative"] = True
-            if in_label:     rows[key]["found_in_label"] = True
-            if faers_count:  rows[key]["faers_count"]  = faers_count
+            if in_narrative:  rows[key]["in_narrative"]   = True
+            if in_label:      rows[key]["found_in_label"] = True
+            if faers_count:   rows[key]["faers_count"]    = faers_count
+            if label_sections:
+                existing = rows[key]["label_sections"]
+                rows[key]["label_sections"] = list(dict.fromkeys(existing + label_sections))
 
     # 1. Narrative reactions
     for r in narrative_reactions:
         key = r["reaction"].lower().strip()
-        keywords = key.split()
-        # Check label
-        matched_cats = [c for c, t in warnings.items() if any(kw in t.lower() for kw in keywords)]
-        matched_ar   = [a for a in ar_list if any(kw in a.lower() for kw in keywords)]
-        in_label = bool(matched_cats or matched_ar)
-        # Check FAERS
+        keywords = [kw for kw in key.split() if len(kw) > 3]
+        sections = _label_sections(keywords)
+        in_label = bool(sections)
         fmatch = key if key in faers_map else next(
             (fk for fk in faers_map if all(kw in fk for kw in keywords if len(kw) > 3)), None)
         fc = faers_map.get(fmatch, 0) if fmatch else 0
-        _add(r["reaction"], r.get("severity"), r.get("onset"), r.get("outcome","unknown"),
-             in_narrative=True, in_label=in_label, faers_count=fc)
+        _add(r["reaction"], r.get("severity"), r.get("onset"), r.get("outcome", "unknown"),
+             in_narrative=True, in_label=in_label, faers_count=fc, label_sections=sections)
 
-    # 2. FDA label adverse reactions not yet in rows
+    # 2. FDA label adverse reactions
     for ar in ar_list:
-        # Extract a short reaction term from the label sentence
         term = ar.strip()
         if len(term) > 60:
-            term = term[:60].rsplit(' ', 1)[0]  # truncate long sentences
+            term = term[:60].rsplit(' ', 1)[0]
         key = term.lower()
         kws = [w for w in key.split() if len(w) > 3]
         fmatch = next((fk for fk in faers_map if all(kw in fk for kw in kws)), None) if kws else None
         fc = faers_map.get(fmatch, 0) if fmatch else 0
-        _add(term, in_label=True, faers_count=fc)
+        warn_secs = [f"⚠ Warning: {c}" for c, t in warnings.items() if any(kw in t.lower() for kw in kws)]
+        sections = warn_secs + ["Adverse Reactions"]
+        _add(term, in_label=True, faers_count=fc, label_sections=list(dict.fromkeys(sections)))
 
-    # 3. FAERS top-50 reactions not yet in rows
+    # 3. FAERS top-50 reactions
     for fterm, fcount in list(faers_map.items())[:50]:
-        _add(fterm, in_label=any(fterm in a.lower() for a in ar_list), faers_count=fcount)
+        kws = [w for w in fterm.split() if len(w) > 3]
+        sections = _label_sections(kws)
+        _add(fterm, in_label=bool(sections), faers_count=fcount, label_sections=sections)
 
     return list(rows.values())
 
