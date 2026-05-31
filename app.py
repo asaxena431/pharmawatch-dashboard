@@ -403,16 +403,28 @@ def build_full_comparison(narrative_reactions, label, faers_reactions):
 
     rows = {}  # key = normalized reaction name
 
-    def _label_sections(keywords):
-        """Return Adverse Reactions and/or Warning tags."""
-        if not keywords:
+    def _label_sections(reaction_name):
+        """Return Adverse Reactions and/or Warning tags.
+        Requires the full term OR all meaningful keywords to appear in label text."""
+        if not reaction_name:
             return []
+        term = reaction_name.lower().strip()
+        # Only use keywords that are long enough to be clinically meaningful (>4 chars)
+        keywords = [kw for kw in re.split(r'\W+', term) if len(kw) > 4]
         sections = []
-        # Match against full raw adverse_reactions blob
-        if any(kw in raw_ar_text for kw in keywords):
+
+        def _matches(blob):
+            # First try: exact full term match
+            if term in blob:
+                return True
+            # Second try: ALL meaningful keywords must appear
+            if keywords and all(kw in blob for kw in keywords):
+                return True
+            return False
+
+        if _matches(raw_ar_text):
             sections.append("Adverse Reactions")
-        # Match against full raw warnings blob
-        if any(kw in raw_warn_text for kw in keywords):
+        if _matches(raw_warn_text):
             sections.append("Warning")
         return sections
 
@@ -444,9 +456,9 @@ def build_full_comparison(narrative_reactions, label, faers_reactions):
     # 1. Narrative reactions
     for r in narrative_reactions:
         key = r["reaction"].lower().strip()
-        keywords = [kw for kw in key.split() if len(kw) > 3]
-        sections = _label_sections(keywords)
+        sections = _label_sections(r["reaction"])
         in_label = bool(sections)
+        keywords = [kw for kw in key.split() if len(kw) > 3]
         fmatch = key if key in faers_map else next(
             (fk for fk in faers_map if all(kw in fk for kw in keywords if len(kw) > 3)), None)
         fc = faers_map.get(fmatch, 0) if fmatch else 0
@@ -467,8 +479,7 @@ def build_full_comparison(narrative_reactions, label, faers_reactions):
 
     # 3. FAERS top-50 reactions
     for fterm, fcount in list(faers_map.items())[:50]:
-        kws = [w for w in fterm.split() if len(w) > 3]
-        sections = _label_sections(kws)
+        sections = _label_sections(fterm)
         _add(fterm, in_label=bool(sections), faers_count=fcount, label_sections=sections)
 
     return list(rows.values())
