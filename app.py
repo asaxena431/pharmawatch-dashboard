@@ -263,23 +263,37 @@ def extract_from_narrative(text):
         re.IGNORECASE
     )
 
+    # Patterns that indicate the match is inside a dosage/drug context, not a reaction
+    DOSE_CONTEXT_PATTERN = re.compile(
+        r'\b\d+\s*mg\b|\b\d+\s*mcg\b|\btablet\b|\bcapsule\b|\bdose\b|\bdosage\b|'
+        r'\btreatment\b|\btherapy\b|\badminister\b|\bprescri\w+\b|\bformulation\b',
+        re.IGNORECASE
+    )
+
     for reaction in KNOWN_REACTIONS:
-        if reaction in text_lower:
-            m = re.search(re.escape(reaction), text_lower)
-            severity, onset, outcome = None, None, "unknown"
-            if m:
-                # Check 60-char window before the reaction for negation
-                pre_ctx = text[max(0, m.start()-60):m.start()]
-                if NEGATION_PATTERN.search(pre_ctx):
-                    continue  # skip negated reaction
-                ctx = text[max(0, m.start()-30):m.end()+80]
-                sm = SEVERITY_PATTERN.search(ctx)
-                om = OUTCOME_PATTERN.search(ctx)
-                severity = sm.group(0).lower() if sm else None
-                outcome  = om.group(0).lower() if om else "unknown"
-                ons_m = re.search(r'after\s+([\w\s]+?)(?:,|\.|\s+(?:he|she|the|patient))', ctx, re.IGNORECASE)
-                onset = ons_m.group(1).strip() if ons_m else None
-            reactions.append({"reaction": reaction, "severity": severity, "onset": onset, "outcome": outcome})
+        # Use word-boundary regex match instead of substring search
+        pattern = r'(?<!\w)' + re.escape(reaction) + r'(?!\w)'
+        m = re.search(pattern, text_lower)
+        if not m:
+            continue
+        severity, onset, outcome = None, None, "unknown"
+        # Check 60-char window before the reaction for negation
+        pre_ctx = text[max(0, m.start()-60):m.start()]
+        if NEGATION_PATTERN.search(pre_ctx):
+            continue  # skip negated reaction
+        # Check that surrounding context looks clinical, not a dosage line
+        surrounding = text[max(0, m.start()-40):m.end()+40]
+        # Skip if the match is sandwiched between dose numbers like "40 mg and 80 mg"
+        if re.search(r'\d+\s*(?:mg|mcg|g|ml)\b.{0,10}' + re.escape(reaction), surrounding, re.IGNORECASE):
+            continue
+        ctx = text[max(0, m.start()-30):m.end()+80]
+        sm = SEVERITY_PATTERN.search(ctx)
+        om = OUTCOME_PATTERN.search(ctx)
+        severity = sm.group(0).lower() if sm else None
+        outcome  = om.group(0).lower() if om else "unknown"
+        ons_m = re.search(r'after\s+([\w\s]+?)(?:,|\.|\s+(?:he|she|the|patient))', ctx, re.IGNORECASE)
+        onset = ons_m.group(1).strip() if ons_m else None
+        reactions.append({"reaction": reaction, "severity": severity, "onset": onset, "outcome": outcome})
 
     age_m  = AGE_PATTERN.search(text)
     sex_m  = SEX_PATTERN.search(text)
