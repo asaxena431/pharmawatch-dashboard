@@ -401,6 +401,17 @@ def build_full_comparison(narrative_reactions, label, faers_reactions):
     # Section header names that must never appear as reaction rows
     SECTION_HEADERS = {kw.lower() for kw in WARNING_KEYWORDS}
 
+    # Non-clinical FAERS terms to exclude from comparison rows
+    NON_REACTION_FAERS = {
+        "off label use", "drug ineffective", "fall", "death", "product quality issue",
+        "no adverse event", "condition aggravated", "therapeutic response decreased",
+        "drug interaction", "medication error", "wrong drug administered",
+        "incorrect dose administered", "drug administration error",
+        "intentional overdose", "accidental overdose", "overdose",
+        "product use issue", "inappropriate schedule of drug administration",
+        "lack of efficacy", "weight increased", "weight decreased",
+    }
+
     # Use raw full-text fields for matching (not cleaned/truncated fragments)
     raw_ar_text   = (label.get("adverse_reactions_raw") or " ".join(ar_list)).lower()
     raw_warn_text = (label.get("warnings_raw") or " ".join(warnings.values())).lower()
@@ -489,6 +500,8 @@ def build_full_comparison(narrative_reactions, label, faers_reactions):
     # 3. FAERS top-50 reactions
     for fterm, fcount in list(faers_map.items())[:50]:
         if fterm.lower() in SECTION_HEADERS:
+            continue
+        if fterm.lower() in NON_REACTION_FAERS:
             continue
         sections = _label_sections(fterm)
         _add(fterm, in_label=bool(sections), faers_count=fcount, label_sections=sections)
