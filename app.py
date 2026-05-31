@@ -500,9 +500,9 @@ def build_full_comparison(narrative_reactions, label, faers_reactions):
         warn_tag = ["Warning"] if any(any(kw in t.lower() for kw in kws) for t in warnings.values()) else []
         _add(term, in_label=True, faers_count=fc, label_sections=list(dict.fromkeys(["Adverse Reactions"] + warn_tag)))
 
-    # 2b. OTC warning reactions — extract known clinical terms from warning texts
-    # (for drugs like Tylenol that have no adverse_reactions field)
-    if not ar_list and warnings:
+    # 2b. Warning reactions — extract known clinical terms from all warning section texts
+    # Always run so both Adverse Reactions AND Warnings appear in the comparison
+    if warnings:
         for sec_name, sec_text in warnings.items():
             sec_lower = sec_text.lower()
             for reaction in KNOWN_REACTIONS:
