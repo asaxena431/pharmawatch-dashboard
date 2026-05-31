@@ -37,7 +37,10 @@ KNOWN_REACTIONS = [
     "swelling","edema","fever","pyrexia","chills","night sweats","weight gain",
     "weight loss","hair loss","alopecia","blurred vision","tinnitus","hearing loss",
     "blistering","mucosal involvement","muscle spasm","myopathy","rhabdomyolysis",
-    "pancreatitis","peripheral neuropathy"
+    "pancreatitis","peripheral neuropathy",
+    "liver damage","skin reddening","stomach bleeding","allergic reaction",
+    "difficulty breathing","serious skin reactions","dark urine","clay-colored stools",
+    "loss of appetite","upper stomach pain"
 ]
 
 DOSE_PATTERN     = re.compile(r'\b(\d+\.?\d*\s*(?:mg|mcg|ug|g|ml|units?|IU|mEq)(?:\s*/\s*(?:day|daily|kg|dose))?)\b', re.IGNORECASE)
@@ -496,6 +499,22 @@ def build_full_comparison(narrative_reactions, label, faers_reactions):
         fc = faers_map.get(fmatch, 0) if fmatch else 0
         warn_tag = ["Warning"] if any(any(kw in t.lower() for kw in kws) for t in warnings.values()) else []
         _add(term, in_label=True, faers_count=fc, label_sections=list(dict.fromkeys(["Adverse Reactions"] + warn_tag)))
+
+    # 2b. OTC warning reactions — extract known clinical terms from warning texts
+    # (for drugs like Tylenol that have no adverse_reactions field)
+    if not ar_list and warnings:
+        for sec_name, sec_text in warnings.items():
+            sec_lower = sec_text.lower()
+            for reaction in KNOWN_REACTIONS:
+                if reaction in sec_lower:
+                    key = reaction.lower()
+                    if key in SECTION_HEADERS or key in NON_REACTION_FAERS:
+                        continue
+                    fmatch = key if key in faers_map else next(
+                        (fk for fk in faers_map if key in fk or fk in key), None)
+                    fc = faers_map.get(fmatch, 0) if fmatch else 0
+                    _add(reaction, in_label=True, faers_count=fc,
+                         label_sections=["Warning"])
 
     # 3. FAERS top-50 reactions
     for fterm, fcount in list(faers_map.items())[:50]:
