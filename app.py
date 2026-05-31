@@ -101,7 +101,19 @@ def get_fda_label(drug_name):
         "randomized", "double-blind", "open-label", "most common",
         "incidence of", "occurred in", "reported in", "observed in",
         "compared to", "compared with", "versus", "vs.", "per 100",
-        "rate of", "frequency of", "proportion of"
+        "rate of", "frequency of", "proportion of",
+        "off label", "off-label", "label use", "prescribing information",
+        "see full", "full prescribing", "medication guide", "package insert",
+        "see section", "refer to", "please see", "for more information",
+        "not established", "not been established", "has not been", "have not been",
+        "is not known", "are not known", "was not evaluated", "were not evaluated",
+        "in patients with", "in patients who", "in subjects", "in healthy",
+        "doses of", "dose of", "mg dose", "mg/day", "mg/kg",
+        "once daily", "twice daily", "three times", "four times",
+        "clinical study", "clinical studies", "controlled trial", "controlled study",
+        "safety and efficacy", "efficacy and safety", "safety profile",
+        "no clinically", "not clinically", "not statistically", "statistically significant",
+        "spontaneous report", "post-market", "postmarket", "surveillance"
     ]
 
     # Words/phrases that indicate a fragment is NOT a clinical reaction
