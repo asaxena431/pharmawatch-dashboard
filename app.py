@@ -244,11 +244,23 @@ def extract_from_narrative(text):
                 dose = dm.group(0) if dm else None
             drugs.append({"name": drug, "dose": dose})
 
+    # Negation phrases to check in the window before a reaction mention
+    NEGATION_PATTERN = re.compile(
+        r'\b(no|not|without|denies|denied|deny|absence of|absent|free of|'
+        r'negative for|never|ruled out|unremarkable for|fails to|'
+        r'did not|does not|was not|were not|is not|are not)\b',
+        re.IGNORECASE
+    )
+
     for reaction in KNOWN_REACTIONS:
         if reaction in text_lower:
             m = re.search(re.escape(reaction), text_lower)
             severity, onset, outcome = None, None, "unknown"
             if m:
+                # Check 60-char window before the reaction for negation
+                pre_ctx = text[max(0, m.start()-60):m.start()]
+                if NEGATION_PATTERN.search(pre_ctx):
+                    continue  # skip negated reaction
                 ctx = text[max(0, m.start()-30):m.end()+80]
                 sm = SEVERITY_PATTERN.search(ctx)
                 om = OUTCOME_PATTERN.search(ctx)
@@ -471,6 +483,12 @@ def extract_medspacy(text):
 # ── GPT-4 extraction ─────────────────────────────────────────────────────────
 GPT_SYSTEM = """You are a clinical pharmacovigilance expert.
 Extract all drugs and adverse reactions from the clinical narrative.
+
+CRITICAL RULES:
+- ONLY include reactions that are AFFIRMED/PRESENT — do NOT include reactions that are negated, denied, absent, or ruled out.
+- Examples of negated reactions to EXCLUDE: "no nausea", "denies headache", "without fever", "no evidence of bleeding", "ruled out hepatotoxicity".
+- If a reaction is mentioned only in a negative context, omit it entirely from the output.
+
 Return ONLY valid JSON:
 {
   "drugs": [{"name": "", "dose": null, "route": null, "indication": null}],
