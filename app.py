@@ -122,7 +122,11 @@ def get_fda_label(drug_name):
         r'including|such as|following|both|either|neither|however|therefore|'
         r'additionally|furthermore|moreover|although|whereas|while|since|because|'
         r'compared|between|among|during|within|after|before|above|below|'
-        r'these|those|this|that|which|who|than|then|when|where)\b',
+        r'these|those|this|that|which|who|than|then|when|where|'
+        r'upon|if|when|should|must|do not|do|use|take|avoid|monitor|'
+        r'consider|consult|contact|inform|instruct|advise|recommend|'
+        r'discontinu|interrupt|reduc|increas|adjust|withhold|resume|'
+        r'administer|prescri|dispens|store|keep|discard)\b',
         re.IGNORECASE
     )
 
