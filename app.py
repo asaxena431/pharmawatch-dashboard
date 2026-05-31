@@ -194,6 +194,8 @@ def get_fda_label(drug_name):
         "route":          openfda.get("route", ["N/A"]),
         "product_type":   openfda.get("product_type", ["N/A"]),
         "adverse_reactions": ar_list,
+        "adverse_reactions_raw": ar_raw or "",
+        "warnings_raw":   label.get("warnings", [None])[0] or label.get("warnings_and_precautions", [None])[0] or "",
         "side_effects":   side_effects,
         "warnings":       warnings_structured,
         "boxed_warning":  label.get("boxed_warning", [None])[0],
@@ -396,9 +398,9 @@ def build_full_comparison(narrative_reactions, label, faers_reactions):
     ar_list  = label.get("adverse_reactions") or [] if label else []
     faers_map = {r["reaction"].lower(): r["count"] for r in faers_reactions}
 
-    # Build a single lowercased blob of all raw label text for broad matching
-    raw_ar_text   = " ".join(ar_list).lower()
-    raw_warn_text = " ".join(warnings.values()).lower()
+    # Use raw full-text fields for matching (not cleaned/truncated fragments)
+    raw_ar_text   = (label.get("adverse_reactions_raw") or " ".join(ar_list)).lower()
+    raw_warn_text = (label.get("warnings_raw") or " ".join(warnings.values())).lower()
     raw_label_all = raw_ar_text + " " + raw_warn_text
 
     rows = {}  # key = normalized reaction name
