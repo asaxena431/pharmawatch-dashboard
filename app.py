@@ -165,21 +165,36 @@ def get_dailymed_narrative(drug_name):
     try:
         # Step 1: find the setid for the drug
         search_url = "https://dailymed.nlm.nih.gov/dailymed/services/v2/spls.json"
-        r = requests.get(search_url, params={"drug_name": drug_name, "pagesize": 5}, timeout=10)
+        r = requests.get(search_url, params={"drug_name": drug_name, "pagesize": 10}, timeout=10)
         data = r.json()
         results = data.get("data", [])
         if not results:
             return {"error": f"No DailyMed label found for '{drug_name}'"}
 
-        # Pick the first result
-        setid = results[0]["setid"]
-        title = results[0].get("title", drug_name)
+        # Prefer Rx prescription labels (longer title usually = more detail)
+        best = max(results, key=lambda x: len(x.get("title", "")))
+        setid = best["setid"]
+        title = best.get("title", drug_name)
 
         # Step 2: fetch sections via the sections endpoint
         sections_url = f"https://dailymed.nlm.nih.gov/dailymed/services/v2/spls/{setid}/sections.json"
         sr = requests.get(sections_url, timeout=10)
-        sdata = sr.json()
+        try:
+            sdata = sr.json()
+        except Exception:
+            # Sections endpoint failed — try fetching full SPL text instead
+            sdata = {}
         sections_raw = sdata.get("data", [])
+
+        # If sections endpoint returned nothing, fall back to searching by setid directly
+        if not sections_raw:
+            alt_url = f"https://dailymed.nlm.nih.gov/dailymed/services/v2/spls/{setid}.json"
+            try:
+                ar2 = requests.get(alt_url, timeout=10)
+                sdata2 = ar2.json()
+                sections_raw = sdata2.get("data", {}).get("sections", [])
+            except Exception:
+                sections_raw = []
 
         # Section codes we care about (LOINC codes used in SPL)
         WANTED = {
@@ -198,17 +213,25 @@ def get_dailymed_narrative(drug_name):
         }
 
         narrative_sections = []
+        seen_names = set()
         for sec in sections_raw:
-            code = sec.get("section_code", "")
+            code = sec.get("section_code", "") or sec.get("loinc_code", "")
             name = WANTED.get(code)
-            if not name:
+            if not name or name in seen_names:
                 continue
-            # Strip HTML tags from section text
-            raw_text = sec.get("section_text", "") or ""
+            # section_text may be a string, list, or nested dict
+            raw_text = sec.get("section_text") or sec.get("text") or ""
+            if isinstance(raw_text, list):
+                raw_text = " ".join(str(x) for x in raw_text)
+            elif isinstance(raw_text, dict):
+                raw_text = raw_text.get("content", "") or str(raw_text)
+            raw_text = str(raw_text)
+            # Strip HTML tags
             clean = re.sub(r'<[^>]+>', ' ', raw_text)
             clean = re.sub(r'\s+', ' ', clean).strip()
-            if clean:
+            if clean and len(clean) > 20:
                 narrative_sections.append({"section": name, "code": code, "text": clean})
+                seen_names.add(name)
 
         return {
             "drug": drug_name,
