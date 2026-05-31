@@ -831,7 +831,7 @@
       const inFAERS = r.faers_count > 0;
       const inMs    = r.in_narrative ? msReactions.has(key) || msReactions.size === 0 : false;
       const inGpt   = r.in_narrative ? gptReactions.has(key) : false;
-      const isNovel  = !inFDA && (inFAERS || (inMs && inGpt));
+      const isNovel  = !inFDA && (inFAERS || inMs || inGpt);
       const rowClass = isNovel                    ? 'bg-red-900/10'
                      : r.in_narrative && !inFDA   ? 'bg-yellow-900/10' : '';
 
@@ -860,19 +860,18 @@
       </tr>`;
     }).join('');
 
-    // Novel reactions: (in FAERS OR both engines agreed) AND not in FDA label
+    // Novel reactions: not in FDA label (found anywhere — FAERS, medspaCy, or GPT)
     const msSet  = new Set((msData?.reactions  || []).map(r => r.reaction.toLowerCase()));
     const gptSet = new Set((gptData?.reactions || []).map(r => r.reaction.toLowerCase()));
-    const novel = allRows.filter(r => !r.found_in_label && (
-      r.faers_count > 0 || (msSet.has(r.reaction.toLowerCase()) && gptSet.has(r.reaction.toLowerCase()))
-    ));
+    const novel = allRows.filter(r => !r.found_in_label);
     if (novel.length > 0) {
       document.getElementById('novelAlert').classList.remove('hidden');
       document.getElementById('novelList').innerHTML = novel.map(r => {
         const key = r.reaction.toLowerCase();
         const reasons = [];
         if (r.faers_count > 0) reasons.push(`${(r.faers_count||0).toLocaleString()} FAERS reports`);
-        if (msSet.has(key) && gptSet.has(key)) reasons.push('medspaCy + GPT agreed');
+        if (msSet.has(key)) reasons.push('medspaCy');
+        if (gptSet.has(key)) reasons.push('GPT-4o');
         return `<div class="flex items-center gap-3 bg-red-900/20 border border-red-800/30 rounded-lg px-4 py-3">
           <i class="fa-solid fa-circle-radiation text-red-400"></i>
           <span class="text-red-300 font-medium capitalize">${r.reaction}</span>
