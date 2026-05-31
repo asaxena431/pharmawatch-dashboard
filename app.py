@@ -398,6 +398,9 @@ def build_full_comparison(narrative_reactions, label, faers_reactions):
     ar_list  = label.get("adverse_reactions") or [] if label else []
     faers_map = {r["reaction"].lower(): r["count"] for r in faers_reactions}
 
+    # Section header names that must never appear as reaction rows
+    SECTION_HEADERS = {kw.lower() for kw in WARNING_KEYWORDS}
+
     # Use raw full-text fields for matching (not cleaned/truncated fragments)
     raw_ar_text   = (label.get("adverse_reactions_raw") or " ".join(ar_list)).lower()
     raw_warn_text = (label.get("warnings_raw") or " ".join(warnings.values())).lower()
@@ -458,6 +461,8 @@ def build_full_comparison(narrative_reactions, label, faers_reactions):
     # 1. Narrative reactions
     for r in narrative_reactions:
         key = r["reaction"].lower().strip()
+        if key in SECTION_HEADERS:
+            continue
         sections = _label_sections(r["reaction"])
         in_label = bool(sections)
         keywords = [kw for kw in key.split() if len(kw) > 3]
@@ -470,6 +475,8 @@ def build_full_comparison(narrative_reactions, label, faers_reactions):
     # 2. FDA label adverse reactions
     for ar in ar_list:
         term = ar.strip()
+        if term.lower() in SECTION_HEADERS:
+            continue
         if len(term) > 60:
             term = term[:60].rsplit(' ', 1)[0]
         key = term.lower()
@@ -481,6 +488,8 @@ def build_full_comparison(narrative_reactions, label, faers_reactions):
 
     # 3. FAERS top-50 reactions
     for fterm, fcount in list(faers_map.items())[:50]:
+        if fterm.lower() in SECTION_HEADERS:
+            continue
         sections = _label_sections(fterm)
         _add(fterm, in_label=bool(sections), faers_count=fcount, label_sections=sections)
 
