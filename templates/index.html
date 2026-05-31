@@ -100,57 +100,12 @@
         </div>
       </div>
 
-      <!-- Grid of sections -->
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-
-        <!-- Adverse Reactions / Side Effects -->
-        <div class="glass rounded-2xl p-6">
-          <h3 class="font-semibold text-red-400 mb-4 flex items-center gap-2">
-            <i class="fa-solid fa-triangle-exclamation"></i> Side Effects &amp; Adverse Reactions
-          </h3>
-          <div id="fdaAdverseReactions" class="space-y-4 text-sm"></div>
-        </div>
-
-        <!-- Warnings -->
-        <div class="glass rounded-2xl p-6">
-          <h3 class="font-semibold text-yellow-400 mb-4 flex items-center gap-2">
-            <i class="fa-solid fa-circle-exclamation"></i> Warnings
-          </h3>
-          <div id="fdaWarnings" class="space-y-3 text-sm"></div>
-        </div>
-
-        <!-- Boxed Warning -->
-        <div class="glass rounded-2xl p-6 border border-red-900/50">
-          <h3 class="font-semibold text-red-400 mb-3 flex items-center gap-2">
-            <i class="fa-solid fa-box"></i> Boxed Warning
-          </h3>
-          <p id="fdaBoxedWarning" class="text-sm text-slate-300"></p>
-        </div>
-
-        <!-- Indications -->
-        <div class="glass rounded-2xl p-6">
-          <h3 class="font-semibold text-green-400 mb-3 flex items-center gap-2">
-            <i class="fa-solid fa-stethoscope"></i> Indications & Usage
-          </h3>
-          <p id="fdaIndications" class="text-sm text-slate-300"></p>
-        </div>
-
-        <!-- Drug Interactions -->
-        <div class="glass rounded-2xl p-6">
-          <h3 class="font-semibold text-purple-400 mb-3 flex items-center gap-2">
-            <i class="fa-solid fa-pills"></i> Drug Interactions
-          </h3>
-          <p id="fdaDrugInteractions" class="text-sm text-slate-300"></p>
-        </div>
-
-        <!-- Dosage -->
-        <div class="glass rounded-2xl p-6">
-          <h3 class="font-semibold text-blue-400 mb-3 flex items-center gap-2">
-            <i class="fa-solid fa-syringe"></i> Dosage & Administration
-          </h3>
-          <p id="fdaDosage" class="text-sm text-slate-300"></p>
-        </div>
-
+      <!-- Side Effects: Adverse Reactions + Warnings only -->
+      <div class="glass rounded-2xl p-6">
+        <h3 class="font-semibold text-red-400 mb-4 flex items-center gap-2">
+          <i class="fa-solid fa-triangle-exclamation"></i> Side Effects &amp; Adverse Reactions
+        </h3>
+        <div id="fdaAdverseReactions" class="space-y-6 text-sm"></div>
       </div>
     </div>
   </div>
@@ -476,10 +431,6 @@
     document.getElementById('fdaManufacturer').textContent = data.manufacturer.join(', ');
     document.getElementById('fdaRoute').textContent        = data.route.join(', ');
     document.getElementById('fdaProductType').textContent  = data.product_type.join(', ');
-    document.getElementById('fdaBoxedWarning').textContent = data.boxed_warning || 'None';
-    document.getElementById('fdaIndications').textContent  = data.indications   || 'N/A';
-    document.getElementById('fdaDrugInteractions').textContent = data.drug_interactions || 'N/A';
-    document.getElementById('fdaDosage').textContent       = data.dosage        || 'N/A';
 
     const arEl = document.getElementById('fdaAdverseReactions');
     const se = data.side_effects || [];
@@ -524,17 +475,6 @@
       arEl.innerHTML = `<p class="text-slate-500 italic">No side effects data found in FDA label.</p>`;
     }
 
-    const warnEl = document.getElementById('fdaWarnings');
-    if (data.warnings && Object.keys(data.warnings).length) {
-      warnEl.innerHTML = Object.entries(data.warnings).map(([k,v]) =>
-        `<details class="bg-slate-800/50 rounded-lg p-3 cursor-pointer">
-          <summary class="font-medium text-yellow-300 text-sm">${k}</summary>
-          <p class="text-slate-300 mt-2 text-xs leading-relaxed">${v}</p>
-        </details>`
-      ).join('');
-    } else {
-      warnEl.innerHTML = `<p class="text-slate-500 italic">No warnings section found.</p>`;
-    }
   }
 
   async function loadFaers(drug) {
