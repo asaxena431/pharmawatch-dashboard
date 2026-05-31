@@ -160,6 +160,67 @@ def get_fda_label(drug_name):
     }
 
 
+def get_dailymed_narrative(drug_name):
+    """Fetch structured narrative sections from DailyMed SPL API."""
+    try:
+        # Step 1: find the setid for the drug
+        search_url = "https://dailymed.nlm.nih.gov/dailymed/services/v2/spls.json"
+        r = requests.get(search_url, params={"drug_name": drug_name, "pagesize": 5}, timeout=10)
+        data = r.json()
+        results = data.get("data", [])
+        if not results:
+            return {"error": f"No DailyMed label found for '{drug_name}'"}
+
+        # Pick the first result
+        setid = results[0]["setid"]
+        title = results[0].get("title", drug_name)
+
+        # Step 2: fetch sections via the sections endpoint
+        sections_url = f"https://dailymed.nlm.nih.gov/dailymed/services/v2/spls/{setid}/sections.json"
+        sr = requests.get(sections_url, timeout=10)
+        sdata = sr.json()
+        sections_raw = sdata.get("data", [])
+
+        # Section codes we care about (LOINC codes used in SPL)
+        WANTED = {
+            "34084-4":  "Adverse Reactions",
+            "43685-7":  "Warnings and Precautions",
+            "34071-1":  "Warnings",
+            "42232-9":  "Precautions",
+            "34067-9":  "Indications and Usage",
+            "34068-7":  "Dosage and Administration",
+            "34070-3":  "Contraindications",
+            "34073-7":  "Drug Interactions",
+            "34080-2":  "Nursing Mothers",
+            "34081-0":  "Pediatric Use",
+            "34076-0":  "Patient Information",
+            "42229-5":  "Special Populations",
+        }
+
+        narrative_sections = []
+        for sec in sections_raw:
+            code = sec.get("section_code", "")
+            name = WANTED.get(code)
+            if not name:
+                continue
+            # Strip HTML tags from section text
+            raw_text = sec.get("section_text", "") or ""
+            clean = re.sub(r'<[^>]+>', ' ', raw_text)
+            clean = re.sub(r'\s+', ' ', clean).strip()
+            if clean:
+                narrative_sections.append({"section": name, "code": code, "text": clean})
+
+        return {
+            "drug": drug_name,
+            "title": title,
+            "setid": setid,
+            "sections": narrative_sections,
+            "dailymed_url": f"https://dailymed.nlm.nih.gov/dailymed/drugInfo.cfm?setid={setid}"
+        }
+    except Exception as e:
+        return {"error": str(e)}
+
+
 def get_faers_reactions(drug_name, limit=500):
     url = f"https://api.fda.gov/drug/event.json?search=patient.drug.medicinalproduct:{drug_name.upper()}&count=patient.reaction.reactionmeddrapt.exact&limit={limit}"
     r = requests.get(url)
@@ -507,6 +568,15 @@ def api_fda_label():
     if not label:
         return jsonify({"error": f"No FDA label found for '{drug}'"}), 404
     return jsonify(label)
+
+
+@app.route("/api/dailymed", methods=["POST"])
+def api_dailymed():
+    drug = request.json.get("drug_name", "").strip()
+    if not drug:
+        return jsonify({"error": "Drug name required"}), 400
+    result = get_dailymed_narrative(drug)
+    return jsonify(result)
 
 
 @app.route("/api/faers", methods=["POST"])

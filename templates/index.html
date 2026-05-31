@@ -66,6 +66,7 @@
   <div class="flex gap-2 mb-6 border-b border-slate-700 pb-3 flex-wrap">
     <button onclick="switchTab('fda')"       id="tab-fda"       class="tab-btn px-4 py-2 rounded-lg text-sm font-medium text-slate-400 hover:text-white transition active">FDA Label</button>
     <button onclick="switchTab('faers')"     id="tab-faers"     class="tab-btn px-4 py-2 rounded-lg text-sm font-medium text-slate-400 hover:text-white transition">FAERS Reports</button>
+    <button onclick="switchTab('dailymed')"  id="tab-dailymed"  class="tab-btn px-4 py-2 rounded-lg text-sm font-medium text-slate-400 hover:text-white transition flex items-center gap-2"><i class="fa-solid fa-book-medical text-teal-400"></i> DailyMed Narrative</button>
     <button onclick="switchTab('narrative')" id="tab-narrative" class="tab-btn px-4 py-2 rounded-lg text-sm font-medium text-slate-400 hover:text-white transition flex items-center gap-2"><i class="fa-solid fa-robot text-blue-400"></i> Narrative (medspaCy)</button>
     <button onclick="switchTab('gptnar')"    id="tab-gptnar"   class="tab-btn px-4 py-2 rounded-lg text-sm font-medium text-slate-400 hover:text-white transition flex items-center gap-2"><i class="fa-solid fa-brain text-green-400"></i> Narrative (OpenAI)</button>
     <button onclick="switchTab('report')"    id="tab-report"    class="tab-btn px-4 py-2 rounded-lg text-sm font-medium text-slate-400 hover:text-white transition">Comparison Report</button>
@@ -133,7 +134,16 @@
     </div>
   </div>
 
-  <!-- ── TAB 3: Narrative medspaCy ── -->
+  <!-- ── TAB 3: DailyMed Narrative ── -->
+  <div id="tab-dailymed-content" class="tab-content">
+    <div id="dailymedPlaceholder" class="text-center py-20 text-slate-500">
+      <i class="fa-solid fa-book-medical text-4xl mb-4 block"></i>
+      Enter a drug name above and click Analyze
+    </div>
+    <div id="dailymedContent" class="hidden space-y-4"></div>
+  </div>
+
+  <!-- ── TAB 4: Narrative medspaCy ── -->
   <div id="tab-narrative-content" class="tab-content">
     <div class="glass rounded-2xl p-6 mb-6">
       <div class="flex items-center justify-between mb-4">
@@ -414,8 +424,61 @@
     currentDrug = document.getElementById('drugInput').value.trim();
     if (!currentDrug) return;
     showLoading(true);
-    await Promise.all([loadFdaLabel(currentDrug), loadFaers(currentDrug)]);
+    await Promise.all([loadFdaLabel(currentDrug), loadFaers(currentDrug), loadDailyMed(currentDrug)]);
     showLoading(false);
+  }
+
+  async function loadDailyMed(drug) {
+    const res  = await fetch('/api/dailymed', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({drug_name: drug})});
+    const data = await res.json();
+    const ph   = document.getElementById('dailymedPlaceholder');
+    const ct   = document.getElementById('dailymedContent');
+    if (data.error) { ph.textContent = data.error; return; }
+    ph.classList.add('hidden');
+    ct.classList.remove('hidden');
+
+    const SECTION_COLORS = {
+      'Adverse Reactions':          'red',
+      'Warnings and Precautions':   'yellow',
+      'Warnings':                   'yellow',
+      'Precautions':                'yellow',
+      'Contraindications':          'orange',
+      'Indications and Usage':      'green',
+      'Dosage and Administration':  'blue',
+      'Drug Interactions':          'purple',
+    };
+    const ICONS = {
+      'red':    'fa-triangle-exclamation',
+      'yellow': 'fa-circle-exclamation',
+      'orange': 'fa-ban',
+      'green':  'fa-stethoscope',
+      'blue':   'fa-syringe',
+      'purple': 'fa-pills',
+    };
+
+    const header = `<div class="glass rounded-2xl p-5 flex items-center justify-between">
+      <div>
+        <h3 class="font-bold text-white text-lg">${data.title}</h3>
+        <p class="text-slate-400 text-sm mt-1">Source: DailyMed SPL</p>
+      </div>
+      <a href="${data.dailymed_url}" target="_blank"
+         class="text-xs px-3 py-1.5 rounded-lg bg-teal-900/40 text-teal-300 border border-teal-700/40 hover:bg-teal-800/40 transition flex items-center gap-1.5">
+        <i class="fa-solid fa-arrow-up-right-from-square"></i> View on DailyMed
+      </a>
+    </div>`;
+
+    const sections = (data.sections || []).map(sec => {
+      const color = SECTION_COLORS[sec.section] || 'slate';
+      const icon  = ICONS[color] || 'fa-file-lines';
+      return `<div class="glass rounded-2xl p-5">
+        <h4 class="font-semibold text-${color}-400 mb-3 flex items-center gap-2 text-sm uppercase tracking-wider">
+          <i class="fa-solid ${icon}"></i> ${sec.section}
+        </h4>
+        <p class="text-slate-300 text-sm leading-relaxed whitespace-pre-line">${sec.text}</p>
+      </div>`;
+    }).join('');
+
+    ct.innerHTML = header + (sections || `<div class="glass rounded-2xl p-6 text-slate-400 italic">No narrative sections found for this drug on DailyMed.</div>`);
   }
 
   async function loadFdaLabel(drug) {
