@@ -106,13 +106,28 @@ def get_fda_label(drug_name):
 
     def _clean_items(raw_text):
         items = re.split(r'\.\s+(?=[A-Z])|;\s*|,\s*(?=[a-z])', raw_text.strip())
-        return [
-            i.strip() for i in items
-            if len(i.strip()) > 4
-            and not any(bp in i.lower() for bp in BOILERPLATE)
-            and not re.search(r'\d+\s*%', i)
-            and not re.match(r'^[\d\s,\.]+$', i.strip())
-        ]
+        cleaned = []
+        for i in items:
+            i = i.strip()
+            if len(i) < 5:
+                continue
+            if any(bp in i.lower() for bp in BOILERPLATE):
+                continue
+            if re.search(r'\d+\s*%', i):
+                continue
+            if re.match(r'^[\d\s,\.]+$', i):
+                continue
+            # Skip pure dosage fragments like "10 mg", "and 80 mg", "40 and 80 mg"
+            if re.match(r'^(and\s+)?[\d\s,\-]+\s*(mg|mcg|g|ml|units?)\b.*$', i, re.IGNORECASE):
+                continue
+            # Skip items that start with conjunctions/prepositions with no clinical noun
+            if re.match(r'^(and|or|in|of|at|to|the|a |an |with|for|by|as|on)\b', i, re.IGNORECASE):
+                continue
+            # Must contain at least one letter-word of length >= 3
+            if not re.search(r'[a-zA-Z]{3,}', i):
+                continue
+            cleaned.append(i)
+        return cleaned
 
     ar_raw = label.get("adverse_reactions", [None])[0]
     ar_list = _clean_items(ar_raw) if ar_raw else []
