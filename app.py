@@ -104,27 +104,40 @@ def get_fda_label(drug_name):
         "rate of", "frequency of", "proportion of"
     ]
 
+    # Words/phrases that indicate a fragment is NOT a clinical reaction
+    NON_CLINICAL = re.compile(
+        r'^(and|or|in|of|at|to|the|a|an|with|for|by|as|on|also|respectively|'
+        r'including|such as|following|both|either|neither|however|therefore|'
+        r'additionally|furthermore|moreover|although|whereas|while|since|because|'
+        r'compared|between|among|during|within|after|before|above|below|'
+        r'these|those|this|that|which|who|than|then|when|where)\b',
+        re.IGNORECASE
+    )
+
     def _clean_items(raw_text):
-        items = re.split(r'\.\s+(?=[A-Z])|;\s*|,\s*(?=[a-z])', raw_text.strip())
+        # Split only on sentence boundaries and semicolons — NOT on commas
+        items = re.split(r'(?<=[.!?])\s+(?=[A-Z])|;\s*', raw_text.strip())
         cleaned = []
         for i in items:
-            i = i.strip()
-            if len(i) < 5:
+            i = i.strip().rstrip('.,;')
+            if len(i) < 6:
                 continue
             if any(bp in i.lower() for bp in BOILERPLATE):
                 continue
+            # Drop percentage stats
             if re.search(r'\d+\s*%', i):
                 continue
-            if re.match(r'^[\d\s,\.]+$', i):
+            # Drop pure numbers/punctuation
+            if re.match(r'^[\d\s,\.\-]+$', i):
                 continue
-            # Skip pure dosage fragments like "10 mg", "and 80 mg", "40 and 80 mg"
-            if re.match(r'^(and\s+)?[\d\s,\-]+\s*(mg|mcg|g|ml|units?)\b.*$', i, re.IGNORECASE):
+            # Drop dosage fragments: "10 mg", "and 80 mg", "40 and 80 mg", "10, 20, and 40 mg"
+            if re.match(r'^[\w\s,\-]*\d+\s*(mg|mcg|ug|g|ml|units?|IU)\b[\w\s,\-]*$', i, re.IGNORECASE):
                 continue
-            # Skip items that start with conjunctions/prepositions with no clinical noun
-            if re.match(r'^(and|or|in|of|at|to|the|a |an |with|for|by|as|on)\b', i, re.IGNORECASE):
+            # Drop items starting with non-clinical connector words
+            if NON_CLINICAL.match(i):
                 continue
-            # Must contain at least one letter-word of length >= 3
-            if not re.search(r'[a-zA-Z]{3,}', i):
+            # Must have at least one meaningful clinical word (4+ letters)
+            if not re.search(r'[a-zA-Z]{4,}', i):
                 continue
             cleaned.append(i)
         return cleaned
