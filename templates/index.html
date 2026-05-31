@@ -831,7 +831,7 @@
       const inFAERS = r.faers_count > 0;
       const inMs    = r.in_narrative ? msReactions.has(key) || msReactions.size === 0 : false;
       const inGpt   = r.in_narrative ? gptReactions.has(key) : false;
-      const rowClass = r.in_narrative && !inFAERS ? 'bg-red-900/10'
+      const rowClass = inFAERS && !inFDA           ? 'bg-red-900/10'
                      : r.in_narrative && !inFDA   ? 'bg-yellow-900/10' : '';
 
       return `<tr class="reaction-row ${rowClass}">
@@ -852,19 +852,22 @@
         <td class="py-2 pr-3 text-center">${inFAERS ? `<span class="text-green-400 font-bold">✓</span>` : `<span class="text-slate-700">✗</span>`}</td>
         <td class="py-2 pr-3 text-center">${r.in_narrative ? ck(inMs || msReactions.size === 0) : `<span class="text-slate-700">—</span>`}</td>
         <td class="py-2 pr-3 text-center">${r.in_narrative ? ck(inGpt) : `<span class="text-slate-700">—</span>`}</td>
-        <td class="py-2 text-purple-300 font-mono text-xs">${inFAERS ? (r.faers_count||0).toLocaleString() : '<span class="text-red-500 text-xs">Novel</span>'}</td>
+        <td class="py-2 text-purple-300 font-mono text-xs">
+          ${inFAERS ? (r.faers_count||0).toLocaleString() : '<span class="text-slate-600 text-xs">—</span>'}
+          ${inFAERS && !inFDA ? '<span class="ml-1 text-xs px-1.5 py-0.5 rounded bg-red-900/40 text-red-400 border border-red-800/40">Novel</span>' : ''}
+        </td>
       </tr>`;
     }).join('');
 
-    // Novel reactions (in narrative, not in FAERS)
-    const novel = allRows.filter(r => r.in_narrative && !r.faers_count);
+    // Novel reactions: in FAERS but NOT in FDA label
+    const novel = allRows.filter(r => r.faers_count > 0 && !r.found_in_label);
     if (novel.length > 0) {
       document.getElementById('novelAlert').classList.remove('hidden');
       document.getElementById('novelList').innerHTML = novel.map(r =>
         `<div class="flex items-center gap-3 bg-red-900/20 border border-red-800/30 rounded-lg px-4 py-3">
           <i class="fa-solid fa-circle-radiation text-red-400"></i>
           <span class="text-red-300 font-medium capitalize">${r.reaction}</span>
-          <span class="text-xs text-red-500 ml-auto">0 FAERS reports — investigate</span>
+          <span class="text-xs text-red-500 ml-auto">${(r.faers_count||0).toLocaleString()} FAERS reports — not in FDA label</span>
         </div>`
       ).join('');
     }
