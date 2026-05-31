@@ -103,12 +103,12 @@
       <!-- Grid of sections -->
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
-        <!-- Adverse Reactions -->
+        <!-- Adverse Reactions / Side Effects -->
         <div class="glass rounded-2xl p-6">
           <h3 class="font-semibold text-red-400 mb-4 flex items-center gap-2">
-            <i class="fa-solid fa-triangle-exclamation"></i> Adverse Reactions
+            <i class="fa-solid fa-triangle-exclamation"></i> Side Effects &amp; Adverse Reactions
           </h3>
-          <div id="fdaAdverseReactions" class="space-y-2 text-sm text-slate-300"></div>
+          <div id="fdaAdverseReactions" class="space-y-4 text-sm"></div>
         </div>
 
         <!-- Warnings -->
@@ -482,12 +482,26 @@
     document.getElementById('fdaDosage').textContent       = data.dosage        || 'N/A';
 
     const arEl = document.getElementById('fdaAdverseReactions');
-    if (data.adverse_reactions && data.adverse_reactions.length) {
-      arEl.innerHTML = data.adverse_reactions.map(r =>
-        `<div class="reaction-row px-3 py-2 rounded-lg flex items-start gap-2"><i class="fa-solid fa-circle text-red-500 mt-1 text-xs shrink-0"></i><span>${r}</span></div>`
-      ).join('');
+    const se = data.side_effects || [];
+    if (se.length) {
+      arEl.innerHTML = se.map(group => {
+        const isWarning = group.section.startsWith('Warning');
+        const headerColor = isWarning ? 'text-yellow-400' : 'text-red-400';
+        const icon = isWarning
+          ? `<i class="fa-solid fa-circle-exclamation text-yellow-400"></i>`
+          : `<i class="fa-solid fa-triangle-exclamation text-red-400"></i>`;
+        const pills = group.items.map(item =>
+          `<span class="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-medium ${isWarning ? 'bg-yellow-900/30 text-yellow-200 border border-yellow-800/40' : 'bg-red-900/30 text-red-200 border border-red-800/40'} capitalize">
+            <i class="fa-solid fa-circle text-xs opacity-60"></i>${item}
+          </span>`
+        ).join('');
+        return `<div class="mb-3">
+          <p class="text-xs font-semibold uppercase tracking-wider ${headerColor} mb-2 flex items-center gap-1.5">${icon} ${group.section}</p>
+          <div class="flex flex-wrap gap-2">${pills}</div>
+        </div>`;
+      }).join('');
     } else {
-      arEl.innerHTML = `<p class="text-slate-500 italic">No dedicated adverse reactions section (OTC drug). See Warnings.</p>`;
+      arEl.innerHTML = `<p class="text-slate-500 italic">No side effects data found in FDA label.</p>`;
     }
 
     const warnEl = document.getElementById('fdaWarnings');

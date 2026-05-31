@@ -88,33 +88,66 @@ def get_fda_label(drug_name):
             warnings_structured[current_key] = " ".join(buffer).strip()
         warnings_structured.pop("general", None)
 
-    ar_raw = label.get("adverse_reactions", [None])[0]
-    ar_list = None
-    if ar_raw:
-        items = re.split(r'\.\s+(?=[A-Z])|;\s*', ar_raw.strip())
-        # Filter out boilerplate non-reaction sentences
-        BOILERPLATE = [
-            "to report", "contact ", "call ", "fda at ", "1-800", "www.",
-            "postmarketing", "the following", "table ", "clinical trial",
-            "in clinical", "adverse reactions reported", "because these reactions",
-            "voluntarily reported", "cannot be reliably", "adverse reaction reporting",
-            "were white", "were black", "were female", "were male", "were hispanic",
-            "were asian", "% white", "% black", "% female", "% male", "% hispanic",
-            "% asian", "median age", "mean age", "age range", "years of age",
-            "patients were", "subjects were", "participants were", "n =", "n=",
-            "placebo", "treatment group", "study population", "enrolled",
-            "randomized", "double-blind", "open-label", "most common",
-            "incidence of", "occurred in", "reported in", "observed in",
-            "compared to", "compared with", "versus", "vs.", "per 100",
-            "rate of", "frequency of", "proportion of"
-        ]
-        ar_list = [
+    BOILERPLATE = [
+        "to report", "contact ", "call ", "fda at ", "1-800", "www.",
+        "postmarketing", "the following", "table ", "clinical trial",
+        "in clinical", "adverse reactions reported", "because these reactions",
+        "voluntarily reported", "cannot be reliably", "adverse reaction reporting",
+        "were white", "were black", "were female", "were male", "were hispanic",
+        "were asian", "% white", "% black", "% female", "% male", "% hispanic",
+        "% asian", "median age", "mean age", "age range", "years of age",
+        "patients were", "subjects were", "participants were", "n =", "n=",
+        "placebo", "treatment group", "study population", "enrolled",
+        "randomized", "double-blind", "open-label", "most common",
+        "incidence of", "occurred in", "reported in", "observed in",
+        "compared to", "compared with", "versus", "vs.", "per 100",
+        "rate of", "frequency of", "proportion of"
+    ]
+
+    def _clean_items(raw_text):
+        items = re.split(r'\.\s+(?=[A-Z])|;\s*|,\s*(?=[a-z])', raw_text.strip())
+        return [
             i.strip() for i in items
-            if len(i.strip()) > 5
+            if len(i.strip()) > 4
             and not any(bp in i.lower() for bp in BOILERPLATE)
-            and not re.search(r'\d+\s*%', i)   # remove any sentence with a percentage
-            and not re.match(r'^[\d\s,\.]+$', i.strip())  # remove pure numeric entries
+            and not re.search(r'\d+\s*%', i)
+            and not re.match(r'^[\d\s,\.]+$', i.strip())
         ]
+
+    ar_raw = label.get("adverse_reactions", [None])[0]
+    ar_list = _clean_items(ar_raw) if ar_raw else []
+
+    # Build structured side_effects: {section, items[]}
+    # Rx drugs: from adverse_reactions field
+    # OTC drugs (null AR): extract symptom phrases from warnings
+    REACTION_KEYWORDS = [
+        "skin reddening", "blisters", "rash", "liver damage", "nausea", "vomiting",
+        "stomach bleeding", "ulcer", "allergic reaction", "swelling", "hives",
+        "difficulty breathing", "anaphylaxis", "dizziness", "headache", "fatigue",
+        "ringing in ears", "tinnitus", "hearing loss", "vision", "kidney",
+        "heart attack", "stroke", "serious skin reactions", "stevens-johnson",
+        "toxic epidermal", "jaundice", "dark urine", "clay-colored", "itching",
+        "bruising", "bleeding", "muscle pain", "weakness"
+    ]
+
+    side_effects = []
+    if ar_list:
+        side_effects.append({"section": "Adverse Reactions", "items": ar_list})
+
+    # Extract reaction symptoms from each warning section
+    for sec_name, sec_text in warnings_structured.items():
+        # Pull out symptom fragments (after "Symptoms may include", "may cause", etc.)
+        symptom_match = re.search(
+            r'(?:symptoms?\s+(?:may\s+)?include[:\s]+|may\s+cause[:\s]+|signs?\s+(?:may\s+)?include[:\s]+)(.*)',
+            sec_text, re.IGNORECASE)
+        if symptom_match:
+            raw = symptom_match.group(1)
+            items = [s.strip() for s in re.split(r'[,;]|\band\b', raw) if len(s.strip()) > 3]
+            if items:
+                side_effects.append({"section": f"Warning — {sec_name}", "items": items})
+        elif any(kw in sec_text.lower() for kw in REACTION_KEYWORDS):
+            # Whole warning text is about a reaction — use it directly
+            side_effects.append({"section": f"Warning — {sec_name}", "items": [sec_text]})
 
     return {
         "brand_name":     openfda.get("brand_name", ["N/A"]),
@@ -123,6 +156,7 @@ def get_fda_label(drug_name):
         "route":          openfda.get("route", ["N/A"]),
         "product_type":   openfda.get("product_type", ["N/A"]),
         "adverse_reactions": ar_list,
+        "side_effects":   side_effects,
         "warnings":       warnings_structured,
         "boxed_warning":  label.get("boxed_warning", [None])[0],
         "contraindications": label.get("contraindications", [None])[0],
