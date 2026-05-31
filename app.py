@@ -131,23 +131,17 @@ def get_fda_label(drug_name):
     ]
 
     side_effects = []
+
+    # Section 1: Adverse Reactions
     if ar_list:
         side_effects.append({"section": "Adverse Reactions", "items": ar_list})
 
-    # Extract reaction symptoms from each warning section
+    # Section 2: Warnings — collect all warning section texts as items
+    warning_items = []
     for sec_name, sec_text in warnings_structured.items():
-        # Pull out symptom fragments (after "Symptoms may include", "may cause", etc.)
-        symptom_match = re.search(
-            r'(?:symptoms?\s+(?:may\s+)?include[:\s]+|may\s+cause[:\s]+|signs?\s+(?:may\s+)?include[:\s]+)(.*)',
-            sec_text, re.IGNORECASE)
-        if symptom_match:
-            raw = symptom_match.group(1)
-            items = [s.strip() for s in re.split(r'[,;]|\band\b', raw) if len(s.strip()) > 3]
-            if items:
-                side_effects.append({"section": f"Warning — {sec_name}", "items": items})
-        elif any(kw in sec_text.lower() for kw in REACTION_KEYWORDS):
-            # Whole warning text is about a reaction — use it directly
-            side_effects.append({"section": f"Warning — {sec_name}", "items": [sec_text]})
+        warning_items.append(f"{sec_name}: {sec_text}")
+    if warning_items:
+        side_effects.append({"section": "Warnings", "items": warning_items})
 
     return {
         "brand_name":     openfda.get("brand_name", ["N/A"]),

@@ -485,20 +485,40 @@
     const se = data.side_effects || [];
     if (se.length) {
       arEl.innerHTML = se.map(group => {
-        const isWarning = group.section.startsWith('Warning');
-        const headerColor = isWarning ? 'text-yellow-400' : 'text-red-400';
-        const icon = isWarning
-          ? `<i class="fa-solid fa-circle-exclamation text-yellow-400"></i>`
-          : `<i class="fa-solid fa-triangle-exclamation text-red-400"></i>`;
-        const pills = group.items.map(item =>
-          `<span class="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-medium ${isWarning ? 'bg-yellow-900/30 text-yellow-200 border border-yellow-800/40' : 'bg-red-900/30 text-red-200 border border-red-800/40'} capitalize">
-            <i class="fa-solid fa-circle text-xs opacity-60"></i>${item}
-          </span>`
-        ).join('');
-        return `<div class="mb-3">
-          <p class="text-xs font-semibold uppercase tracking-wider ${headerColor} mb-2 flex items-center gap-1.5">${icon} ${group.section}</p>
-          <div class="flex flex-wrap gap-2">${pills}</div>
-        </div>`;
+        const isWarning = group.section === 'Warnings';
+        if (isWarning) {
+          // Warnings: expandable cards per item
+          const cards = group.items.map(item => {
+            const colonIdx = item.indexOf(':');
+            const title = colonIdx > -1 ? item.slice(0, colonIdx).trim() : item;
+            const body  = colonIdx > -1 ? item.slice(colonIdx + 1).trim() : '';
+            return `<details class="bg-yellow-900/20 border border-yellow-800/30 rounded-lg p-3 cursor-pointer">
+              <summary class="font-semibold text-yellow-300 text-sm flex items-center gap-2">
+                <i class="fa-solid fa-circle-exclamation text-yellow-400"></i>${title}
+              </summary>
+              ${body ? `<p class="text-slate-300 text-xs leading-relaxed mt-2">${body}</p>` : ''}
+            </details>`;
+          }).join('');
+          return `<div>
+            <p class="text-xs font-semibold uppercase tracking-wider text-yellow-400 mb-2 flex items-center gap-1.5">
+              <i class="fa-solid fa-triangle-exclamation"></i> Warnings
+            </p>
+            <div class="space-y-2">${cards}</div>
+          </div>`;
+        } else {
+          // Adverse Reactions: red pills
+          const pills = group.items.map(item =>
+            `<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium bg-red-900/30 text-red-200 border border-red-800/40 capitalize">
+              <i class="fa-solid fa-circle text-xs opacity-50"></i>${item}
+            </span>`
+          ).join('');
+          return `<div>
+            <p class="text-xs font-semibold uppercase tracking-wider text-red-400 mb-2 flex items-center gap-1.5">
+              <i class="fa-solid fa-triangle-exclamation"></i> Adverse Reactions
+            </p>
+            <div class="flex flex-wrap gap-2">${pills}</div>
+          </div>`;
+        }
       }).join('');
     } else {
       arEl.innerHTML = `<p class="text-slate-500 italic">No side effects data found in FDA label.</p>`;
