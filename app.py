@@ -715,7 +715,7 @@ def api_analyze_narrative():
         "label_comparison":  label_comparison,
         "faers_comparison":  faers_comparison,
         "full_rows":         full_rows,
-        "novel_reactions":   [r for r in full_rows if r.get("faers_count", 0) > 0 and not r.get("found_in_label")],
+        "novel_reactions":   [r for r in full_rows if not r.get("found_in_label") and r.get("faers_count", 0) > 0],
         "label_gaps": [r for r in label_comparison if not r.get("found_in_label")],
     })
 
@@ -772,7 +772,7 @@ def api_compare_engines():
         "faers_comparison":  faers_comparison,
         "full_rows":         full_rows,
         "label_gaps":        [r for r in label_comparison if not r.get("found_in_label")],
-        "novel_reactions":   [r for r in full_rows if r.get("faers_count", 0) > 0 and not r.get("found_in_label")],
+        "novel_reactions":   [r for r in full_rows if not r.get("found_in_label") and r.get("faers_count", 0) > 0],
     })
 
 
