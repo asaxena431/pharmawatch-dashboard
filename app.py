@@ -396,19 +396,24 @@ def build_full_comparison(narrative_reactions, label, faers_reactions):
     ar_list  = label.get("adverse_reactions") or [] if label else []
     faers_map = {r["reaction"].lower(): r["count"] for r in faers_reactions}
 
+    # Build a single lowercased blob of all raw label text for broad matching
+    raw_ar_text   = " ".join(ar_list).lower()
+    raw_warn_text = " ".join(warnings.values()).lower()
+    raw_label_all = raw_ar_text + " " + raw_warn_text
+
     rows = {}  # key = normalized reaction name
 
     def _label_sections(keywords):
         """Return Adverse Reactions and/or Warning tags."""
+        if not keywords:
+            return []
         sections = []
-        for a in ar_list:
-            if any(kw in a.lower() for kw in keywords):
-                sections.append("Adverse Reactions")
-                break
-        for c, t in warnings.items():
-            if any(kw in t.lower() for kw in keywords):
-                sections.append("Warning")
-                break
+        # Match against full raw adverse_reactions blob
+        if any(kw in raw_ar_text for kw in keywords):
+            sections.append("Adverse Reactions")
+        # Match against full raw warnings blob
+        if any(kw in raw_warn_text for kw in keywords):
+            sections.append("Warning")
         return sections
 
     def _add(reaction_name, severity=None, onset=None, outcome="unknown",
