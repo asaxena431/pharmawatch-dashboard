@@ -161,84 +161,72 @@ def get_fda_label(drug_name):
 
 
 def get_dailymed_narrative(drug_name):
-    """Fetch structured narrative sections from DailyMed SPL API."""
+    """Fetch structured narrative sections from openFDA drug label API."""
     try:
-        # Step 1: find the setid for the drug
-        search_url = "https://dailymed.nlm.nih.gov/dailymed/services/v2/spls.json"
-        r = requests.get(search_url, params={"drug_name": drug_name, "pagesize": 10}, timeout=10)
+        r = requests.get(
+            "https://api.fda.gov/drug/label.json",
+            params={"search": f'openfda.brand_name:"{drug_name}"', "limit": 1},
+            timeout=10
+        )
         data = r.json()
-        results = data.get("data", [])
-        if not results:
-            return {"error": f"No DailyMed label found for '{drug_name}'"}
+        if "results" not in data:
+            # fallback: generic name search
+            r2 = requests.get(
+                "https://api.fda.gov/drug/label.json",
+                params={"search": f'openfda.generic_name:"{drug_name}"', "limit": 1},
+                timeout=10
+            )
+            data = r2.json()
+        if "results" not in data:
+            return {"error": f"No label found for '{drug_name}'"}
 
-        # Prefer Rx prescription labels (longer title usually = more detail)
-        best = max(results, key=lambda x: len(x.get("title", "")))
-        setid = best["setid"]
-        title = best.get("title", drug_name)
+        label  = data["results"][0]
+        openfda = label.get("openfda", {})
+        brand  = openfda.get("brand_name", [drug_name])[0]
+        generic = openfda.get("generic_name", [""])[0]
+        title  = f"{brand} ({generic})" if generic else brand
 
-        # Step 2: fetch sections via the sections endpoint
-        sections_url = f"https://dailymed.nlm.nih.gov/dailymed/services/v2/spls/{setid}/sections.json"
-        sr = requests.get(sections_url, timeout=10)
-        try:
-            sdata = sr.json()
-        except Exception:
-            # Sections endpoint failed — try fetching full SPL text instead
-            sdata = {}
-        sections_raw = sdata.get("data", [])
-
-        # If sections endpoint returned nothing, fall back to searching by setid directly
-        if not sections_raw:
-            alt_url = f"https://dailymed.nlm.nih.gov/dailymed/services/v2/spls/{setid}.json"
-            try:
-                ar2 = requests.get(alt_url, timeout=10)
-                sdata2 = ar2.json()
-                sections_raw = sdata2.get("data", {}).get("sections", [])
-            except Exception:
-                sections_raw = []
-
-        # Section codes we care about (LOINC codes used in SPL)
-        WANTED = {
-            "34084-4":  "Adverse Reactions",
-            "43685-7":  "Warnings and Precautions",
-            "34071-1":  "Warnings",
-            "42232-9":  "Precautions",
-            "34067-9":  "Indications and Usage",
-            "34068-7":  "Dosage and Administration",
-            "34070-3":  "Contraindications",
-            "34073-7":  "Drug Interactions",
-            "34080-2":  "Nursing Mothers",
-            "34081-0":  "Pediatric Use",
-            "34076-0":  "Patient Information",
-            "42229-5":  "Special Populations",
-        }
+        # Map of openFDA field → display section name
+        FIELD_MAP = [
+            ("warnings_and_precautions",  "Warnings and Precautions"),
+            ("warnings",                  "Warnings"),
+            ("boxed_warning",             "Boxed Warning"),
+            ("adverse_reactions",         "Adverse Reactions"),
+            ("contraindications",         "Contraindications"),
+            ("drug_interactions",         "Drug Interactions"),
+            ("indications_and_usage",     "Indications and Usage"),
+            ("dosage_and_administration", "Dosage and Administration"),
+            ("clinical_pharmacology",     "Clinical Pharmacology"),
+            ("mechanism_of_action",       "Mechanism of Action"),
+            ("pharmacokinetics",          "Pharmacokinetics"),
+            ("use_in_specific_populations", "Use in Specific Populations"),
+            ("nursing_mothers",           "Nursing Mothers"),
+            ("pediatric_use",             "Pediatric Use"),
+            ("geriatric_use",             "Geriatric Use"),
+        ]
 
         narrative_sections = []
-        seen_names = set()
-        for sec in sections_raw:
-            code = sec.get("section_code", "") or sec.get("loinc_code", "")
-            name = WANTED.get(code)
-            if not name or name in seen_names:
+        for field, display_name in FIELD_MAP:
+            raw = label.get(field, [None])[0]
+            if not raw:
                 continue
-            # section_text may be a string, list, or nested dict
-            raw_text = sec.get("section_text") or sec.get("text") or ""
-            if isinstance(raw_text, list):
-                raw_text = " ".join(str(x) for x in raw_text)
-            elif isinstance(raw_text, dict):
-                raw_text = raw_text.get("content", "") or str(raw_text)
-            raw_text = str(raw_text)
-            # Strip HTML tags
-            clean = re.sub(r'<[^>]+>', ' ', raw_text)
-            clean = re.sub(r'\s+', ' ', clean).strip()
-            if clean and len(clean) > 20:
-                narrative_sections.append({"section": name, "code": code, "text": clean})
-                seen_names.add(name)
+            clean = re.sub(r'\s+', ' ', raw.strip())
+            if len(clean) > 20:
+                narrative_sections.append({"section": display_name, "text": clean})
+
+        # Build DailyMed link via setid if available
+        setid = label.get("set_id", "")
+        dailymed_url = (
+            f"https://dailymed.nlm.nih.gov/dailymed/drugInfo.cfm?setid={setid}"
+            if setid else
+            f"https://dailymed.nlm.nih.gov/dailymed/search.cfm?query={drug_name}"
+        )
 
         return {
-            "drug": drug_name,
-            "title": title,
-            "setid": setid,
-            "sections": narrative_sections,
-            "dailymed_url": f"https://dailymed.nlm.nih.gov/dailymed/drugInfo.cfm?setid={setid}"
+            "drug":        drug_name,
+            "title":       title,
+            "sections":    narrative_sections,
+            "dailymed_url": dailymed_url
         }
     except Exception as e:
         return {"error": str(e)}
