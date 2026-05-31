@@ -180,10 +180,10 @@ def get_fda_label(drug_name):
     if ar_list:
         side_effects.append({"section": "Adverse Reactions", "items": ar_list})
 
-    # Section 2: Warnings — collect all warning section texts as items
+    # Section 2: Warnings — each item carries its sub-section name
     warning_items = []
     for sec_name, sec_text in warnings_structured.items():
-        warning_items.append(f"{sec_name}: {sec_text}")
+        warning_items.append({"label": sec_name, "text": sec_text})
     if warning_items:
         side_effects.append({"section": "Warnings", "items": warning_items})
 

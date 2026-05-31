@@ -438,14 +438,15 @@
       arEl.innerHTML = se.map(group => {
         const isWarning = group.section === 'Warnings';
         if (isWarning) {
-          // Warnings: expandable cards per item
+          // Warnings: expandable cards per item, each tagged with sub-section
           const cards = group.items.map(item => {
-            const colonIdx = item.indexOf(':');
-            const title = colonIdx > -1 ? item.slice(0, colonIdx).trim() : item;
-            const body  = colonIdx > -1 ? item.slice(colonIdx + 1).trim() : '';
+            const title = item.label || item;
+            const body  = item.text  || '';
             return `<details class="bg-yellow-900/20 border border-yellow-800/30 rounded-lg p-3 cursor-pointer">
               <summary class="font-semibold text-yellow-300 text-sm flex items-center gap-2">
-                <i class="fa-solid fa-circle-exclamation text-yellow-400"></i>${title}
+                <i class="fa-solid fa-circle-exclamation text-yellow-400"></i>
+                ${title}
+                <span class="ml-auto text-xs px-2 py-0.5 rounded-full bg-yellow-900/40 text-yellow-400 border border-yellow-700/40 font-normal">Warning</span>
               </summary>
               ${body ? `<p class="text-slate-300 text-xs leading-relaxed mt-2">${body}</p>` : ''}
             </details>`;
@@ -457,10 +458,12 @@
             <div class="space-y-2">${cards}</div>
           </div>`;
         } else {
-          // Adverse Reactions: red pills
+          // Adverse Reactions: red pills with source tag
           const pills = group.items.map(item =>
-            `<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium bg-red-900/30 text-red-200 border border-red-800/40 capitalize">
-              <i class="fa-solid fa-circle text-xs opacity-50"></i>${item}
+            `<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium bg-red-900/30 text-red-200 border border-red-800/40">
+              <i class="fa-solid fa-circle text-xs opacity-50"></i>
+              ${item}
+              <span class="px-1.5 py-0.5 rounded text-xs bg-red-900/50 text-red-400 border border-red-800/50 font-semibold ml-1">Adverse Reactions</span>
             </span>`
           ).join('');
           return `<div>
