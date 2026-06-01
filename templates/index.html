@@ -407,8 +407,13 @@
     currentDrug = document.getElementById('drugInput').value.trim();
     if (!currentDrug) return;
     showLoading(true);
-    await Promise.all([loadFdaLabel(currentDrug), loadFaers(currentDrug)]);
-    showLoading(false);
+    try {
+      await Promise.all([loadFdaLabel(currentDrug), loadFaers(currentDrug)]);
+    } catch(e) {
+      console.error('Lookup error:', e);
+    } finally {
+      showLoading(false);
+    }
   }
 
   async function loadFdaLabel(drug) {
@@ -524,15 +529,21 @@
     if (!narrative) return;
     const drug = currentDrug || document.getElementById('drugInput').value.trim();
 
-    // If key provided inline, set it via a temp header (informational only — handled server-side)
     showLoading(true);
-    const res  = await fetch('/api/compare-engines', {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({narrative, drug_name: drug})
-    });
-    const data = await res.json();
-    showLoading(false);
+    let data;
+    try {
+      const res = await fetch('/api/compare-engines', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({narrative, drug_name: drug})
+      });
+      data = await res.json();
+    } catch(e) {
+      alert('Request failed: ' + e.message);
+      return;
+    } finally {
+      showLoading(false);
+    }
     lastEngineData = data;
 
     document.getElementById('engResults').classList.remove('hidden');
@@ -756,9 +767,16 @@
     const drug = currentDrug || document.getElementById('drugInput').value.trim();
 
     showLoading(true);
-    const res  = await fetch('/api/analyze-narrative', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({narrative, drug_name: drug})});
-    const data = await res.json();
-    showLoading(false);
+    let data;
+    try {
+      const res = await fetch('/api/analyze-narrative', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({narrative, drug_name: drug})});
+      data = await res.json();
+    } catch(e) {
+      alert('Request failed: ' + e.message);
+      return;
+    } finally {
+      showLoading(false);
+    }
     lastAnalysis = data;
 
     document.getElementById('narrativeResults').classList.remove('hidden');
