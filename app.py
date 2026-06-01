@@ -786,13 +786,17 @@ def api_compare_engines():
         gpt_conf = calculate_confidence(gpt_result) if gpt_result else None
 
         merged = ms_result.copy()
-        if gpt_result and diff and not gpt_result.get("error"):
-            extra_reactions = [r for r in gpt_result.get("reactions", [])
-                               if r["reaction"].lower() in diff["reactions_only_in_gpt"]]
-            merged["reactions"] = ms_result["reactions"] + extra_reactions
-            extra_drugs = [d for d in gpt_result.get("drugs", [])
-                           if d["name"].lower() in diff["drugs_only_in_gpt"]]
-            merged["drugs"] = ms_result["drugs"] + extra_drugs
+        if gpt_result and not gpt_result.get("error"):
+            # Merge ALL GPT reactions (deduplicated by name)
+            ms_rxn_keys = {r["reaction"].lower() for r in ms_result.get("reactions", [])}
+            all_gpt_reactions = [r for r in gpt_result.get("reactions", [])
+                                 if r["reaction"].lower() not in ms_rxn_keys]
+            merged["reactions"] = ms_result.get("reactions", []) + all_gpt_reactions
+            # Merge drugs
+            ms_drug_keys = {d["name"].lower() for d in ms_result.get("drugs", [])}
+            all_gpt_drugs = [d for d in gpt_result.get("drugs", [])
+                             if d["name"].lower() not in ms_drug_keys]
+            merged["drugs"] = ms_result.get("drugs", []) + all_gpt_drugs
             if not merged.get("causality") or merged["causality"] == "unassessable":
                 merged["causality"] = gpt_result.get("causality") or "unassessable"
             if not merged.get("overall_severity"):
