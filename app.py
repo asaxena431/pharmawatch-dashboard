@@ -3,6 +3,8 @@ import requests
 import json
 import re
 import os
+from dotenv import load_dotenv
+load_dotenv()
 try:
     from openai import OpenAI
     OPENAI_AVAILABLE = True
