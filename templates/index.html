@@ -688,11 +688,13 @@
       });
       data = await res.json();
     } catch(e) {
-      showLoading(false);
-      alert('GPT-4o request timed out or failed. Please try again.');
+      const msg = e.name === 'AbortError' ? 'Request timed out after 45s.' : e.message;
+      console.error('GPT fetch error:', e);
+      alert('GPT-4o error: ' + msg);
       return;
     } finally {
       clearTimeout(timer);
+      showLoading(false);
     }
     showLoading(false);
     lastEngineData = data;
