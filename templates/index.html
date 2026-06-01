@@ -225,7 +225,11 @@
       <textarea id="gptNarrativeInput" rows="6"
         placeholder="Paste the doctor's narrative here..."
         class="w-full bg-slate-800 border border-slate-600 rounded-xl px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:border-green-500 resize-none mb-3"></textarea>
-      <div class="flex justify-end">
+      <div class="flex justify-end gap-3">
+        <button onclick="skipGptAndReport()"
+          class="px-5 py-2 bg-slate-600 hover:bg-slate-500 text-white font-semibold rounded-xl transition flex items-center gap-2">
+          <i class="fa-solid fa-forward"></i> Skip GPT → Go to Report
+        </button>
         <button onclick="analyzeWithGPT()"
           class="px-5 py-2 bg-green-600 hover:bg-green-500 text-white font-semibold rounded-xl transition flex items-center gap-2">
           <i class="fa-solid fa-wand-magic-sparkles"></i> Extract with GPT-4o
@@ -755,6 +759,15 @@
 
     // Auto-build comparison report now that both engines have completed
     buildGptReport();
+  }
+
+  function skipGptAndReport() {
+    if (!lastAnalysis) {
+      alert('Please run medspaCy extraction first (Narrative tab).');
+      return;
+    }
+    buildReport({ ...lastAnalysis, medspacy: lastAnalysis.extracted, gpt: null });
+    switchTab('report');
   }
 
   function buildGptReport() {
