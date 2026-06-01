@@ -225,11 +225,6 @@
       <textarea id="gptNarrativeInput" rows="6"
         placeholder="Paste the doctor's narrative here..."
         class="w-full bg-slate-800 border border-slate-600 rounded-xl px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:border-green-500 resize-none mb-3"></textarea>
-      <div id="openaiKeyRow" class="hidden mb-3">
-        <input id="openaiKeyInput" type="password" placeholder="Enter OpenAI API Key (sk-...)..."
-          class="w-full bg-slate-800 border border-yellow-600 rounded-xl px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:border-yellow-400"/>
-        <p class="text-xs text-yellow-500 mt-1">Key is used only for this request and not stored.</p>
-      </div>
       <div class="flex justify-end">
         <button onclick="analyzeWithGPT()"
           class="px-5 py-2 bg-green-600 hover:bg-green-500 text-white font-semibold rounded-xl transition flex items-center gap-2">
@@ -383,15 +378,13 @@
   window.addEventListener('DOMContentLoaded', async () => {
     const res  = await fetch('/api/check-openai');
     const data = await res.json();
-    const el   = document.getElementById('openaiStatus');
-    const keyRow = document.getElementById('openaiKeyRow');
+    const el = document.getElementById('openaiStatus');
     if (data.available) {
       el.textContent = 'GPT-4o Ready';
       el.className = 'text-xs px-3 py-1 rounded-full badge-green';
     } else {
-      el.textContent = 'GPT-4o: API Key Required';
+      el.textContent = 'GPT-4o Unavailable';
       el.className = 'text-xs px-3 py-1 rounded-full badge-yellow';
-      keyRow.classList.remove('hidden');
     }
   });
 
@@ -672,17 +665,34 @@
     const drug = currentDrug || document.getElementById('drugInput').value.trim();
 
     showLoading(true);
-    const res  = await fetch('/api/compare-engines', {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({narrative, drug_name: drug})
-    });
-    const data = await res.json();
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 45000);
+    let data;
+    try {
+      const res = await fetch('/api/compare-engines', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({narrative, drug_name: drug}),
+        signal: controller.signal
+      });
+      data = await res.json();
+    } catch(e) {
+      showLoading(false);
+      alert('GPT-4o request timed out or failed. Please try again.');
+      return;
+    } finally {
+      clearTimeout(timer);
+    }
     showLoading(false);
     lastEngineData = data;
 
     const gpt  = data.gpt;
     const conf = data.gpt_confidence;
+
+    if (gpt?.error) {
+      alert(`GPT-4o error: ${gpt.error}`);
+      return;
+    }
 
     document.getElementById('gptNarResults').classList.remove('hidden');
 

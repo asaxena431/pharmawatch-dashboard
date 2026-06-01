@@ -634,17 +634,22 @@ def extract_gpt(text):
     api_key = os.environ.get("OPENAI_API_KEY")
     if not api_key or not OPENAI_AVAILABLE:
         return None
-    client = OpenAI(api_key=api_key)
-    resp = client.chat.completions.create(
-        model="gpt-4o",
-        messages=[
-            {"role": "system", "content": GPT_SYSTEM},
-            {"role": "user",   "content": f"Clinical Narrative:\n\n{text}"}
-        ],
-        temperature=0,
-        response_format={"type": "json_object"}
-    )
-    return json.loads(resp.choices[0].message.content)
+    try:
+        client = OpenAI(api_key=api_key, timeout=30.0)
+        resp = client.chat.completions.create(
+            model="gpt-4o",
+            messages=[
+                {"role": "system", "content": GPT_SYSTEM},
+                {"role": "user",   "content": f"Clinical Narrative:\n\n{text}"}
+            ],
+            temperature=0,
+            response_format={"type": "json_object"},
+            max_tokens=1000,
+        )
+        return json.loads(resp.choices[0].message.content)
+    except Exception as e:
+        print(f"[GPT ERROR] {e}")
+        return {"error": str(e), "drugs": [], "reactions": [], "patient": {}, "causality": None, "overall_severity": None, "notes": str(e)}
 
 
 # ── Diff two extractions ──────────────────────────────────────────────────────
