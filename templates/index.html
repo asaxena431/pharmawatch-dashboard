@@ -686,6 +686,11 @@
         body: JSON.stringify({narrative, drug_name: drug}),
         signal: controller.signal
       });
+      if (!res.ok) {
+        const txt = await res.text();
+        console.error('Server error response:', txt);
+        throw new Error(`Server error ${res.status}: ${txt.substring(0, 200)}`);
+      }
       data = await res.json();
     } catch(e) {
       const msg = e.name === 'AbortError' ? 'Request timed out after 45s.' : e.message;

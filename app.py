@@ -783,50 +783,54 @@ def api_compare_engines():
     if not narrative:
         return jsonify({"error": "Narrative text required"}), 400
 
-    ms_result  = extract_medspacy(narrative)
-    gpt_result = extract_gpt(narrative)
-    diff       = diff_extractions(ms_result, gpt_result)
+    try:
+        ms_result  = extract_medspacy(narrative)
+        gpt_result = extract_gpt(narrative)
+        diff       = diff_extractions(ms_result, gpt_result)
 
-    ms_conf  = calculate_confidence(ms_result)
-    gpt_conf = calculate_confidence(gpt_result) if gpt_result else None
+        ms_conf  = calculate_confidence(ms_result)
+        gpt_conf = calculate_confidence(gpt_result) if gpt_result else None
 
-    # If GPT ran, merge missing fields back for richer comparison report
-    merged = ms_result.copy()
-    if gpt_result and diff:
-        extra_reactions = [r for r in gpt_result.get("reactions", [])
-                           if r["reaction"].lower() in diff["reactions_only_in_gpt"]]
-        merged["reactions"] = ms_result["reactions"] + extra_reactions
-        extra_drugs = [d for d in gpt_result.get("drugs", [])
-                       if d["name"].lower() in diff["drugs_only_in_gpt"]]
-        merged["drugs"] = ms_result["drugs"] + extra_drugs
-        if not merged.get("causality") or merged["causality"] == "unassessable":
-            merged["causality"] = gpt_result.get("causality") or "unassessable"
-        if not merged.get("overall_severity"):
-            merged["overall_severity"] = gpt_result.get("overall_severity")
-        if not merged.get("patient", {}).get("relevant_history"):
-            merged.setdefault("patient", {})["relevant_history"] = \
-                gpt_result.get("patient", {}).get("relevant_history")
+        merged = ms_result.copy()
+        if gpt_result and diff and not gpt_result.get("error"):
+            extra_reactions = [r for r in gpt_result.get("reactions", [])
+                               if r["reaction"].lower() in diff["reactions_only_in_gpt"]]
+            merged["reactions"] = ms_result["reactions"] + extra_reactions
+            extra_drugs = [d for d in gpt_result.get("drugs", [])
+                           if d["name"].lower() in diff["drugs_only_in_gpt"]]
+            merged["drugs"] = ms_result["drugs"] + extra_drugs
+            if not merged.get("causality") or merged["causality"] == "unassessable":
+                merged["causality"] = gpt_result.get("causality") or "unassessable"
+            if not merged.get("overall_severity"):
+                merged["overall_severity"] = gpt_result.get("overall_severity")
+            if not merged.get("patient", {}).get("relevant_history"):
+                merged.setdefault("patient", {})["relevant_history"] = \
+                    gpt_result.get("patient", {}).get("relevant_history")
 
-    label = get_fda_label(drug_name) if drug_name else None
-    faers = get_faers_reactions(drug_name) if drug_name else []
-    label_comparison = compare_narrative_vs_label(merged["reactions"], label) if label else []
-    faers_comparison = compare_narrative_vs_faers(merged["reactions"], faers) if faers else {}
-    full_rows        = build_full_comparison(merged["reactions"], label or {}, faers)
+        label = get_fda_label(drug_name) if drug_name else None
+        faers = get_faers_reactions(drug_name) if drug_name else []
+        label_comparison = compare_narrative_vs_label(merged["reactions"], label) if label else []
+        faers_comparison = compare_narrative_vs_faers(merged["reactions"], faers) if faers else {}
+        full_rows        = build_full_comparison(merged["reactions"], label or {}, faers)
 
-    return jsonify({
-        "medspacy":          ms_result,
-        "medspacy_confidence": ms_conf,
-        "gpt":               gpt_result,
-        "gpt_confidence":    gpt_conf,
-        "gpt_available":     bool(os.environ.get("OPENAI_API_KEY") and OPENAI_AVAILABLE),
-        "diff":              diff,
-        "merged":            merged,
-        "label_comparison":  label_comparison,
-        "faers_comparison":  faers_comparison,
-        "full_rows":         full_rows,
-        "label_gaps":        [r for r in label_comparison if not r.get("found_in_label")],
-        "novel_reactions":   [r for r in full_rows if not r.get("found_in_label")],
-    })
+        return jsonify({
+            "medspacy":            ms_result,
+            "medspacy_confidence": ms_conf,
+            "gpt":                 gpt_result,
+            "gpt_confidence":      gpt_conf,
+            "gpt_available":       bool(os.environ.get("OPENAI_API_KEY") and OPENAI_AVAILABLE),
+            "diff":                diff,
+            "merged":              merged,
+            "label_comparison":    label_comparison,
+            "faers_comparison":    faers_comparison,
+            "full_rows":           full_rows,
+            "label_gaps":          [r for r in label_comparison if not r.get("found_in_label")],
+            "novel_reactions":     [r for r in full_rows if not r.get("found_in_label")],
+        })
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify({"error": str(e)}), 500
 
 
 @app.route("/api/check-openai", methods=["GET"])
