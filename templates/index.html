@@ -829,8 +829,9 @@
     document.getElementById('narCausality').textContent= data.extracted.causality        || 'N/A';
     document.getElementById('narSeverity').textContent = data.extracted.overall_severity || 'N/A';
 
-    buildReport({ ...data, medspacy: data.extracted, gpt: null });
-    switchTab('report');
+    // Pre-fill GPT tab with the same narrative and switch to it
+    document.getElementById('gptNarrativeInput').value = narrative;
+    switchTab('gptnar');
   }
 
   function buildReport(data) {
