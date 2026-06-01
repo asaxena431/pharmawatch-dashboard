@@ -557,9 +557,7 @@ def calculate_confidence(extracted):
 
 # ── medspaCy extraction (rule-based) ────────────────────────────────────────
 def extract_medspacy(text):
-    """Full rule-based extraction using spaCy NER + regex patterns."""
-    nlp = get_nlp()
-    doc = nlp(text)
+    """Rule-based extraction using regex patterns."""
     text_lower = text.lower()
     drugs, reactions = [], []
 
@@ -576,10 +574,6 @@ def extract_medspacy(text):
                 route      = rm.group(0).lower() if rm else None
                 indication = im.group(1).strip() if im else None
             drugs.append({"name": drug, "dose": dose, "route": route, "indication": indication})
-
-    for ent in doc.ents:
-        if ent.label_ in ("PRODUCT", "ORG", "CHEMICAL") and ent.text.lower() not in KNOWN_DRUGS:
-            drugs.append({"name": ent.text, "dose": None, "route": None, "indication": None})
 
     for reaction in KNOWN_REACTIONS:
         if reaction in text_lower:
