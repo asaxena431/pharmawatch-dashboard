@@ -337,6 +337,7 @@
             <thead>
               <tr class="text-left border-b border-slate-700">
                 <th class="pb-3 pr-3 text-slate-300">Reaction</th>
+                <th class="pb-3 pr-3 text-slate-400 text-xs"><i class="fa-solid fa-pills mr-1"></i>Drug</th>
                 <th class="pb-3 pr-3 text-yellow-400 text-xs"><i class="fa-solid fa-file-medical mr-1"></i>FDA Label</th>
                 <th class="pb-3 pr-3 text-purple-400 text-xs"><i class="fa-solid fa-database mr-1"></i>FAERS</th>
                 <th class="pb-3 pr-3 text-blue-400 text-xs"><i class="fa-solid fa-robot mr-1"></i>medspaCy</th>
@@ -883,12 +884,13 @@
       const key     = r.reaction.toLowerCase();
       const inFDA   = r.found_in_label;
       const inFAERS = r.faers_count > 0;
-      const inMs    = r.in_narrative ? msReactions.has(key) || msReactions.size === 0 : false;
+      const inMs    = r.in_narrative ? msReactions.has(key) : false;
       const inGpt   = r.in_narrative ? gptReactions.has(key) : false;
       const isNovel  = !inFDA && (inFAERS || inMs || inGpt);
       const rowClass = isNovel                    ? 'bg-red-900/10'
                      : r.in_narrative && !inFDA   ? 'bg-yellow-900/10' : '';
 
+      const drugLabel = r.drug ? `<span class="text-xs px-1.5 py-0.5 rounded bg-slate-700 text-slate-300 capitalize">${r.drug}</span>` : `<span class="text-slate-600 text-xs">—</span>`;
       return `<tr class="reaction-row ${rowClass}">
         <td class="py-2 pr-3 font-medium text-slate-200 capitalize text-sm">
           ${r.reaction}
@@ -896,6 +898,7 @@
           ${r.severity ? `<span class="ml-1 text-xs text-slate-500">(${r.severity})</span>` : ''}
           ${r.onset    ? `<div class="text-xs text-slate-600">onset: ${r.onset}</div>` : ''}
         </td>
+        <td class="py-2 pr-3 text-sm">${drugLabel}</td>
         <td class="py-2 pr-3 text-center align-top">
           ${inFDA ? `<span class="text-green-400 font-bold">✓</span>` : `<span class="text-slate-700">✗</span>`}
           ${inFDA && r.label_sections && r.label_sections.length ? `<div class="mt-1 space-y-0.5">${r.label_sections.map(s =>
@@ -905,7 +908,7 @@
             ).join('')}</div>` : ''}
         </td>
         <td class="py-2 pr-3 text-center">${inFAERS ? `<span class="text-green-400 font-bold">✓</span>` : `<span class="text-slate-700">✗</span>`}</td>
-        <td class="py-2 pr-3 text-center">${r.in_narrative ? ck(inMs || msReactions.size === 0) : `<span class="text-slate-700">—</span>`}</td>
+        <td class="py-2 pr-3 text-center">${r.in_narrative ? ck(inMs) : `<span class="text-slate-700">—</span>`}</td>
         <td class="py-2 pr-3 text-center">${r.in_narrative ? ck(inGpt) : `<span class="text-slate-700">—</span>`}</td>
         <td class="py-2 text-purple-300 font-mono text-xs">
           ${inFAERS ? (r.faers_count||0).toLocaleString() : '<span class="text-slate-600 text-xs">—</span>'}

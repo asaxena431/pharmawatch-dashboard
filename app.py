@@ -575,11 +575,19 @@ def extract_medspacy(text):
                 indication = im.group(1).strip() if im else None
             drugs.append({"name": drug, "dose": dose, "route": route, "indication": indication})
 
+    # Build drug position map for nearest-drug association
+    drug_positions = []
+    for d in drugs:
+        dm = re.search(re.escape(d["name"]), text_lower)
+        if dm:
+            drug_positions.append((dm.start(), d["name"]))
+
     for reaction in KNOWN_REACTIONS:
         if reaction in text_lower:
             m = re.search(re.escape(reaction), text_lower)
             severity = onset = None
             outcome = "unknown"
+            associated_drug = None
             if m:
                 ctx = text[max(0, m.start()-30):m.end()+80]
                 sm  = SEVERITY_PATTERN.search(ctx)
@@ -588,7 +596,12 @@ def extract_medspacy(text):
                 severity = sm.group(0).lower() if sm else None
                 outcome  = om.group(0).lower() if om else "unknown"
                 onset    = ons.group(1).strip() if ons else None
-            reactions.append({"reaction": reaction, "severity": severity, "onset": onset, "outcome": outcome})
+                # Associate with nearest preceding drug
+                preceding = [(pos, name) for pos, name in drug_positions if pos <= m.start()]
+                if preceding:
+                    associated_drug = max(preceding, key=lambda x: x[0])[1]
+            reactions.append({"reaction": reaction, "severity": severity, "onset": onset,
+                              "outcome": outcome, "drug": associated_drug})
 
     age_m  = AGE_PATTERN.search(text)
     sex_m  = SEX_PATTERN.search(text)
@@ -619,12 +632,15 @@ CRITICAL RULES:
 Return ONLY valid JSON:
 {
   "drugs": [{"name": "", "dose": null, "route": null, "indication": null}],
-  "reactions": [{"reaction": "", "severity": null, "onset": null, "outcome": "unknown"}],
+  "reactions": [{"reaction": "", "drug": null, "severity": null, "onset": null, "outcome": "unknown"}],
   "patient": {"age": null, "sex": null, "relevant_history": null},
   "causality": null,
   "overall_severity": null,
   "notes": ""
-}"""
+}
+
+For each reaction, set "drug" to the name of the drug most likely responsible. If unclear, set to null.
+"""
 
 def extract_gpt(text):
     """GPT-4o extraction via OpenAI API."""
