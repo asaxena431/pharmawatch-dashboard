@@ -332,9 +332,12 @@
           headers: {'Content-Type': 'application/json'},
           body: JSON.stringify({drug_name: name})
         });
-        const d = await r.json();
+        const txt = await r.text();
+        let d;
+        try { d = JSON.parse(txt); } catch(pe) { console.error('[FDA label] JSON parse error for ' + name + ':', txt.substring(0,100)); return; }
+        console.log('[FDA label]', name, 'status=' + r.status, 'error=' + (d.error || 'none'), 'ar_len=' + (d.adverse_reactions_raw || '').length);
         if (!d.error) labelMap[name] = d;
-      } catch(e) {}
+      } catch(e) { console.error('[FDA label] fetch error for ' + name + ':', e); }
     }));
 
     // Group reactions by drug

@@ -129,7 +129,9 @@ def get_fda_label(drug_name):
         f'openfda.brand_name:"{dn}"',
         f'openfda.generic_name:"{dn}"',
         f'openfda.substance_name:"{dn}"',
-        dn,  # full-text fallback
+        f'openfda.generic_name:{dn}',       # unquoted — handles partial
+        f'openfda.substance_name:{dn}',     # unquoted fallback
+        dn,                                  # full-text fallback
     ]
     data = None
     for q in queries:
@@ -270,6 +272,7 @@ def get_fda_label(drug_name):
         side_effects.append({"section": "Warnings", "items": warning_items})
 
     return {
+        "drug_name":      dn,
         "brand_name":     openfda.get("brand_name", ["N/A"]),
         "generic_name":   openfda.get("generic_name", ["N/A"]),
         "manufacturer":   openfda.get("manufacturer_name", ["N/A"]),
