@@ -63,6 +63,64 @@ WARNING_KEYWORDS = [
     "Heart attack and stroke warning","Warnings"
 ]
 
+# ── De-identification ────────────────────────────────────────────────────────
+# Ordered list of (pattern, replacement_label) tuples applied sequentially
+_DEID_RULES = [
+    # SSN
+    (re.compile(r'\b\d{3}-\d{2}-\d{4}\b'),                                     '[SSN]'),
+    # MRN / patient ID (common formats)
+    (re.compile(r'\b(?:MRN|Patient\s*ID|Chart\s*(?:No|#)?)[:\s#]*\d{4,12}\b', re.IGNORECASE), '[MRN]'),
+    # Phone numbers
+    (re.compile(r'\b(?:\+?1[\s.-]?)?\(?\d{3}\)?[\s.-]\d{3}[\s.-]\d{4}\b'),    '[PHONE]'),
+    # Email
+    (re.compile(r'\b[\w.+-]+@[\w.-]+\.[a-zA-Z]{2,}\b'),                        '[EMAIL]'),
+    # Full dates  e.g. 01/15/1980, January 15 1980, 15-Jan-80
+    (re.compile(r'\b(?:\d{1,2}[/-])?\d{1,2}[/-]\d{2,4}\b'),                   '[DATE]'),
+    (re.compile(r'\b(?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|'
+                r'Jul(?:y)?|Aug(?:ust)?|Sep(?:tember)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)'
+                r'\s+\d{1,2},?\s+\d{4}\b', re.IGNORECASE),                    '[DATE]'),
+    # Year of birth patterns
+    (re.compile(r'\bborn\s+in\s+\d{4}\b', re.IGNORECASE),                      'born in [YEAR]'),
+    # DOB label
+    (re.compile(r'\b(?:DOB|Date\s+of\s+Birth)[:\s]+[\w/,-]+', re.IGNORECASE),  '[DOB]'),
+    # Titled names: Mr/Mrs/Ms/Dr/Prof followed by 1-2 capitalised words
+    (re.compile(r'\b(?:Mr\.?|Mrs\.?|Ms\.?|Miss|Dr\.?|Prof\.?)\s+[A-Z][a-z]+(?:\s+[A-Z][a-z]+)?\b'),
+                                                                                '[NAME]'),
+    # Street addresses  e.g. 123 Main St, Springfield
+    (re.compile(r'\b\d{1,5}\s+[A-Z][a-zA-Z\s]{2,30}(?:Street|St|Avenue|Ave|Road|Rd|Blvd|Drive|Dr|Lane|Ln|Court|Ct|Way)\b',
+                re.IGNORECASE),                                                 '[ADDRESS]'),
+    # ZIP codes
+    (re.compile(r'\b\d{5}(?:-\d{4})?\b'),                                      '[ZIP]'),
+    # Hospital / clinic names (heuristic: "XYZ Hospital/Clinic/Medical Center")
+    (re.compile(r'\b[A-Z][a-zA-Z\s]{2,40}(?:Hospital|Clinic|Medical\s+Center|Health\s+System|'
+                r'Medical\s+Group|Healthcare)\b'),                              '[FACILITY]'),
+]
+
+def deidentify_text(text):
+    """
+    Remove PHI/PII from text before sending to external AI APIs.
+    Returns (redacted_text, list_of_findings).
+    """
+    redacted = text
+    findings = []
+    for pattern, label in _DEID_RULES:
+        matches = pattern.findall(redacted)
+        if matches:
+            for m in matches:
+                findings.append({"original": m if isinstance(m, str) else m[0], "replaced_with": label})
+            redacted = pattern.sub(label, redacted)
+    return redacted, findings
+
+
+@app.route("/api/deidentify", methods=["POST"])
+def api_deidentify():
+    text = request.json.get("narrative", "").strip()
+    if not text:
+        return jsonify({"error": "No narrative provided"}), 400
+    redacted, findings = deidentify_text(text)
+    return jsonify({"redacted": redacted, "findings": findings, "changed": redacted != text})
+
+
 # ── Core functions ────────────────────────────────────────────────────────────
 def get_fda_label(drug_name):
     r = requests.get("https://api.fda.gov/drug/label.json",
@@ -658,8 +716,9 @@ def extract_huggingface(text):
         url = f"https://api-inference.huggingface.co/models/{HF_NER_MODEL}"
         headers = {"Authorization": f"Bearer {api_key}"}
         # HF NER returns list of entity dicts
+        safe_text, _ = deidentify_text(text)
         resp = requests.post(url, headers=headers,
-                             json={"inputs": text[:2000]},  # model token limit
+                             json={"inputs": safe_text[:2000]},  # model token limit
                              timeout=30)
         resp.raise_for_status()
         entities = resp.json()
@@ -735,17 +794,18 @@ def extract_huggingface(text):
 
 
 def extract_gpt(text):
-    """GPT-4o extraction via OpenAI API."""
+    """GPT-4o extraction via OpenAI API. De-identifies text before sending."""
     api_key = os.environ.get("OPENAI_API_KEY")
     if not api_key or not OPENAI_AVAILABLE:
         return None
+    safe_text, _ = deidentify_text(text)
     try:
         client = OpenAI(api_key=api_key, timeout=30.0)
         resp = client.chat.completions.create(
             model="gpt-4o",
             messages=[
                 {"role": "system", "content": GPT_SYSTEM},
-                {"role": "user",   "content": f"Clinical Narrative:\n\n{text}"}
+                {"role": "user",   "content": f"Clinical Narrative:\n\n{safe_text}"}
             ],
             temperature=0,
             response_format={"type": "json_object"},

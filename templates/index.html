@@ -64,6 +64,47 @@
     </div>
   </div>
 
+  <!-- De-identification Review Modal -->
+  <div id="deidModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm px-4">
+    <div class="glass rounded-2xl p-6 w-full max-w-3xl max-h-[90vh] overflow-y-auto space-y-4">
+      <div class="flex items-center justify-between">
+        <h3 class="text-lg font-bold text-white flex items-center gap-2">
+          <i class="fa-solid fa-shield-halved text-yellow-400"></i> De-identification Review
+        </h3>
+        <span class="text-xs text-slate-400">Review before sending to AI</span>
+      </div>
+      <!-- Redacted fields list -->
+      <div id="deidFindings" class="hidden">
+        <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Fields Redacted</p>
+        <div id="deidFindingsList" class="flex flex-wrap gap-2"></div>
+      </div>
+      <div id="deidNoChange" class="hidden text-sm text-green-400 flex items-center gap-2">
+        <i class="fa-solid fa-circle-check"></i> No confidential fields detected.
+      </div>
+      <!-- Side by side -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+        <div>
+          <p class="text-slate-400 font-semibold mb-1">Original Narrative</p>
+          <div id="deidOriginal" class="bg-slate-900 rounded-xl p-3 text-slate-300 leading-relaxed whitespace-pre-wrap border border-slate-700 max-h-64 overflow-y-auto"></div>
+        </div>
+        <div>
+          <p class="text-yellow-400 font-semibold mb-1">Redacted Text (sent to AI)</p>
+          <div id="deidRedacted" class="bg-slate-900 rounded-xl p-3 text-slate-300 leading-relaxed whitespace-pre-wrap border border-yellow-800/40 max-h-64 overflow-y-auto"></div>
+        </div>
+      </div>
+      <div class="flex gap-3 justify-end pt-2">
+        <button onclick="cancelDeid()"
+          class="px-4 py-2 rounded-xl border border-slate-600 text-slate-400 hover:text-white text-sm transition">
+          <i class="fa-solid fa-xmark mr-1"></i> Cancel
+        </button>
+        <button onclick="confirmAndAnalyze()"
+          class="px-6 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-semibold text-sm transition flex items-center gap-2">
+          <i class="fa-solid fa-paper-plane"></i> Confirm & Send to AI
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- Loading -->
   <div id="loading" class="hidden flex items-center gap-3 py-6 justify-center">
     <div class="spinner"></div>
@@ -182,10 +223,62 @@
     });
   }
 
+  var _pendingNarrative = null;
+
   async function analyzeNarrative() {
     const narrative = document.getElementById('narrativeInput').value.trim();
     if (!narrative) { alert('Please enter a clinical narrative.'); return; }
+    const useAI = selectedEngine === 'openai' || selectedEngine === 'huggingface';
 
+    if (useAI) {
+      // Step 1: show de-id preview before sending to AI
+      try {
+        const r = await fetch('/api/deidentify', {
+          method: 'POST', headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({narrative: narrative})
+        });
+        const d = await r.json();
+        _pendingNarrative = narrative;
+        // Populate modal
+        document.getElementById('deidOriginal').textContent  = narrative;
+        document.getElementById('deidRedacted').innerHTML = d.redacted
+          .replace(/\[([A-Z]+)\]/g, '<mark class="bg-red-900/60 text-red-300 rounded px-1">[$1]</mark>');
+        const findingsEl = document.getElementById('deidFindings');
+        const listEl     = document.getElementById('deidFindingsList');
+        if (d.findings && d.findings.length > 0) {
+          listEl.innerHTML = d.findings.map(function(f) {
+            return '<span class="text-xs px-2 py-1 rounded bg-slate-700 text-slate-300">'
+              + '<span class="line-through text-red-400 mr-1">' + f.original + '</span>'
+              + '&rarr; <span class="text-yellow-300">' + f.replaced_with + '</span></span>';
+          }).join('');
+          findingsEl.classList.remove('hidden');
+          document.getElementById('deidNoChange').classList.add('hidden');
+        } else {
+          findingsEl.classList.add('hidden');
+          document.getElementById('deidNoChange').classList.remove('hidden');
+        }
+        document.getElementById('deidModal').classList.remove('hidden');
+        return; // wait for user confirmation
+      } catch(e) {
+        console.error('de-id error', e);
+        // fall through and run without preview
+      }
+    }
+    await _runAnalysis(narrative);
+  }
+
+  function cancelDeid() {
+    document.getElementById('deidModal').classList.add('hidden');
+    _pendingNarrative = null;
+  }
+
+  async function confirmAndAnalyze() {
+    document.getElementById('deidModal').classList.add('hidden');
+    if (_pendingNarrative) await _runAnalysis(_pendingNarrative);
+    _pendingNarrative = null;
+  }
+
+  async function _runAnalysis(narrative) {
     document.getElementById('loading').classList.remove('hidden');
     document.getElementById('results').classList.add('hidden');
 
@@ -193,7 +286,7 @@
     const timer = setTimeout(function() { controller.abort(); }, 60000);
     let data;
     try {
-      const useAI   = selectedEngine === 'openai' || selectedEngine === 'huggingface';
+      const useAI    = selectedEngine === 'openai' || selectedEngine === 'huggingface';
       const endpoint = useAI ? '/api/compare-engines' : '/api/analyze-narrative';
       const body     = {narrative: narrative, drug_name: '', engine: selectedEngine};
       const res = await fetch(endpoint, {
