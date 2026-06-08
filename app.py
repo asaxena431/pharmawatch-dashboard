@@ -453,7 +453,7 @@ def build_full_comparison(narrative_reactions, label, faers_reactions):
         return sections
 
     def _add(reaction_name, severity=None, onset=None, outcome="unknown",
-             in_narrative=False, in_label=False, faers_count=0, label_sections=None):
+             in_narrative=False, in_label=False, faers_count=0, label_sections=None, drug=None):
         key = reaction_name.lower().strip()
         if key not in rows:
             rows[key] = {
@@ -465,6 +465,7 @@ def build_full_comparison(narrative_reactions, label, faers_reactions):
                 "found_in_label": in_label,
                 "faers_count":    faers_count,
                 "label_sections": label_sections or [],
+                "drug":           drug,
             }
         else:
             if severity:      rows[key]["severity"]       = severity
@@ -473,6 +474,7 @@ def build_full_comparison(narrative_reactions, label, faers_reactions):
             if in_narrative:  rows[key]["in_narrative"]   = True
             if in_label:      rows[key]["found_in_label"] = True
             if faers_count:   rows[key]["faers_count"]    = faers_count
+            if drug and not rows[key].get("drug"): rows[key]["drug"] = drug
             if label_sections:
                 existing = rows[key]["label_sections"]
                 rows[key]["label_sections"] = list(dict.fromkeys(existing + label_sections))
@@ -489,7 +491,8 @@ def build_full_comparison(narrative_reactions, label, faers_reactions):
             (fk for fk in faers_map if all(kw in fk for kw in keywords if len(kw) > 3)), None)
         fc = faers_map.get(fmatch, 0) if fmatch else 0
         _add(r["reaction"], r.get("severity"), r.get("onset"), r.get("outcome", "unknown"),
-             in_narrative=True, in_label=in_label, faers_count=fc, label_sections=sections)
+             in_narrative=True, in_label=in_label, faers_count=fc, label_sections=sections,
+             drug=r.get("drug"))
 
     # 2. FDA label adverse reactions
     for ar in ar_list:

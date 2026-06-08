@@ -329,15 +329,14 @@
       <!-- 4-column comparison table -->
       <div class="glass rounded-2xl p-6">
         <h3 class="font-semibold text-white mb-1 flex items-center gap-2">
-          <i class="fa-solid fa-table-columns text-blue-400"></i> 4-Way Comparison: Narrative (medspaCy) vs Narrative (GPT-4o) vs FDA Label vs FAERS
+          <i class="fa-solid fa-table-columns text-blue-400"></i> Adverse Reactions by Drug
         </h3>
-        <p class="text-xs text-slate-500 mb-4">Each row is a unique reaction. Columns show whether it was found by each source.</p>
+        <p class="text-xs text-slate-500 mb-4">Reactions grouped by suspected drug. Columns show which source identified each reaction.</p>
         <div class="overflow-x-auto">
           <table class="w-full text-sm min-w-[700px]">
             <thead>
               <tr class="text-left border-b border-slate-700">
                 <th class="pb-3 pr-3 text-slate-300">Reaction</th>
-                <th class="pb-3 pr-3 text-slate-400 text-xs"><i class="fa-solid fa-pills mr-1"></i>Drug</th>
                 <th class="pb-3 pr-3 text-yellow-400 text-xs"><i class="fa-solid fa-file-medical mr-1"></i>FDA Label</th>
                 <th class="pb-3 pr-3 text-purple-400 text-xs"><i class="fa-solid fa-database mr-1"></i>FAERS</th>
                 <th class="pb-3 pr-3 text-blue-400 text-xs"><i class="fa-solid fa-robot mr-1"></i>medspaCy</th>
@@ -871,51 +870,66 @@
       ? `<span class="text-green-400 font-bold">✓</span>`
       : `<span class="text-slate-700">✗</span>`;
 
-    // Sort: narrative reactions first, then label-only, then FAERS-only
-    allRows.sort((a, b) => {
-      if (a.in_narrative && !b.in_narrative) return -1;
-      if (!a.in_narrative && b.in_narrative) return 1;
-      if (a.found_in_label && !b.found_in_label) return -1;
-      if (!a.found_in_label && b.found_in_label) return 1;
-      return (b.faers_count || 0) - (a.faers_count || 0);
+    // Group by drug: narrative reactions under their drug, rest under 'Other Sources'
+    const grouped = {};
+    allRows.forEach(r => {
+      const grp = (r.in_narrative && r.drug) ? r.drug : (r.in_narrative ? '__narrative__' : '__other__');
+      if (!grouped[grp]) grouped[grp] = [];
+      grouped[grp].push(r);
     });
 
-    document.getElementById('reportTable').innerHTML = allRows.map(r => {
-      const key     = r.reaction.toLowerCase();
-      const inFDA   = r.found_in_label;
-      const inFAERS = r.faers_count > 0;
-      const inMs    = r.in_narrative ? msReactions.has(key) : false;
-      const inGpt   = r.in_narrative ? gptReactions.has(key) : false;
-      const isNovel  = !inFDA && (inFAERS || inMs || inGpt);
-      const rowClass = isNovel                    ? 'bg-red-900/10'
-                     : r.in_narrative && !inFDA   ? 'bg-yellow-900/10' : '';
+    function renderRows(rows) {
+      return rows.map(r => {
+        const key    = r.reaction.toLowerCase();
+        const inFDA  = r.found_in_label;
+        const inFAERS= r.faers_count > 0;
+        const inMs   = msReactions.has(key);
+        const inGpt  = gptReactions.has(key);
+        const isNovel = !inFDA && (inFAERS || inMs || inGpt);
+        const rowClass = isNovel ? 'bg-red-900/10' : (!inFDA && r.in_narrative ? 'bg-yellow-900/10' : '');
+        return `<tr class="reaction-row ${rowClass}">
+          <td class="py-2 pr-3 font-medium text-slate-200 capitalize text-sm">
+            ${r.reaction}
+            ${r.severity ? `<span class="ml-1 text-xs text-slate-500">(${r.severity})</span>` : ''}
+            ${r.onset    ? `<div class="text-xs text-slate-600">onset: ${r.onset}</div>` : ''}
+          </td>
+          <td class="py-2 pr-3 text-center align-top">
+            ${inFDA ? `<span class="text-green-400 font-bold">✓</span>` : `<span class="text-slate-700">✗</span>`}
+            ${inFDA && r.label_sections?.length ? `<div class="mt-1 space-y-0.5">${r.label_sections.map(s =>
+                s === 'Warning'
+                  ? `<span class="block text-xs px-1.5 py-0.5 rounded bg-yellow-900/50 text-yellow-300 whitespace-nowrap">⚠ Warning</span>`
+                  : `<span class="block text-xs px-1.5 py-0.5 rounded bg-blue-900/40 text-blue-300 whitespace-nowrap">Adverse Reactions</span>`
+              ).join('')}</div>` : ''}
+          </td>
+          <td class="py-2 pr-3 text-center">${inFAERS ? `<span class="text-green-400 font-bold">✓</span>` : `<span class="text-slate-700">✗</span>`}</td>
+          <td class="py-2 pr-3 text-center">${ck(inMs)}</td>
+          <td class="py-2 pr-3 text-center">${ck(inGpt)}</td>
+          <td class="py-2 text-purple-300 font-mono text-xs">
+            ${inFAERS ? (r.faers_count||0).toLocaleString() : '<span class="text-slate-600 text-xs">—</span>'}
+            ${isNovel ? '<span class="ml-1 text-xs px-1.5 py-0.5 rounded bg-red-900/40 text-red-400 border border-red-800/40">Novel</span>' : ''}
+          </td>
+        </tr>`;
+      }).join('');
+    }
 
-      const drugLabel = r.drug ? `<span class="text-xs px-1.5 py-0.5 rounded bg-slate-700 text-slate-300 capitalize">${r.drug}</span>` : `<span class="text-slate-600 text-xs">—</span>`;
-      return `<tr class="reaction-row ${rowClass}">
-        <td class="py-2 pr-3 font-medium text-slate-200 capitalize text-sm">
-          ${r.reaction}
-          ${r.in_narrative ? `<span class="ml-2 text-xs px-1.5 py-0.5 rounded badge-blue">narrative</span>` : ''}
-          ${r.severity ? `<span class="ml-1 text-xs text-slate-500">(${r.severity})</span>` : ''}
-          ${r.onset    ? `<div class="text-xs text-slate-600">onset: ${r.onset}</div>` : ''}
-        </td>
-        <td class="py-2 pr-3 text-sm">${drugLabel}</td>
-        <td class="py-2 pr-3 text-center align-top">
-          ${inFDA ? `<span class="text-green-400 font-bold">✓</span>` : `<span class="text-slate-700">✗</span>`}
-          ${inFDA && r.label_sections && r.label_sections.length ? `<div class="mt-1 space-y-0.5">${r.label_sections.map(s =>
-              s === 'Warning'
-                ? `<span class="block text-xs px-1.5 py-0.5 rounded bg-yellow-900/50 text-yellow-300 whitespace-nowrap">⚠ Warning</span>`
-                : `<span class="block text-xs px-1.5 py-0.5 rounded bg-blue-900/40 text-blue-300 whitespace-nowrap">Adverse Reactions</span>`
-            ).join('')}</div>` : ''}
-        </td>
-        <td class="py-2 pr-3 text-center">${inFAERS ? `<span class="text-green-400 font-bold">✓</span>` : `<span class="text-slate-700">✗</span>`}</td>
-        <td class="py-2 pr-3 text-center">${r.in_narrative ? ck(inMs) : `<span class="text-slate-700">—</span>`}</td>
-        <td class="py-2 pr-3 text-center">${r.in_narrative ? ck(inGpt) : `<span class="text-slate-700">—</span>`}</td>
-        <td class="py-2 text-purple-300 font-mono text-xs">
-          ${inFAERS ? (r.faers_count||0).toLocaleString() : '<span class="text-slate-600 text-xs">—</span>'}
-          ${isNovel ? '<span class="ml-1 text-xs px-1.5 py-0.5 rounded bg-red-900/40 text-red-400 border border-red-800/40">Novel</span>' : ''}
-        </td>
-      </tr>`;
-    }).join('');
+    const drugOrder = Object.keys(grouped).filter(k => k !== '__narrative__' && k !== '__other__');
+    const hasNarOnly = grouped['__narrative__']?.length > 0;
+    const hasOther   = grouped['__other__']?.length > 0;
+
+    let html = '';
+    drugOrder.forEach(drug => {
+      html += `<tr class="bg-slate-800/60"><td colspan="6" class="py-2 px-3 text-sm font-bold text-blue-300 capitalize"><i class="fa-solid fa-pills mr-2"></i>${drug}</td></tr>`;
+      html += renderRows(grouped[drug]);
+    });
+    if (hasNarOnly) {
+      html += `<tr class="bg-slate-800/60"><td colspan="6" class="py-2 px-3 text-sm font-bold text-slate-400"><i class="fa-solid fa-comment-medical mr-2"></i>Narrative (drug unattributed)</td></tr>`;
+      html += renderRows(grouped['__narrative__']);
+    }
+    if (hasOther) {
+      html += `<tr class="bg-slate-800/60"><td colspan="6" class="py-2 px-3 text-sm font-bold text-slate-500"><i class="fa-solid fa-database mr-2"></i>FDA Label / FAERS Only</td></tr>`;
+      html += renderRows(grouped['__other__']);
+    }
+    document.getElementById('reportTable').innerHTML = html;
 
     // Novel reactions: not in FDA label (found anywhere — FAERS, medspaCy, or GPT)
     const msSet  = new Set((msData?.reactions  || []).map(r => r.reaction.toLowerCase()));
