@@ -3,27 +3,15 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"/>
-  <meta http-equiv="Pragma" content="no-cache"/>
-  <meta http-equiv="Expires" content="0"/>
-  <title>PharmaWatch — Drug Safety Intelligence</title>
+  <title>PharmaWatch — Narrative Analyzer</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
   <style>
     body { font-family: 'Inter', sans-serif; background: #0f172a; }
     .glass { background: rgba(255,255,255,0.05); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.1); }
-    .tab-btn.active { background: #3b82f6; color: white; }
-    .tab-content { display: none; }
-    .tab-content.active { display: block; }
     .spinner { border: 3px solid rgba(255,255,255,0.1); border-top-color: #3b82f6; border-radius: 50%; width: 24px; height: 24px; animation: spin 0.8s linear infinite; }
     @keyframes spin { to { transform: rotate(360deg); } }
-    .badge-green  { background:#065f46; color:#6ee7b7; }
-    .badge-red    { background:#7f1d1d; color:#fca5a5; }
-    .badge-yellow { background:#78350f; color:#fcd34d; }
-    .badge-blue   { background:#1e3a8a; color:#93c5fd; }
-    .reaction-row:hover { background: rgba(255,255,255,0.05); }
-    pre { white-space: pre-wrap; word-break: break-word; }
+    .reaction-row:hover { background: rgba(255,255,255,0.04); }
   </style>
 </head>
 <body class="text-slate-200 min-h-screen">
@@ -36,934 +24,280 @@
     </div>
     <div>
       <h1 class="text-lg font-bold text-white">PharmaWatch</h1>
-      <p class="text-xs text-slate-400">Drug Safety Intelligence Platform</p>
+      <p class="text-xs text-slate-400">Narrative Drug Safety Analyzer</p>
     </div>
   </div>
-  <div class="flex gap-2 text-xs text-slate-400">
-    <span class="px-2 py-1 rounded bg-slate-800">FDA openFDA API</span>
-    <span class="px-2 py-1 rounded bg-slate-800">FAERS Database</span>
-    <span class="px-2 py-1 rounded bg-slate-800">NLP Extraction</span>
-  </div>
+  <div id="openaiStatus" class="text-xs px-3 py-1 rounded-full bg-slate-800 text-slate-400">Checking OpenAI...</div>
 </nav>
 
-<!-- Main -->
-<div class="max-w-7xl mx-auto px-6 py-8">
+<div class="max-w-5xl mx-auto px-6 py-10 space-y-8">
 
-  <!-- Drug Search Bar -->
-  <div class="glass rounded-2xl p-6 mb-8">
-    <h2 class="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-4">Drug Lookup</h2>
-    <div class="flex gap-3">
-      <input id="drugInput" type="text" placeholder="Enter drug name (e.g. Tylenol, Lipitor, Prozac)..."
-        class="flex-1 bg-slate-800 border border-slate-600 rounded-xl px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"/>
-      <button onclick="runFullLookup()"
-        class="px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white font-semibold rounded-xl transition flex items-center gap-2">
-        <i class="fa-solid fa-magnifying-glass"></i> Analyze
+  <!-- Narrative Input -->
+  <div class="glass rounded-2xl p-6">
+    <h2 class="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-4">
+      <i class="fa-solid fa-file-medical-alt mr-2 text-blue-400"></i>Clinical Narrative
+    </h2>
+    <textarea id="narrativeInput" rows="7"
+      placeholder="Paste the clinical narrative here. e.g. 'A 45-year-old male was prescribed ibuprofen 400mg and lisinopril 10mg. He developed nausea, headache, and elevated liver enzymes after 2 weeks...'"
+      class="w-full bg-slate-800 border border-slate-600 rounded-xl px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 resize-none mb-4"></textarea>
+    <div class="flex items-center justify-between flex-wrap gap-3">
+      <label class="flex items-center gap-2 text-sm text-slate-400 cursor-pointer">
+        <input type="checkbox" id="useGpt" class="rounded accent-green-500"/>
+        <i class="fa-solid fa-brain text-green-400"></i> Use GPT-4o for extraction
+      </label>
+      <button onclick="analyzeNarrative()"
+        class="px-6 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-semibold rounded-xl transition flex items-center gap-2">
+        <i class="fa-solid fa-magnifying-glass"></i> Analyze Narrative
       </button>
     </div>
   </div>
 
-  <!-- Tabs -->
-  <div class="flex gap-2 mb-6 border-b border-slate-700 pb-3 flex-wrap">
-    <button onclick="switchTab('fda')"       id="tab-fda"       class="tab-btn px-4 py-2 rounded-lg text-sm font-medium text-slate-400 hover:text-white transition active">FDA Label</button>
-    <button onclick="switchTab('faers')"     id="tab-faers"     class="tab-btn px-4 py-2 rounded-lg text-sm font-medium text-slate-400 hover:text-white transition">FAERS Reports</button>
-    <button onclick="switchTab('narrative')" id="tab-narrative" class="tab-btn px-4 py-2 rounded-lg text-sm font-medium text-slate-400 hover:text-white transition flex items-center gap-2"><i class="fa-solid fa-robot text-blue-400"></i> Narrative (medspaCy)</button>
-    <button onclick="switchTab('gptnar')"    id="tab-gptnar"   class="tab-btn px-4 py-2 rounded-lg text-sm font-medium text-slate-400 hover:text-white transition flex items-center gap-2"><i class="fa-solid fa-brain text-green-400"></i> Narrative (OpenAI)</button>
-    <button onclick="switchTab('report')"    id="tab-report"    class="tab-btn px-4 py-2 rounded-lg text-sm font-medium text-slate-400 hover:text-white transition">Comparison Report</button>
-  </div>
-
   <!-- Loading -->
-  <div id="loading" class="hidden flex items-center gap-3 py-8 justify-center">
+  <div id="loading" class="hidden flex items-center gap-3 py-6 justify-center">
     <div class="spinner"></div>
-    <span class="text-slate-400">Fetching data from FDA & FAERS...</span>
+    <span class="text-slate-400">Extracting drugs and reactions...</span>
   </div>
 
-  <!-- ── TAB 1: FDA Label ── -->
-  <div id="tab-fda-content" class="tab-content active">
-    <div id="fdaPlaceholder" class="text-center py-20 text-slate-500">
-      <i class="fa-solid fa-pills text-4xl mb-4 block"></i>
-      Enter a drug name above and click Analyze
-    </div>
-    <div id="fdaContent" class="hidden space-y-6">
+  <!-- Results -->
+  <div id="results" class="hidden space-y-6">
 
-      <!-- Drug header -->
-      <div class="glass rounded-2xl p-6">
-        <div class="flex items-start justify-between">
-          <div>
-            <h2 id="fdaBrandName" class="text-2xl font-bold text-white"></h2>
-            <p id="fdaGenericName" class="text-slate-400 mt-1"></p>
-          </div>
-          <div class="text-right text-sm">
-            <p id="fdaManufacturer" class="text-slate-300"></p>
-            <p id="fdaRoute"        class="text-slate-500 mt-1"></p>
-            <span id="fdaProductType" class="inline-block mt-2 px-3 py-1 rounded-full text-xs font-semibold badge-blue"></span>
-          </div>
-        </div>
+    <!-- Summary cards -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div class="glass rounded-2xl p-4 text-center border-t-2 border-blue-500">
+        <p class="text-2xl font-bold text-blue-400" id="sDrugs">0</p>
+        <p class="text-xs text-slate-400 mt-1">Drugs Found</p>
       </div>
-
-      <!-- Side Effects: Adverse Reactions + Warnings only -->
-      <div class="glass rounded-2xl p-6">
-        <h3 class="font-semibold text-red-400 mb-4 flex items-center gap-2">
-          <i class="fa-solid fa-triangle-exclamation"></i> Side Effects &amp; Adverse Reactions
-        </h3>
-        <div id="fdaAdverseReactions" class="space-y-6 text-sm"></div>
+      <div class="glass rounded-2xl p-4 text-center border-t-2 border-purple-500">
+        <p class="text-2xl font-bold text-purple-400" id="sReactions">0</p>
+        <p class="text-xs text-slate-400 mt-1">Reactions Found</p>
+      </div>
+      <div class="glass rounded-2xl p-4 text-center border-t-2 border-green-500">
+        <p class="text-2xl font-bold text-green-400" id="sInLabel">0</p>
+        <p class="text-xs text-slate-400 mt-1">Found in FDA Label</p>
+      </div>
+      <div class="glass rounded-2xl p-4 text-center border-t-2 border-red-500">
+        <p class="text-2xl font-bold text-red-400" id="sNotInLabel">0</p>
+        <p class="text-xs text-slate-400 mt-1">Not in FDA Label</p>
       </div>
     </div>
+
+    <!-- Patient info -->
+    <div class="glass rounded-2xl p-5 flex flex-wrap gap-6 text-sm">
+      <div><span class="text-slate-500 mr-2">Age:</span><span id="pAge" class="text-white font-medium">N/A</span></div>
+      <div><span class="text-slate-500 mr-2">Sex:</span><span id="pSex" class="text-white font-medium">N/A</span></div>
+      <div><span class="text-slate-500 mr-2">Causality:</span><span id="pCausality" class="text-white font-medium">N/A</span></div>
+      <div><span class="text-slate-500 mr-2">Severity:</span><span id="pSeverity" class="text-white font-medium">N/A</span></div>
+      <div><span class="text-slate-500 mr-2">Engine:</span><span id="pEngine" class="text-white font-medium">N/A</span></div>
+    </div>
+
+    <!-- Per-drug reaction tables -->
+    <div id="drugTables" class="space-y-6"></div>
+
+    <!-- Unattributed reactions -->
+    <div id="unattributedSection" class="hidden glass rounded-2xl p-6">
+      <h3 class="font-semibold text-white mb-4 flex items-center gap-2">
+        <i class="fa-solid fa-circle-question text-slate-400"></i> Reactions — Drug Unattributed
+      </h3>
+      <div id="unattributedTable"></div>
+    </div>
+
   </div>
-
-  <!-- ── TAB 2: FAERS ── -->
-  <div id="tab-faers-content" class="tab-content">
-    <div id="faersPlaceholder" class="text-center py-20 text-slate-500">
-      <i class="fa-solid fa-database text-4xl mb-4 block"></i>
-      Enter a drug name above and click Analyze
-    </div>
-    <div id="faersContent" class="hidden space-y-6">
-      <div class="glass rounded-2xl p-6">
-        <div class="flex items-center justify-between mb-4">
-          <h3 class="font-semibold text-white flex items-center gap-2">
-            <i class="fa-solid fa-chart-bar text-blue-400"></i>
-            Top Real-World Adverse Events — FAERS Database
-          </h3>
-          <span id="faersTotal" class="text-xs px-3 py-1 rounded-full badge-blue"></span>
-        </div>
-        <div class="mb-6">
-          <canvas id="faersChart" height="120"></canvas>
-        </div>
-        <div id="faersTable" class="space-y-1 text-sm max-h-96 overflow-y-auto"></div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ── TAB 3: Narrative medspaCy ── -->
-  <div id="tab-narrative-content" class="tab-content">
-    <div class="glass rounded-2xl p-6 mb-6">
-      <div class="flex items-center justify-between mb-4">
-        <h3 class="font-semibold text-white flex items-center gap-2">
-          <i class="fa-solid fa-robot text-blue-400"></i> Narrative Analysis — medspaCy (Rule-Based NLP)
-        </h3>
-        <span class="text-xs px-3 py-1 rounded-full badge-blue">Free · Local · No API needed</span>
-      </div>
-      <textarea id="narrativeInput" rows="6"
-        placeholder="Paste the doctor's narrative here..."
-        class="w-full bg-slate-800 border border-slate-600 rounded-xl px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 resize-none"></textarea>
-      <div class="flex justify-end mt-3">
-        <button onclick="analyzeNarrative()"
-          class="px-5 py-2 bg-blue-600 hover:bg-blue-500 text-white font-semibold rounded-xl transition flex items-center gap-2">
-          <i class="fa-solid fa-wand-magic-sparkles"></i> Extract with medspaCy
-        </button>
-      </div>
-    </div>
-
-    <div id="narrativeResults" class="hidden space-y-6">
-
-      <!-- Confidence -->
-      <div class="glass rounded-2xl p-6">
-        <h3 class="font-semibold text-white mb-4">Extraction Confidence</h3>
-        <div class="flex items-center gap-4">
-          <div class="relative w-24 h-24">
-            <svg viewBox="0 0 36 36" class="w-24 h-24 -rotate-90">
-              <circle cx="18" cy="18" r="15.9" fill="none" stroke="#1e293b" stroke-width="3"/>
-              <circle id="confCircle" cx="18" cy="18" r="15.9" fill="none" stroke="#3b82f6" stroke-width="3"
-                stroke-dasharray="0 100" stroke-linecap="round" class="transition-all duration-700"/>
-            </svg>
-            <div class="absolute inset-0 flex items-center justify-center">
-              <span id="confScore" class="text-xl font-bold text-white"></span>
-            </div>
-          </div>
-          <div>
-            <p id="confVerdict" class="text-lg font-semibold"></p>
-            <p id="confGpt"     class="text-sm text-slate-400 mt-1"></p>
-          </div>
-        </div>
-      </div>
-
-      <!-- Extracted data -->
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div class="glass rounded-2xl p-6">
-          <h3 class="font-semibold text-blue-400 mb-4 flex items-center gap-2"><i class="fa-solid fa-capsules"></i> Drugs Identified</h3>
-          <div id="narDrugs" class="space-y-2 text-sm"></div>
-        </div>
-        <div class="glass rounded-2xl p-6">
-          <h3 class="font-semibold text-red-400 mb-4 flex items-center gap-2"><i class="fa-solid fa-triangle-exclamation"></i> Reactions Identified</h3>
-          <div id="narReactions" class="space-y-2 text-sm"></div>
-        </div>
-      </div>
-
-      <!-- Patient info -->
-      <div class="glass rounded-2xl p-6">
-        <h3 class="font-semibold text-slate-300 mb-4">Patient & Case Info</h3>
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-          <div class="bg-slate-800 rounded-lg p-3">
-            <p class="text-slate-500 text-xs mb-1">Age</p>
-            <p id="narAge" class="text-white font-medium"></p>
-          </div>
-          <div class="bg-slate-800 rounded-lg p-3">
-            <p class="text-slate-500 text-xs mb-1">Sex</p>
-            <p id="narSex" class="text-white font-medium"></p>
-          </div>
-          <div class="bg-slate-800 rounded-lg p-3">
-            <p class="text-slate-500 text-xs mb-1">Causality</p>
-            <p id="narCausality" class="text-white font-medium"></p>
-          </div>
-          <div class="bg-slate-800 rounded-lg p-3">
-            <p class="text-slate-500 text-xs mb-1">Severity</p>
-            <p id="narSeverity" class="text-white font-medium"></p>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ── TAB 4: Narrative OpenAI ── -->
-  <div id="tab-gptnar-content" class="tab-content">
-    <div class="glass rounded-2xl p-6 mb-6">
-      <div class="flex items-center justify-between mb-4">
-        <h3 class="font-semibold text-white flex items-center gap-2">
-          <i class="fa-solid fa-brain text-green-400"></i> Narrative Analysis — OpenAI GPT-4o
-        </h3>
-        <div id="openaiStatus" class="text-xs px-3 py-1 rounded-full badge-blue">Checking OpenAI...</div>
-      </div>
-      <textarea id="gptNarrativeInput" rows="6"
-        placeholder="Paste the doctor's narrative here..."
-        class="w-full bg-slate-800 border border-slate-600 rounded-xl px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:border-green-500 resize-none mb-3"></textarea>
-      <div class="flex justify-end gap-3">
-        <button onclick="skipGptAndReport()"
-          class="px-5 py-2 bg-slate-600 hover:bg-slate-500 text-white font-semibold rounded-xl transition flex items-center gap-2">
-          <i class="fa-solid fa-forward"></i> Skip GPT → Go to Report
-        </button>
-        <button onclick="analyzeWithGPT()"
-          class="px-5 py-2 bg-green-600 hover:bg-green-500 text-white font-semibold rounded-xl transition flex items-center gap-2">
-          <i class="fa-solid fa-wand-magic-sparkles"></i> Extract with GPT-4o
-        </button>
-      </div>
-    </div>
-
-    <div id="gptNarResults" class="hidden space-y-6">
-      <!-- Confidence -->
-      <div class="glass rounded-2xl p-6">
-        <h3 class="font-semibold text-white mb-4">Extraction Confidence</h3>
-        <div class="flex items-center gap-4">
-          <div class="relative w-24 h-24">
-            <svg viewBox="0 0 36 36" class="w-24 h-24 -rotate-90">
-              <circle cx="18" cy="18" r="15.9" fill="none" stroke="#1e293b" stroke-width="3"/>
-              <circle id="gptConfCircle" cx="18" cy="18" r="15.9" fill="none" stroke="#22c55e" stroke-width="3"
-                stroke-dasharray="0 100" stroke-linecap="round" class="transition-all duration-700"/>
-            </svg>
-            <div class="absolute inset-0 flex items-center justify-center">
-              <span id="gptConfScore" class="text-xl font-bold text-white"></span>
-            </div>
-          </div>
-          <div>
-            <p id="gptConfVerdict" class="text-lg font-semibold"></p>
-            <p class="text-sm text-slate-400 mt-1">GPT-4o understands clinical context and implicit reactions</p>
-          </div>
-        </div>
-      </div>
-
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div class="glass rounded-2xl p-6">
-          <h3 class="font-semibold text-green-400 mb-4 flex items-center gap-2"><i class="fa-solid fa-capsules"></i> Drugs Identified</h3>
-          <div id="gptDrugsNar" class="space-y-2 text-sm"></div>
-        </div>
-        <div class="glass rounded-2xl p-6">
-          <h3 class="font-semibold text-red-400 mb-4 flex items-center gap-2"><i class="fa-solid fa-triangle-exclamation"></i> Reactions Identified</h3>
-          <div id="gptReactionsNar" class="space-y-2 text-sm"></div>
-        </div>
-      </div>
-
-      <div class="glass rounded-2xl p-6">
-        <h3 class="font-semibold text-slate-300 mb-4">Patient & Case Info</h3>
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-          <div class="bg-slate-800 rounded-lg p-3"><p class="text-slate-500 text-xs mb-1">Age</p><p id="gptNarAge" class="text-white font-medium"></p></div>
-          <div class="bg-slate-800 rounded-lg p-3"><p class="text-slate-500 text-xs mb-1">Sex</p><p id="gptNarSex" class="text-white font-medium"></p></div>
-          <div class="bg-slate-800 rounded-lg p-3"><p class="text-slate-500 text-xs mb-1">Causality</p><p id="gptNarCausality" class="text-white font-medium"></p></div>
-          <div class="bg-slate-800 rounded-lg p-3"><p class="text-slate-500 text-xs mb-1">Severity</p><p id="gptNarSeverity" class="text-white font-medium"></p></div>
-        </div>
-      </div>
-
-      <div class="glass rounded-2xl p-5 text-center">
-        <p class="text-slate-400 text-sm mb-3">Compare GPT-4o findings against FDA Label and FAERS</p>
-        <button onclick="buildGptReport()"
-          class="px-6 py-2 bg-blue-600 hover:bg-blue-500 text-white font-semibold rounded-xl transition">
-          <i class="fa-solid fa-scale-balanced mr-2"></i> View 4-Way Comparison Report
-        </button>
-      </div>
-    </div>
-  </div>
-
-  <!-- ── TAB 5: Comparison Report ── -->
-  <div id="tab-report-content" class="tab-content">
-    <div id="reportPlaceholder" class="text-center py-20 text-slate-500">
-      <i class="fa-solid fa-scale-balanced text-4xl mb-4 block"></i>
-      Run a Narrative Analysis or Engine Comparison first
-    </div>
-    <div id="reportContent" class="hidden space-y-6">
-
-      <!-- Legend -->
-      <div class="flex flex-wrap gap-3 text-xs">
-        <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-full bg-yellow-500 inline-block"></span> FDA Label (official)</span>
-        <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-full bg-purple-500 inline-block"></span> FAERS (real-world)</span>
-        <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-full bg-blue-500 inline-block"></span> medspaCy (rule-based)</span>
-        <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-full bg-green-500 inline-block"></span> GPT-4o (AI)</span>
-      </div>
-
-      <!-- Summary cards -->
-      <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div class="glass rounded-2xl p-5 text-center border-t-2 border-blue-500">
-          <p class="text-3xl font-bold text-blue-400" id="rTotalReactions">0</p>
-          <p class="text-xs text-slate-400 mt-1">Total Unique Reactions</p>
-        </div>
-        <div class="glass rounded-2xl p-5 text-center border-t-2 border-green-500">
-          <p class="text-3xl font-bold text-green-400" id="rInLabel">0</p>
-          <p class="text-xs text-slate-400 mt-1">In FDA Label</p>
-        </div>
-        <div class="glass rounded-2xl p-5 text-center border-t-2 border-yellow-500">
-          <p class="text-3xl font-bold text-yellow-400" id="rNotInLabel">0</p>
-          <p class="text-xs text-slate-400 mt-1">Missing from FDA Label</p>
-        </div>
-        <div class="glass rounded-2xl p-5 text-center border-t-2 border-red-500">
-          <p class="text-3xl font-bold text-red-400" id="rNovelFaers">0</p>
-          <p class="text-xs text-slate-400 mt-1">Not in FAERS (Novel)</p>
-        </div>
-      </div>
-
-      <!-- 4-column comparison table -->
-      <div class="glass rounded-2xl p-6">
-        <h3 class="font-semibold text-white mb-1 flex items-center gap-2">
-          <i class="fa-solid fa-table-columns text-blue-400"></i> Adverse Reactions by Drug
-        </h3>
-        <p class="text-xs text-slate-500 mb-4">Reactions grouped by suspected drug. Columns show which source identified each reaction.</p>
-        <div class="overflow-x-auto">
-          <table class="w-full text-sm min-w-[700px]">
-            <thead>
-              <tr class="text-left border-b border-slate-700">
-                <th class="pb-3 pr-3 text-slate-300">Reaction</th>
-                <th class="pb-3 pr-3 text-yellow-400 text-xs"><i class="fa-solid fa-file-medical mr-1"></i>FDA Label</th>
-                <th class="pb-3 pr-3 text-purple-400 text-xs"><i class="fa-solid fa-database mr-1"></i>FAERS</th>
-                <th class="pb-3 pr-3 text-blue-400 text-xs"><i class="fa-solid fa-robot mr-1"></i>medspaCy</th>
-                <th class="pb-3 pr-3 text-green-400 text-xs"><i class="fa-solid fa-brain mr-1"></i>GPT-4o</th>
-                <th class="pb-3 text-purple-300 text-xs">FAERS Count</th>
-              </tr>
-            </thead>
-            <tbody id="reportTable" class="divide-y divide-slate-800/60"></tbody>
-          </table>
-        </div>
-      </div>
-
-      <!-- Novel reactions alert -->
-      <div id="novelAlert" class="hidden glass rounded-2xl p-6 border border-red-800/50">
-        <h3 class="font-semibold text-red-400 mb-3 flex items-center gap-2">
-          <i class="fa-solid fa-radiation"></i> Potential Novel Signals — Not in FDA Label
-        </h3>
-        <p class="text-sm text-slate-400 mb-4">These reactions have real-world evidence (FAERS reports and/or agreed by both extraction engines) but are absent from the official FDA drug label. May warrant pharmacovigilance reporting.</p>
-        <div id="novelList" class="space-y-2"></div>
-      </div>
-
-      <!-- Label gaps alert -->
-      <div id="labelGapAlert" class="hidden glass rounded-2xl p-6 border border-yellow-800/50">
-        <h3 class="font-semibold text-yellow-400 mb-3 flex items-center gap-2">
-          <i class="fa-solid fa-circle-exclamation"></i> Label Gaps — Not in FDA Label
-        </h3>
-        <p class="text-sm text-slate-400 mb-4">Reactions found in the narrative but absent from the official FDA drug label.</p>
-        <div id="labelGapList" class="space-y-2"></div>
-      </div>
-
-    </div>
-  </div>
-
 </div>
 
 <script>
-  let currentDrug = "";
-  let lastAnalysis = null;
-  let lastEngineData = null;
-  let faersChart = null;
-
-  // Check OpenAI availability on load
-  window.addEventListener('DOMContentLoaded', async () => {
-    const res  = await fetch('/api/check-openai');
-    const data = await res.json();
-    const el = document.getElementById('openaiStatus');
-    if (data.available) {
-      el.textContent = 'GPT-4o Ready';
-      el.className = 'text-xs px-3 py-1 rounded-full badge-green';
-    } else {
-      el.textContent = 'GPT-4o Unavailable';
-      el.className = 'text-xs px-3 py-1 rounded-full badge-yellow';
+  function checkInLabel(reactionName, labelData) {
+    if (!labelData) return { found: false, sections: [] };
+    const term    = reactionName.toLowerCase();
+    const arRaw   = (labelData.adverse_reactions_raw || '').toLowerCase();
+    const warnObj = labelData.warnings || {};
+    const warnRaw = (labelData.warnings_raw || Object.values(warnObj).join(' ')).toLowerCase();
+    const words   = term.split(/\s+/).filter(w => w.length > 4);
+    function matches(blob) {
+      if (!blob) return false;
+      if (blob.includes(term)) return true;
+      if (words.length > 0 && words.every(w => blob.includes(w))) return true;
+      return false;
     }
-  });
-
-  function switchTab(tab) {
-    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-    document.getElementById('tab-' + tab).classList.add('active');
-    document.getElementById('tab-' + tab + '-content').classList.add('active');
+    const sections = [];
+    if (matches(arRaw))   sections.push('Adverse Reactions');
+    if (matches(warnRaw)) sections.push('Warning');
+    return { found: sections.length > 0, sections };
   }
 
-  function showLoading(show) {
-    document.getElementById('loading').classList.toggle('hidden', !show);
-  }
+  function renderReactionTable(rxList, labelData) {
+    if (!rxList || !rxList.length) return '<p class="text-slate-500 italic text-sm">No reactions detected.</p>';
+    let html = '<table class="w-full text-sm"><thead><tr class="text-left border-b border-slate-700 text-xs">'
+      + '<th class="pb-2 pr-4 text-slate-300">Reaction</th>'
+      + '<th class="pb-2 pr-4 text-slate-400">Severity</th>'
+      + '<th class="pb-2 pr-4 text-slate-400">Onset</th>'
+      + '<th class="pb-2 text-yellow-400"><i class="fa-solid fa-file-medical mr-1"></i>In FDA Label</th>'
+      + '</tr></thead><tbody class="divide-y divide-slate-800/50">';
 
-  function badge(text, color) {
-    return `<span class="px-2 py-0.5 rounded text-xs font-medium badge-${color}">${text}</span>`;
-  }
-
-  async function runFullLookup() {
-    currentDrug = document.getElementById('drugInput').value.trim();
-    if (!currentDrug) return;
-    showLoading(true);
-    try {
-      await Promise.all([loadFdaLabel(currentDrug), loadFaers(currentDrug)]);
-    } catch(e) {
-      console.error('Lookup error:', e);
-    } finally {
-      showLoading(false);
-    }
-  }
-
-  async function loadFdaLabel(drug) {
-    const res  = await fetch('/api/fda-label', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({drug_name: drug})});
-    const data = await res.json();
-    if (data.error) { document.getElementById('fdaPlaceholder').textContent = data.error; return; }
-
-    document.getElementById('fdaPlaceholder').classList.add('hidden');
-    document.getElementById('fdaContent').classList.remove('hidden');
-
-    document.getElementById('fdaBrandName').textContent    = data.brand_name.join(', ');
-    document.getElementById('fdaGenericName').textContent  = data.generic_name.join(', ');
-    document.getElementById('fdaManufacturer').textContent = data.manufacturer.join(', ');
-    document.getElementById('fdaRoute').textContent        = data.route.join(', ');
-    document.getElementById('fdaProductType').textContent  = data.product_type.join(', ');
-
-    const arEl = document.getElementById('fdaAdverseReactions');
-    const se = data.side_effects || [];
-    if (se.length) {
-      arEl.innerHTML = se.map(group => {
-        const isWarning = group.section === 'Warnings';
-        if (isWarning) {
-          // Warnings: expandable cards per item, each tagged with sub-section
-          const cards = group.items.map(item => {
-            const title = item.label || item;
-            const body  = item.text  || '';
-            return `<details class="bg-yellow-900/20 border border-yellow-800/30 rounded-lg p-3 cursor-pointer">
-              <summary class="font-semibold text-yellow-300 text-sm flex items-center gap-2">
-                <i class="fa-solid fa-circle-exclamation text-yellow-400"></i>
-                ${title}
-                <span class="ml-auto text-xs px-2 py-0.5 rounded-full bg-yellow-900/40 text-yellow-400 border border-yellow-700/40 font-normal">Warning</span>
-              </summary>
-              ${body ? `<p class="text-slate-300 text-xs leading-relaxed mt-2">${body}</p>` : ''}
-            </details>`;
-          }).join('');
-          return `<div>
-            <p class="text-xs font-semibold uppercase tracking-wider text-yellow-400 mb-2 flex items-center gap-1.5">
-              <i class="fa-solid fa-triangle-exclamation"></i> Warnings
-            </p>
-            <div class="space-y-2">${cards}</div>
-          </div>`;
-        } else {
-          // Adverse Reactions: red pills with source tag
-          const pills = group.items.map(item =>
-            `<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium bg-red-900/30 text-red-200 border border-red-800/40">
-              <i class="fa-solid fa-circle text-xs opacity-50"></i>
-              ${item}
-              <span class="px-1.5 py-0.5 rounded text-xs bg-red-900/50 text-red-400 border border-red-800/50 font-semibold ml-1">Adverse Reactions</span>
-            </span>`
-          ).join('');
-          return `<div>
-            <p class="text-xs font-semibold uppercase tracking-wider text-red-400 mb-2 flex items-center gap-1.5">
-              <i class="fa-solid fa-triangle-exclamation"></i> Adverse Reactions
-            </p>
-            <div class="flex flex-wrap gap-2">${pills}</div>
-          </div>`;
-        }
-      }).join('');
-    } else {
-      arEl.innerHTML = `<p class="text-slate-500 italic">No side effects data found in FDA label.</p>`;
-    }
-
-  }
-
-  async function loadFaers(drug) {
-    const res  = await fetch('/api/faers', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({drug_name: drug})});
-    const data = await res.json();
-
-    document.getElementById('faersPlaceholder').classList.add('hidden');
-    document.getElementById('faersContent').classList.remove('hidden');
-    document.getElementById('faersTotal').textContent = `${data.total} unique reactions`;
-
-    const top20 = data.reactions.slice(0, 20);
-
-    // Chart
-    if (faersChart) faersChart.destroy();
-    const ctx = document.getElementById('faersChart').getContext('2d');
-    faersChart = new Chart(ctx, {
-      type: 'bar',
-      data: {
-        labels: top20.map(r => r.reaction),
-        datasets: [{
-          label: 'Reports',
-          data: top20.map(r => r.count),
-          backgroundColor: 'rgba(59,130,246,0.6)',
-          borderColor: 'rgba(59,130,246,1)',
-          borderWidth: 1,
-          borderRadius: 4,
-        }]
-      },
-      options: {
-        responsive: true,
-        plugins: { legend: { display: false } },
-        scales: {
-          x: { ticks: { color: '#94a3b8', font: { size: 10 } }, grid: { color: '#1e293b' } },
-          y: { ticks: { color: '#94a3b8' }, grid: { color: '#1e293b' } }
-        }
-      }
-    });
-
-    // Table
-    document.getElementById('faersTable').innerHTML = data.reactions.map((r, i) =>
-      `<div class="reaction-row flex items-center justify-between px-3 py-2 rounded-lg">
-        <span class="text-slate-400 w-6 text-xs">${i+1}</span>
-        <span class="flex-1 text-slate-200">${r.reaction}</span>
-        <span class="text-blue-400 font-mono font-semibold">${r.count.toLocaleString()}</span>
-      </div>`
-    ).join('');
-  }
-
-  async function runEngineComparison() {
-    const narrative = document.getElementById('engNarrativeInput').value.trim();
-    if (!narrative) return;
-    const drug = currentDrug || document.getElementById('drugInput').value.trim();
-
-    showLoading(true);
-    let data;
-    try {
-      const res = await fetch('/api/compare-engines', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({narrative, drug_name: drug})
+    rxList.forEach(function(r) {
+      const chk   = checkInLabel(r.reaction, labelData);
+      const inFDA = chk.found;
+      let badges  = '';
+      chk.sections.forEach(function(s) {
+        badges += s === 'Warning'
+          ? '<span class="ml-1 text-xs px-1.5 py-0.5 rounded bg-yellow-900/50 text-yellow-300">&#9888; Warning</span>'
+          : '<span class="ml-1 text-xs px-1.5 py-0.5 rounded bg-blue-900/40 text-blue-300">Adverse Rxn</span>';
       });
-      data = await res.json();
-    } catch(e) {
-      alert('Request failed: ' + e.message);
-      return;
-    } finally {
-      showLoading(false);
-    }
-    lastEngineData = data;
-
-    document.getElementById('engResults').classList.remove('hidden');
-
-    // Confidence rings
-    const msConf  = data.medspacy_confidence;
-    const gptConf = data.gpt_confidence;
-    const msColor  = msConf.score >= 80 ? '#22c55e' : msConf.score >= 50 ? '#f59e0b' : '#ef4444';
-
-    document.getElementById('msCircle').setAttribute('stroke-dasharray', `${msConf.score} 100`);
-    document.getElementById('msCircle').setAttribute('stroke', msColor);
-    document.getElementById('msScore').textContent   = msConf.score;
-    document.getElementById('msVerdict').textContent = msConf.verdict;
-    document.getElementById('msVerdict').style.color = msColor;
-    document.getElementById('msNotes').textContent   = data.medspacy?.notes || '';
-
-    if (gptConf) {
-      const gptColor = gptConf.score >= 80 ? '#22c55e' : gptConf.score >= 50 ? '#f59e0b' : '#ef4444';
-      document.getElementById('gptCircle').setAttribute('stroke-dasharray', `${gptConf.score} 100`);
-      document.getElementById('gptCircle').setAttribute('stroke', gptColor);
-      document.getElementById('gptScore').textContent   = gptConf.score;
-      document.getElementById('gptVerdict').textContent = gptConf.verdict;
-      document.getElementById('gptVerdict').style.color = gptColor;
-      document.getElementById('gptNotes').textContent   = data.gpt?.notes || '';
-    } else {
-      document.getElementById('gptScore').textContent   = 'N/A';
-      document.getElementById('gptVerdict').textContent = 'API key not set';
-      document.getElementById('gptVerdict').style.color = '#64748b';
-      document.getElementById('gptNotes').textContent   = 'Set OPENAI_API_KEY environment variable to enable GPT-4o.';
-    }
-
-    // Drug tables
-    const renderDrugs = (drugs) => drugs.length
-      ? drugs.map(d => `<div class="bg-slate-800/50 px-3 py-2 rounded-lg flex justify-between">
-          <span class="text-blue-300 capitalize font-medium">${d.name}</span>
-          <span class="text-slate-400 text-xs">${d.dose||''} ${d.route||''}</span>
-        </div>`).join('')
-      : '<p class="text-slate-600 italic text-xs">None detected</p>';
-    document.getElementById('msDrugs').innerHTML  = renderDrugs(data.medspacy?.drugs || []);
-    document.getElementById('gptDrugs').innerHTML = renderDrugs(data.gpt?.drugs || []);
-
-    // Combined reaction table
-    const msReactions  = data.medspacy?.reactions || [];
-    const gptReactions = data.gpt?.reactions || [];
-    const allReactions = new Map();
-    msReactions.forEach(r  => allReactions.set(r.reaction.toLowerCase(), {ms: r,  gpt: null}));
-    gptReactions.forEach(r => {
-      const key = r.reaction.toLowerCase();
-      if (allReactions.has(key)) allReactions.get(key).gpt = r;
-      else allReactions.set(key, {ms: null, gpt: r});
+      const notBadge = inFDA ? '' : '<span class="ml-2 text-xs px-1.5 py-0.5 rounded bg-red-900/40 text-red-400 border border-red-800/40">Not in Label</span>';
+      html += '<tr class="reaction-row ' + (!inFDA ? 'bg-red-900/10' : '') + '">'
+        + '<td class="py-2 pr-4 font-medium text-slate-200 capitalize">' + r.reaction + notBadge + '</td>'
+        + '<td class="py-2 pr-4 text-slate-400 text-xs capitalize">' + (r.severity || '&mdash;') + '</td>'
+        + '<td class="py-2 pr-4 text-slate-400 text-xs">' + (r.onset || '&mdash;') + '</td>'
+        + '<td class="py-2">' + (inFDA ? '<span class="text-green-400 font-bold">&#10003;</span>' + badges : '<span class="text-red-400 font-bold">&#10007;</span>') + '</td>'
+        + '</tr>';
     });
-
-    document.getElementById('engReactionTable').innerHTML = [...allReactions.values()].map(({ms, gpt}) => {
-      const name     = (ms || gpt).reaction;
-      const source   = ms && gpt ? badge('Both','green') : ms ? badge('medspaCy only','blue') : badge('GPT only','yellow');
-      const msSev    = ms?.severity  ? badge(ms.severity,'yellow')  : '<span class="text-slate-600">—</span>';
-      const gptSev   = gpt?.severity ? badge(gpt.severity,'yellow') : '<span class="text-slate-600">—</span>';
-      const msOnset  = ms?.onset  || '<span class="text-slate-600">—</span>';
-      const gptOnset = gpt?.onset || '<span class="text-slate-600">—</span>';
-      return `<tr class="reaction-row">
-        <td class="py-2 pr-3 font-medium text-slate-200 capitalize">${name}</td>
-        <td class="py-2 pr-3">${msSev}</td>
-        <td class="py-2 pr-3">${gptSev}</td>
-        <td class="py-2 pr-3 text-slate-400 text-xs">${msOnset}</td>
-        <td class="py-2 pr-3 text-slate-400 text-xs">${gptOnset}</td>
-        <td class="py-2">${source}</td>
-      </tr>`;
-    }).join('');
-
-    // Diff cards
-    const diff = data.diff;
-    if (diff) {
-      const gptOnly = [...diff.reactions_only_in_gpt, ...diff.drugs_only_in_gpt];
-      const msOnly  = [...diff.reactions_only_in_medspacy, ...diff.drugs_only_in_medspacy];
-
-      document.getElementById('diffGptOnly').innerHTML = gptOnly.length
-        ? gptOnly.map(r => `<div class="flex items-center gap-2 bg-green-900/20 border border-green-800/30 px-3 py-2 rounded-lg">
-            <i class="fa-solid fa-plus text-green-400 text-xs"></i>
-            <span class="text-green-300 capitalize">${r}</span>
-          </div>`).join('')
-        : '<p class="text-slate-600 italic text-xs">medspaCy caught everything GPT found</p>';
-
-      document.getElementById('diffMsOnly').innerHTML = msOnly.length
-        ? msOnly.map(r => `<div class="flex items-center gap-2 bg-orange-900/20 border border-orange-800/30 px-3 py-2 rounded-lg">
-            <i class="fa-solid fa-minus text-orange-400 text-xs"></i>
-            <span class="text-orange-300 capitalize">${r}</span>
-          </div>`).join('')
-        : '<p class="text-slate-600 italic text-xs">GPT confirmed all medspaCy findings</p>';
-
-      // Field gaps
-      const allFieldGaps = [
-        ...Object.entries(diff.field_gaps || {}).map(([k,v]) => ({label: k, ...v})),
-        ...Object.entries(diff.patient_gaps || {}).map(([k,v]) => ({label: 'patient.' + k, ...v})),
-        ...( diff.reaction_detail_gaps || []).map(r =>
-          Object.entries(r.gaps).map(([k,v]) => ({label: `${r.reaction} → ${k}`, ...v}))
-        ).flat()
-      ];
-      if (allFieldGaps.length > 0) {
-        document.getElementById('fieldGapsCard').classList.remove('hidden');
-        document.getElementById('fieldGapsList').innerHTML = allFieldGaps.map(g =>
-          `<div class="flex items-center gap-3 bg-slate-800/50 px-4 py-3 rounded-lg">
-            <span class="text-slate-400 w-40 capitalize">${g.label}</span>
-            <span class="badge-red px-2 py-0.5 rounded text-xs">${g.medspacy ?? 'null'}</span>
-            <i class="fa-solid fa-arrow-right text-slate-600 text-xs"></i>
-            <span class="badge-green px-2 py-0.5 rounded text-xs">${g.gpt ?? 'null'}</span>
-          </div>`
-        ).join('');
-      }
-    }
-  }
-
-  function showMergedReport() {
-    if (!lastEngineData) return;
-    const d = lastEngineData;
-    buildReport({
-      full_rows:        d.full_rows,
-      label_comparison: d.label_comparison,
-      faers_comparison: d.faers_comparison,
-      label_gaps:       d.label_gaps,
-      novel_reactions:  d.novel_reactions,
-      extracted:        d.merged,
-      medspacy:         d.medspacy,
-      gpt:              d.gpt,
-    });
-    switchTab('report');
-  }
-
-  async function analyzeWithGPT() {
-    const narrative = document.getElementById('gptNarrativeInput').value.trim();
-    if (!narrative) return;
-    const drug = currentDrug || document.getElementById('drugInput').value.trim();
-
-    showLoading(true);
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 45000);
-    let data;
-    try {
-      const res = await fetch('/api/compare-engines', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({narrative, drug_name: drug}),
-        signal: controller.signal
-      });
-      if (!res.ok) {
-        const txt = await res.text();
-        console.error('Server error response:', txt);
-        throw new Error(`Server error ${res.status}: ${txt.substring(0, 200)}`);
-      }
-      data = await res.json();
-    } catch(e) {
-      const msg = e.name === 'AbortError' ? 'Request timed out after 45s.' : e.message;
-      console.error('GPT fetch error:', e);
-      alert('GPT-4o error: ' + msg);
-      return;
-    } finally {
-      clearTimeout(timer);
-      showLoading(false);
-    }
-    showLoading(false);
-    lastEngineData = data;
-
-    const gpt  = data.gpt;
-    const conf = data.gpt_confidence;
-
-    if (gpt?.error) {
-      alert(`GPT-4o error: ${gpt.error}`);
-      return;
-    }
-
-    document.getElementById('gptNarResults').classList.remove('hidden');
-
-    if (conf) {
-      const color = conf.score >= 80 ? '#22c55e' : conf.score >= 50 ? '#f59e0b' : '#ef4444';
-      document.getElementById('gptConfCircle').setAttribute('stroke-dasharray', `${conf.score} 100`);
-      document.getElementById('gptConfCircle').setAttribute('stroke', color);
-      document.getElementById('gptConfScore').textContent   = conf.score;
-      document.getElementById('gptConfVerdict').textContent = conf.verdict;
-      document.getElementById('gptConfVerdict').style.color = color;
-    } else {
-      document.getElementById('gptConfScore').textContent   = 'N/A';
-      document.getElementById('gptConfVerdict').textContent = 'OpenAI API key not set';
-      document.getElementById('gptConfVerdict').style.color = '#64748b';
-    }
-
-    document.getElementById('gptDrugsNar').innerHTML = gpt
-      ? (gpt.drugs || []).map(d =>
-          `<div class="flex items-center justify-between bg-slate-800/50 px-3 py-2 rounded-lg">
-            <span class="font-medium text-green-300 capitalize">${d.name}</span>
-            <span class="text-slate-400 text-xs">${d.dose || ''} ${d.route || ''}</span>
-          </div>`).join('') || '<p class="text-slate-500 italic">None detected</p>'
-      : '<p class="text-slate-500 italic">GPT not available</p>';
-
-    document.getElementById('gptReactionsNar').innerHTML = gpt
-      ? (gpt.reactions || []).map(r =>
-          `<div class="bg-slate-800/50 px-3 py-2 rounded-lg">
-            <div class="flex items-center justify-between">
-              <span class="font-medium text-red-300 capitalize">${r.reaction}</span>
-              ${r.severity ? badge(r.severity,'yellow') : ''}
-            </div>
-            ${r.onset ? `<p class="text-xs text-slate-500 mt-1">Onset: ${r.onset}</p>` : ''}
-          </div>`).join('') || '<p class="text-slate-500 italic">None detected</p>'
-      : '<p class="text-slate-500 italic">GPT not available</p>';
-
-    const p = gpt?.patient || {};
-    document.getElementById('gptNarAge').textContent      = p.age      || 'N/A';
-    document.getElementById('gptNarSex').textContent      = p.sex      || 'N/A';
-    document.getElementById('gptNarCausality').textContent= gpt?.causality        || 'N/A';
-    document.getElementById('gptNarSeverity').textContent = gpt?.overall_severity || 'N/A';
-
-    // Auto-build comparison report now that both engines have completed
-    buildGptReport();
-  }
-
-  function skipGptAndReport() {
-    if (!lastAnalysis) {
-      alert('Please run medspaCy extraction first (Narrative tab).');
-      return;
-    }
-    buildReport({ ...lastAnalysis, medspacy: lastAnalysis.extracted, gpt: null });
-    switchTab('report');
-  }
-
-  function buildGptReport() {
-    if (!lastEngineData) return;
-    const d = lastEngineData;
-    buildReport({
-      full_rows:        d.full_rows,
-      label_comparison: d.label_comparison,
-      faers_comparison: d.faers_comparison,
-      label_gaps:       d.label_gaps,
-      novel_reactions:  d.novel_reactions,
-      extracted:        d.merged,
-      medspacy:         d.medspacy,
-      gpt:              d.gpt,
-    });
-    switchTab('report');
+    html += '</tbody></table>';
+    return html;
   }
 
   async function analyzeNarrative() {
     const narrative = document.getElementById('narrativeInput').value.trim();
-    if (!narrative) return;
-    const drug = currentDrug || document.getElementById('drugInput').value.trim();
+    if (!narrative) { alert('Please enter a clinical narrative.'); return; }
+    const useGpt = document.getElementById('useGpt').checked;
 
-    showLoading(true);
+    document.getElementById('loading').classList.remove('hidden');
+    document.getElementById('results').classList.add('hidden');
+
+    const controller = new AbortController();
+    const timer = setTimeout(function() { controller.abort(); }, 60000);
     let data;
     try {
-      const res = await fetch('/api/analyze-narrative', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({narrative, drug_name: drug})});
+      const endpoint = useGpt ? '/api/compare-engines' : '/api/analyze-narrative';
+      const res = await fetch(endpoint, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({narrative: narrative, drug_name: ''}),
+        signal: controller.signal
+      });
+      if (!res.ok) {
+        const txt = await res.text();
+        throw new Error('Server error ' + res.status + ': ' + txt.substring(0, 200));
+      }
       data = await res.json();
     } catch(e) {
-      alert('Request failed: ' + e.message);
+      alert('Error: ' + (e.name === 'AbortError' ? 'Request timed out.' : e.message));
       return;
     } finally {
-      showLoading(false);
+      clearTimeout(timer);
+      document.getElementById('loading').classList.add('hidden');
     }
-    lastAnalysis = data;
 
-    document.getElementById('narrativeResults').classList.remove('hidden');
+    if (data.error) { alert('Error: ' + data.error); return; }
 
-    // Confidence ring
-    const score = data.confidence.score;
-    const color = score >= 80 ? '#22c55e' : score >= 50 ? '#f59e0b' : '#ef4444';
-    document.getElementById('confCircle').setAttribute('stroke-dasharray', `${score} 100`);
-    document.getElementById('confCircle').setAttribute('stroke', color);
-    document.getElementById('confScore').textContent   = score;
-    document.getElementById('confVerdict').textContent = data.confidence.verdict;
-    document.getElementById('confVerdict').style.color = color;
-    document.getElementById('confGpt').textContent     = data.confidence.needs_gpt ? 'GPT-4 review recommended for missing fields' : 'Extraction complete — GPT not required';
+    const extracted = data.merged || data.extracted || {};
+    const gptUsed   = useGpt && data.gpt && !data.gpt.error;
+    const engine    = gptUsed ? 'GPT-4o + medspaCy' : 'medspaCy';
+    const drugs     = extracted.drugs     || [];
+    const reactions = extracted.reactions || [];
 
-    // Drugs
-    document.getElementById('narDrugs').innerHTML = data.extracted.drugs.length
-      ? data.extracted.drugs.map(d =>
-          `<div class="flex items-center justify-between bg-slate-800/50 px-3 py-2 rounded-lg">
-            <span class="font-medium text-blue-300 capitalize">${d.name}</span>
-            <span class="text-slate-400">${d.dose || 'dose N/A'}</span>
-          </div>`).join('')
-      : '<p class="text-slate-500 italic">No known drugs detected</p>';
+    // Fetch FDA labels for each unique drug
+    const drugNames = [];
+    drugs.forEach(function(d) {
+      const n = d.name.toLowerCase();
+      if (drugNames.indexOf(n) === -1) drugNames.push(n);
+    });
+    const labelMap = {};
+    await Promise.all(drugNames.map(async function(name) {
+      try {
+        const r = await fetch('/api/fda-label', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({drug_name: name})
+        });
+        const d = await r.json();
+        if (!d.error) labelMap[name] = d;
+      } catch(e) {}
+    }));
 
-    // Reactions
-    document.getElementById('narReactions').innerHTML = data.extracted.reactions.length
-      ? data.extracted.reactions.map(r =>
-          `<div class="bg-slate-800/50 px-3 py-2 rounded-lg">
-            <div class="flex items-center justify-between">
-              <span class="font-medium text-red-300 capitalize">${r.reaction}</span>
-              ${r.severity ? badge(r.severity,'yellow') : ''}
-            </div>
-            ${r.onset ? `<p class="text-xs text-slate-500 mt-1">Onset: ${r.onset}</p>` : ''}
-          </div>`).join('')
-      : '<p class="text-slate-500 italic">No reactions detected</p>';
-
-    document.getElementById('narAge').textContent      = data.extracted.patient.age      || 'N/A';
-    document.getElementById('narSex').textContent      = data.extracted.patient.sex      || 'N/A';
-    document.getElementById('narCausality').textContent= data.extracted.causality        || 'N/A';
-    document.getElementById('narSeverity').textContent = data.extracted.overall_severity || 'N/A';
-
-    // Pre-fill GPT tab with the same narrative and switch to it
-    document.getElementById('gptNarrativeInput').value = narrative;
-    switchTab('gptnar');
-  }
-
-  function buildReport(data) {
-    document.getElementById('reportPlaceholder').classList.add('hidden');
-    document.getElementById('reportContent').classList.remove('hidden');
-    document.getElementById('novelAlert').classList.add('hidden');
-    document.getElementById('labelGapAlert').classList.add('hidden');
-
-    // full_rows comes from backend and already unions all 4 sources
-    const allRows  = data.full_rows || [];
-    const msData   = data.medspacy  || data.extracted || null;
-    const gptData  = data.gpt       || null;
-
-    const msReactions  = new Set((msData?.reactions  || []).map(r => r.reaction.toLowerCase()));
-    const gptReactions = new Set((gptData?.reactions || []).map(r => r.reaction.toLowerCase()));
-
-    document.getElementById('rTotalReactions').textContent = allRows.length;
-    document.getElementById('rInLabel').textContent        = allRows.filter(r => r.found_in_label).length;
-    document.getElementById('rNotInLabel').textContent     = allRows.filter(r => !r.found_in_label).length;
-    document.getElementById('rNovelFaers').textContent     = allRows.filter(r => !r.faers_count).length;
-
-    const ck = (val) => val
-      ? `<span class="text-green-400 font-bold">✓</span>`
-      : `<span class="text-slate-700">✗</span>`;
-
-    // Group by drug: narrative reactions under their drug, rest under 'Other Sources'
-    const grouped = {};
-    allRows.forEach(r => {
-      const grp = (r.in_narrative && r.drug) ? r.drug : (r.in_narrative ? '__narrative__' : '__other__');
-      if (!grouped[grp]) grouped[grp] = [];
-      grouped[grp].push(r);
+    // Group reactions by drug
+    const byDrug = {};
+    const unattributed = [];
+    reactions.forEach(function(r) {
+      const d = (r.drug || '').toLowerCase() || null;
+      if (d) {
+        if (!byDrug[d]) byDrug[d] = [];
+        byDrug[d].push(r);
+      } else {
+        unattributed.push(r);
+      }
     });
 
-    function renderRows(rows) {
-      return rows.map(r => {
-        const key    = r.reaction.toLowerCase();
-        const inFDA  = r.found_in_label;
-        const inFAERS= r.faers_count > 0;
-        const inMs   = msReactions.has(key);
-        const inGpt  = gptReactions.has(key);
-        const isNovel = !inFDA && (inFAERS || inMs || inGpt);
-        const rowClass = isNovel ? 'bg-red-900/10' : (!inFDA && r.in_narrative ? 'bg-yellow-900/10' : '');
-        return `<tr class="reaction-row ${rowClass}">
-          <td class="py-2 pr-3 font-medium text-slate-200 capitalize text-sm">
-            ${r.reaction}
-            ${r.severity ? `<span class="ml-1 text-xs text-slate-500">(${r.severity})</span>` : ''}
-            ${r.onset    ? `<div class="text-xs text-slate-600">onset: ${r.onset}</div>` : ''}
-          </td>
-          <td class="py-2 pr-3 text-center align-top">
-            ${inFDA ? `<span class="text-green-400 font-bold">✓</span>` : `<span class="text-slate-700">✗</span>`}
-            ${inFDA && r.label_sections?.length ? `<div class="mt-1 space-y-0.5">${r.label_sections.map(s =>
-                s === 'Warning'
-                  ? `<span class="block text-xs px-1.5 py-0.5 rounded bg-yellow-900/50 text-yellow-300 whitespace-nowrap">⚠ Warning</span>`
-                  : `<span class="block text-xs px-1.5 py-0.5 rounded bg-blue-900/40 text-blue-300 whitespace-nowrap">Adverse Reactions</span>`
-              ).join('')}</div>` : ''}
-          </td>
-          <td class="py-2 pr-3 text-center">${inFAERS ? `<span class="text-green-400 font-bold">✓</span>` : `<span class="text-slate-700">✗</span>`}</td>
-          <td class="py-2 pr-3 text-center">${ck(inMs)}</td>
-          <td class="py-2 pr-3 text-center">${ck(inGpt)}</td>
-          <td class="py-2 text-purple-300 font-mono text-xs">
-            ${inFAERS ? (r.faers_count||0).toLocaleString() : '<span class="text-slate-600 text-xs">—</span>'}
-            ${isNovel ? '<span class="ml-1 text-xs px-1.5 py-0.5 rounded bg-red-900/40 text-red-400 border border-red-800/40">Novel</span>' : ''}
-          </td>
-        </tr>`;
-      }).join('');
-    }
-
-    const drugOrder = Object.keys(grouped).filter(k => k !== '__narrative__' && k !== '__other__');
-    const hasNarOnly = grouped['__narrative__']?.length > 0;
-    const hasOther   = grouped['__other__']?.length > 0;
-
-    let html = '';
-    drugOrder.forEach(drug => {
-      html += `<tr class="bg-slate-800/60"><td colspan="6" class="py-2 px-3 text-sm font-bold text-blue-300 capitalize"><i class="fa-solid fa-pills mr-2"></i>${drug}</td></tr>`;
-      html += renderRows(grouped[drug]);
+    // Count in/not-in label
+    let inLabelCount = 0, notInLabelCount = 0;
+    reactions.forEach(function(r) {
+      const drugKey = (r.drug || '').toLowerCase() || null;
+      const ldata   = drugKey ? (labelMap[drugKey] || null) : null;
+      const chk     = checkInLabel(r.reaction, ldata);
+      if (chk.found) inLabelCount++; else notInLabelCount++;
     });
-    if (hasNarOnly) {
-      html += `<tr class="bg-slate-800/60"><td colspan="6" class="py-2 px-3 text-sm font-bold text-slate-400"><i class="fa-solid fa-comment-medical mr-2"></i>Narrative (drug unattributed)</td></tr>`;
-      html += renderRows(grouped['__narrative__']);
-    }
-    if (hasOther) {
-      html += `<tr class="bg-slate-800/60"><td colspan="6" class="py-2 px-3 text-sm font-bold text-slate-500"><i class="fa-solid fa-database mr-2"></i>FDA Label / FAERS Only</td></tr>`;
-      html += renderRows(grouped['__other__']);
-    }
-    document.getElementById('reportTable').innerHTML = html;
 
-    // Novel reactions: not in FDA label (found anywhere — FAERS, medspaCy, or GPT)
-    const msSet  = new Set((msData?.reactions  || []).map(r => r.reaction.toLowerCase()));
-    const gptSet = new Set((gptData?.reactions || []).map(r => r.reaction.toLowerCase()));
-    const novel = allRows.filter(r => !r.found_in_label);
-    if (novel.length > 0) {
-      document.getElementById('novelAlert').classList.remove('hidden');
-      document.getElementById('novelList').innerHTML = novel.map(r => {
-        const key = r.reaction.toLowerCase();
-        const reasons = [];
-        if (r.faers_count > 0) reasons.push(`${(r.faers_count||0).toLocaleString()} FAERS reports`);
-        if (msSet.has(key)) reasons.push('medspaCy');
-        if (gptSet.has(key)) reasons.push('GPT-4o');
-        return `<div class="flex items-center gap-3 bg-red-900/20 border border-red-800/30 rounded-lg px-4 py-3">
-          <i class="fa-solid fa-circle-radiation text-red-400"></i>
-          <span class="text-red-300 font-medium capitalize">${r.reaction}</span>
-          <span class="text-xs text-red-500 ml-auto">${reasons.join(' · ')} — not in FDA label</span>
-        </div>`;
-      }).join('');
+    // Render per-drug tables
+    const drugTablesEl = document.getElementById('drugTables');
+    drugTablesEl.innerHTML = '';
+    Object.keys(byDrug).forEach(function(drugName) {
+      const rxList    = byDrug[drugName];
+      const labelData = labelMap[drugName] || null;
+      const hasLabel  = !!labelData;
+      const drugInfo  = drugs.find(function(d) { return d.name.toLowerCase() === drugName; }) || {};
+
+      let badges = '';
+      if (drugInfo.dose)  badges += '<span class="px-2 py-1 rounded bg-slate-700 text-slate-300 text-xs">Dose: ' + drugInfo.dose + '</span>';
+      if (drugInfo.route) badges += '<span class="px-2 py-1 rounded bg-slate-700 text-slate-300 text-xs">Route: ' + drugInfo.route + '</span>';
+      badges += hasLabel
+        ? '<span class="px-2 py-1 rounded bg-green-900/40 text-green-300 border border-green-800/40 text-xs"><i class="fa-solid fa-check mr-1"></i>FDA Label Found</span>'
+        : '<span class="px-2 py-1 rounded bg-slate-700 text-slate-400 text-xs">No FDA label data</span>';
+
+      const div = document.createElement('div');
+      div.className = 'glass rounded-2xl p-6';
+      div.innerHTML = '<div class="flex items-center justify-between mb-4 flex-wrap gap-2">'
+        + '<h3 class="font-bold text-white text-lg flex items-center gap-2"><i class="fa-solid fa-pills text-blue-400"></i><span class="capitalize">' + drugName + '</span></h3>'
+        + '<div class="flex gap-2 flex-wrap">' + badges + '</div>'
+        + '</div>'
+        + renderReactionTable(rxList, labelData);
+      drugTablesEl.appendChild(div);
+    });
+
+    // Unattributed
+    if (unattributed.length > 0) {
+      document.getElementById('unattributedSection').classList.remove('hidden');
+      document.getElementById('unattributedTable').innerHTML = renderReactionTable(unattributed, null);
+    } else {
+      document.getElementById('unattributedSection').classList.add('hidden');
     }
 
-    // Label gaps (in narrative, not in FDA label)
-    const gaps = allRows.filter(r => r.in_narrative && !r.found_in_label);
-    if (gaps.length > 0) {
-      document.getElementById('labelGapAlert').classList.remove('hidden');
-      document.getElementById('labelGapList').innerHTML = gaps.map(r =>
-        `<div class="flex items-center gap-3 bg-yellow-900/20 border border-yellow-800/30 rounded-lg px-4 py-3">
-          <i class="fa-solid fa-circle-exclamation text-yellow-400"></i>
-          <span class="text-yellow-300 font-medium capitalize">${r.reaction}</span>
-          ${r.severity ? `<span class="text-xs text-yellow-600">${r.severity}</span>` : ''}
-        </div>`
-      ).join('');
-    }
+    // Update summary
+    document.getElementById('sDrugs').textContent      = drugs.length;
+    document.getElementById('sReactions').textContent  = reactions.length;
+    document.getElementById('sInLabel').textContent    = inLabelCount;
+    document.getElementById('sNotInLabel').textContent = notInLabelCount;
+    document.getElementById('pAge').textContent        = (extracted.patient && extracted.patient.age)  || 'N/A';
+    document.getElementById('pSex').textContent        = (extracted.patient && extracted.patient.sex)  || 'N/A';
+    document.getElementById('pCausality').textContent  = extracted.causality        || 'N/A';
+    document.getElementById('pSeverity').textContent   = extracted.overall_severity || 'N/A';
+    document.getElementById('pEngine').textContent     = engine;
+    document.getElementById('results').classList.remove('hidden');
   }
+
+  // Check OpenAI on load
+  window.addEventListener('DOMContentLoaded', async function() {
+    try {
+      const res  = await fetch('/api/check-openai');
+      const data = await res.json();
+      const el   = document.getElementById('openaiStatus');
+      if (data.available) {
+        el.textContent = 'GPT-4o Ready';
+        el.className   = 'text-xs px-3 py-1 rounded-full bg-green-900/50 text-green-300 border border-green-800/40';
+        document.getElementById('useGpt').checked = true;
+      } else {
+        el.textContent = 'GPT-4o Unavailable';
+        el.className   = 'text-xs px-3 py-1 rounded-full bg-slate-800 text-slate-400';
+      }
+    } catch(e) {}
+  });
 </script>
 </body>
 </html>
