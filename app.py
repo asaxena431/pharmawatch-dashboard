@@ -123,10 +123,26 @@ def api_deidentify():
 
 # ── Core functions ────────────────────────────────────────────────────────────
 def get_fda_label(drug_name):
-    r = requests.get("https://api.fda.gov/drug/label.json",
-                     params={"search": f'openfda.brand_name:"{drug_name}"', "limit": 1})
-    data = r.json()
-    if "results" not in data:
+    dn = drug_name.strip()
+    # Try brand name → generic name → substance name → broad keyword search
+    queries = [
+        f'openfda.brand_name:"{dn}"',
+        f'openfda.generic_name:"{dn}"',
+        f'openfda.substance_name:"{dn}"',
+        dn,  # full-text fallback
+    ]
+    data = None
+    for q in queries:
+        try:
+            r = requests.get("https://api.fda.gov/drug/label.json",
+                             params={"search": q, "limit": 1}, timeout=10)
+            d = r.json()
+            if "results" in d:
+                data = d
+                break
+        except Exception:
+            continue
+    if not data:
         return None
     label = data["results"][0]
     openfda = label.get("openfda", {})
