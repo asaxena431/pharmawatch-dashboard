@@ -362,6 +362,11 @@
       if (chk.found) inLabelCount++; else notInLabelCount++;
     });
 
+    // Debug: show what we have
+    console.log('[DEBUG] labelMap keys:', Object.keys(labelMap));
+    console.log('[DEBUG] byDrug keys:', Object.keys(byDrug));
+    console.log('[DEBUG] unattributed count:', unattributed.length);
+    console.log('[DEBUG] reactions:', JSON.stringify(reactions.map(function(r){return {reaction:r.reaction,drug:r.drug};})));
     // Render per-drug tables
     const drugTablesEl = document.getElementById('drugTables');
     drugTablesEl.innerHTML = '';
