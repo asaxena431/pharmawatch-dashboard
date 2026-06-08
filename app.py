@@ -645,6 +645,95 @@ Return ONLY valid JSON:
 For each reaction, set "drug" to the name of the drug most likely responsible. If unclear, set to null.
 """
 
+# ── HuggingFace Inference API extraction ─────────────────────────────────────
+HF_NER_MODEL = "d4data/biomedical-ner-all"
+
+def extract_huggingface(text):
+    """Extract drugs and reactions via HuggingFace Inference API (NER model)."""
+    api_key = os.environ.get("HUGGINGFACE_API_KEY")
+    if not api_key:
+        return {"error": "HuggingFace API key not set", "drugs": [], "reactions": [],
+                "patient": {}, "causality": None, "overall_severity": None, "notes": ""}
+    try:
+        url = f"https://api-inference.huggingface.co/models/{HF_NER_MODEL}"
+        headers = {"Authorization": f"Bearer {api_key}"}
+        # HF NER returns list of entity dicts
+        resp = requests.post(url, headers=headers,
+                             json={"inputs": text[:2000]},  # model token limit
+                             timeout=30)
+        resp.raise_for_status()
+        entities = resp.json()
+        if isinstance(entities, dict) and "error" in entities:
+            return {"error": entities["error"], "drugs": [], "reactions": [],
+                    "patient": {}, "causality": None, "overall_severity": None, "notes": ""}
+
+        drugs, reactions = [], []
+        seen_drugs, seen_reactions = set(), set()
+        text_lower = text.lower()
+
+        for ent in entities:
+            word  = ent.get("word", "").lstrip("##").strip()
+            label = ent.get("entity_group", ent.get("entity", ""))
+            if not word or len(word) < 2:
+                continue
+            word_lower = word.lower()
+
+            # Map entity labels to drug / reaction
+            if any(t in label for t in ["Chemical", "Drug", "DRUG", "Medication"]):
+                if word_lower not in seen_drugs:
+                    seen_drugs.add(word_lower)
+                    # Try to find dose/route nearby
+                    m = re.search(re.escape(word_lower), text_lower)
+                    dose = route = None
+                    if m:
+                        ctx = text[max(0, m.start()-10):m.end()+80]
+                        dm  = DOSE_PATTERN.search(ctx)
+                        rm  = re.search(r'\b(oral(?:ly)?|IV|intravenous(?:ly)?|IM|subcutaneous(?:ly)?|SC|topical(?:ly)?|inhaled?)\b', ctx, re.IGNORECASE)
+                        dose  = dm.group(0) if dm else None
+                        route = rm.group(0).lower() if rm else None
+                    drugs.append({"name": word_lower, "dose": dose, "route": route, "indication": None})
+
+            elif any(t in label for t in ["Disease", "disorder", "DISEASE", "Symptom", "Sign", "ADR", "Adverse"]):
+                if word_lower not in seen_reactions:
+                    seen_reactions.add(word_lower)
+                    m = re.search(re.escape(word_lower), text_lower)
+                    severity = onset = None
+                    if m:
+                        ctx = text[max(0, m.start()-30):m.end()+80]
+                        sm  = SEVERITY_PATTERN.search(ctx)
+                        ons = re.search(r'after\s+([\w\s]+?)(?:,|\.|\s+(?:he|she|the|patient))', ctx, re.IGNORECASE)
+                        severity = sm.group(0).lower() if sm else None
+                        onset    = ons.group(1).strip() if ons else None
+                        # Associate with nearest preceding drug
+                        drug_positions = []
+                        for d in drugs:
+                            dm2 = re.search(re.escape(d["name"]), text_lower)
+                            if dm2: drug_positions.append((dm2.start(), d["name"]))
+                        preceding = [(pos, name) for pos, name in drug_positions if pos <= m.start()]
+                        assoc_drug = max(preceding, key=lambda x: x[0])[1] if preceding else None
+                    else:
+                        assoc_drug = None
+                    reactions.append({"reaction": word_lower, "severity": severity,
+                                      "onset": onset, "outcome": "unknown", "drug": assoc_drug})
+
+        age_m  = AGE_PATTERN.search(text)
+        sex_m  = SEX_PATTERN.search(text)
+        return {
+            "drugs": drugs,
+            "reactions": reactions,
+            "patient": {"age": age_m.group(1) if age_m else None,
+                        "sex": sex_m.group(0).lower() if sex_m else None,
+                        "relevant_history": None},
+            "causality": "unassessable",
+            "overall_severity": None,
+            "notes": f"Extracted via HuggingFace ({HF_NER_MODEL}). {len(drugs)} drug(s), {len(reactions)} reaction(s)."
+        }
+    except Exception as e:
+        print(f"[HF ERROR] {e}")
+        return {"error": str(e), "drugs": [], "reactions": [],
+                "patient": {}, "causality": None, "overall_severity": None, "notes": str(e)}
+
+
 def extract_gpt(text):
     """GPT-4o extraction via OpenAI API."""
     api_key = os.environ.get("OPENAI_API_KEY")
@@ -786,19 +875,26 @@ def api_analyze_narrative():
     })
 
 
+@app.route("/api/check-hf", methods=["GET"])
+def api_check_hf():
+    available = bool(os.environ.get("HUGGINGFACE_API_KEY"))
+    return jsonify({"available": available, "model": HF_NER_MODEL})
+
+
 @app.route("/api/compare-engines", methods=["POST"])
 def api_compare_engines():
-    """Run medspaCy + GPT-4 on same narrative and return side-by-side diff."""
+    """Run medspaCy + chosen AI engine on same narrative and return results."""
     data      = request.json
     narrative = data.get("narrative", "").strip()
     drug_name = data.get("drug_name", "").strip()
+    engine    = data.get("engine", "openai")  # 'openai' | 'huggingface'
 
     if not narrative:
         return jsonify({"error": "Narrative text required"}), 400
 
     try:
         ms_result  = extract_medspacy(narrative)
-        gpt_result = extract_gpt(narrative)
+        gpt_result = extract_huggingface(narrative) if engine == "huggingface" else extract_gpt(narrative)
         diff       = diff_extractions(ms_result, gpt_result)
 
         ms_conf  = calculate_confidence(ms_result)
