@@ -401,6 +401,13 @@ def extract_from_narrative(text):
         re.IGNORECASE
     )
 
+    # Build drug positions for association
+    drug_positions = []
+    for d in drugs:
+        dm = re.search(re.escape(d["name"]), text_lower)
+        if dm:
+            drug_positions.append((dm.start(), d["name"]))
+
     for reaction in KNOWN_REACTIONS:
         # Use word-boundary regex match instead of substring search
         pattern = r'(?<!\w)' + re.escape(reaction) + r'(?!\w)'
@@ -424,7 +431,11 @@ def extract_from_narrative(text):
         outcome  = om.group(0).lower() if om else "unknown"
         ons_m = re.search(r'after\s+([\w\s]+?)(?:,|\.|\s+(?:he|she|the|patient))', ctx, re.IGNORECASE)
         onset = ons_m.group(1).strip() if ons_m else None
-        reactions.append({"reaction": reaction, "severity": severity, "onset": onset, "outcome": outcome})
+        # Associate with nearest preceding drug
+        preceding = [(pos, name) for pos, name in drug_positions if pos <= m.start()]
+        assoc_drug = max(preceding, key=lambda x: x[0])[1] if preceding else None
+        reactions.append({"reaction": reaction, "severity": severity, "onset": onset,
+                          "outcome": outcome, "drug": assoc_drug})
 
     age_m  = AGE_PATTERN.search(text)
     sex_m  = SEX_PATTERN.search(text)
