@@ -81,15 +81,6 @@
       </div>
     </div>
 
-    <!-- Patient info -->
-    <div class="glass rounded-2xl p-5 flex flex-wrap gap-6 text-sm">
-      <div><span class="text-slate-500 mr-2">Age:</span><span id="pAge" class="text-white font-medium">N/A</span></div>
-      <div><span class="text-slate-500 mr-2">Sex:</span><span id="pSex" class="text-white font-medium">N/A</span></div>
-      <div><span class="text-slate-500 mr-2">Causality:</span><span id="pCausality" class="text-white font-medium">N/A</span></div>
-      <div><span class="text-slate-500 mr-2">Severity:</span><span id="pSeverity" class="text-white font-medium">N/A</span></div>
-      <div><span class="text-slate-500 mr-2">Engine:</span><span id="pEngine" class="text-white font-medium">N/A</span></div>
-    </div>
-
     <!-- Per-drug reaction tables -->
     <div id="drugTables" class="space-y-6"></div>
 
@@ -124,19 +115,31 @@
     return { found: sections.length > 0, sections };
   }
 
-  function renderReactionTable(rxList, labelData) {
+  function extractNarrativeSentence(narrative, reactionName) {
+    if (!narrative) return '';
+    const term = reactionName.toLowerCase();
+    const sentences = narrative.match(/[^.!?]+[.!?]*/g) || [narrative];
+    const hit = sentences.find(function(s) { return s.toLowerCase().includes(term); });
+    if (!hit) return '';
+    var escaped = term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    var re = new RegExp('(' + escaped + ')', 'gi');
+    return hit.trim().replace(re, '<mark class="bg-yellow-800/60 text-yellow-200 rounded px-0.5">$1</mark>');
+  }
+
+  function renderReactionTable(rxList, labelData, narrative) {
     if (!rxList || !rxList.length) return '<p class="text-slate-500 italic text-sm">No reactions detected.</p>';
     let html = '<table class="w-full text-sm"><thead><tr class="text-left border-b border-slate-700 text-xs">'
+      + '<th class="pb-2 pr-4 text-slate-300" style="width:40%">Narrative</th>'
       + '<th class="pb-2 pr-4 text-slate-300">Reaction</th>'
       + '<th class="pb-2 pr-4 text-slate-400">Severity</th>'
-      + '<th class="pb-2 pr-4 text-slate-400">Onset</th>'
       + '<th class="pb-2 text-yellow-400"><i class="fa-solid fa-file-medical mr-1"></i>In FDA Label</th>'
       + '</tr></thead><tbody class="divide-y divide-slate-800/50">';
 
     rxList.forEach(function(r) {
-      const chk   = checkInLabel(r.reaction, labelData);
-      const inFDA = chk.found;
-      let badges  = '';
+      const chk     = checkInLabel(r.reaction, labelData);
+      const inFDA   = chk.found;
+      const snippet = extractNarrativeSentence(narrative, r.reaction);
+      let badges = '';
       chk.sections.forEach(function(s) {
         badges += s === 'Warning'
           ? '<span class="ml-1 text-xs px-1.5 py-0.5 rounded bg-yellow-900/50 text-yellow-300">&#9888; Warning</span>'
@@ -144,9 +147,9 @@
       });
       const notBadge = inFDA ? '' : '<span class="ml-2 text-xs px-1.5 py-0.5 rounded bg-red-900/40 text-red-400 border border-red-800/40">Not in Label</span>';
       html += '<tr class="reaction-row ' + (!inFDA ? 'bg-red-900/10' : '') + '">'
+        + '<td class="py-2 pr-4 text-slate-400 text-xs leading-relaxed">' + (snippet || '<span class="text-slate-600 italic">not found in text</span>') + '</td>'
         + '<td class="py-2 pr-4 font-medium text-slate-200 capitalize">' + r.reaction + notBadge + '</td>'
         + '<td class="py-2 pr-4 text-slate-400 text-xs capitalize">' + (r.severity || '&mdash;') + '</td>'
-        + '<td class="py-2 pr-4 text-slate-400 text-xs">' + (r.onset || '&mdash;') + '</td>'
         + '<td class="py-2">' + (inFDA ? '<span class="text-green-400 font-bold">&#10003;</span>' + badges : '<span class="text-red-400 font-bold">&#10007;</span>') + '</td>'
         + '</tr>';
     });
@@ -257,14 +260,14 @@
         + '<h3 class="font-bold text-white text-lg flex items-center gap-2"><i class="fa-solid fa-pills text-blue-400"></i><span class="capitalize">' + drugName + '</span></h3>'
         + '<div class="flex gap-2 flex-wrap">' + badges + '</div>'
         + '</div>'
-        + renderReactionTable(rxList, labelData);
+        + renderReactionTable(rxList, labelData, narrative);
       drugTablesEl.appendChild(div);
     });
 
     // Unattributed
     if (unattributed.length > 0) {
       document.getElementById('unattributedSection').classList.remove('hidden');
-      document.getElementById('unattributedTable').innerHTML = renderReactionTable(unattributed, null);
+      document.getElementById('unattributedTable').innerHTML = renderReactionTable(unattributed, null, narrative);
     } else {
       document.getElementById('unattributedSection').classList.add('hidden');
     }
@@ -274,11 +277,6 @@
     document.getElementById('sReactions').textContent  = reactions.length;
     document.getElementById('sInLabel').textContent    = inLabelCount;
     document.getElementById('sNotInLabel').textContent = notInLabelCount;
-    document.getElementById('pAge').textContent        = (extracted.patient && extracted.patient.age)  || 'N/A';
-    document.getElementById('pSex').textContent        = (extracted.patient && extracted.patient.sex)  || 'N/A';
-    document.getElementById('pCausality').textContent  = extracted.causality        || 'N/A';
-    document.getElementById('pSeverity').textContent   = extracted.overall_severity || 'N/A';
-    document.getElementById('pEngine').textContent     = engine;
     document.getElementById('results').classList.remove('hidden');
   }
 
