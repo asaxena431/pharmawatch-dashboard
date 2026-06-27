@@ -1,0 +1,71 @@
+llt_name,pt_name
+rash,Rash
+skin rash,Rash
+maculopapular rash,Rash
+nausea,Nausea
+nausea and vomiting,Nausea
+vomiting,Vomiting
+diarrhoea,Diarrhoea
+diarrhea,Diarrhoea
+loose stools,Diarrhoea
+headache,Headache
+head pain,Headache
+migraine headache,Headache
+dizziness,Dizziness
+dizzy,Dizziness
+vertigo,Dizziness
+fatigue,Fatigue
+tiredness,Fatigue
+feeling tired,Fatigue
+liver damage,Hepatotoxicity
+hepatotoxicity,Hepatotoxicity
+elevated liver enzymes,Hepatotoxicity
+raised liver enzymes,Hepatotoxicity
+jaundice,Jaundice
+anaphylaxis,Anaphylaxis
+anaphylactic reaction,Anaphylaxis
+anaphylactic shock,Anaphylaxis
+hives,Urticaria
+urticaria,Urticaria
+swelling,Oedema
+oedema,Oedema
+edema,Oedema
+facial swelling,Angioedema
+angioedema,Angioedema
+itching,Pruritus
+pruritus,Pruritus
+shortness of breath,Dyspnoea
+dyspnea,Dyspnoea
+dyspnoea,Dyspnoea
+difficulty breathing,Dyspnoea
+chest pain,Chest pain
+palpitations,Palpitations
+heart palpitations,Palpitations
+bleeding,Haemorrhage
+haemorrhage,Haemorrhage
+hemorrhage,Haemorrhage
+bruising,Contusion
+kidney damage,Renal failure
+renal failure,Renal failure
+acute kidney injury,Renal failure
+muscle pain,Myalgia
+myalgia,Myalgia
+muscle weakness,Muscle weakness
+rhabdomyolysis,Rhabdomyolysis
+stevens-johnson syndrome,Stevens-Johnson syndrome
+toxic epidermal necrolysis,Toxic epidermal necrolysis
+low blood sugar,Hypoglycaemia
+hypoglycemia,Hypoglycaemia
+hypoglycaemia,Hypoglycaemia
+high blood pressure,Hypertension
+hypertension,Hypertension
+low blood pressure,Hypotension
+hypotension,Hypotension
+seizure,Seizure
+convulsion,Seizure
+insomnia,Insomnia
+sleep disturbance,Insomnia
+depression,Depression
+anxiety,Anxiety
+confusion,Confusional state
+confusional state,Confusional state

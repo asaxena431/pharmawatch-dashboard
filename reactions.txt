@@ -1,0 +1,126 @@
+skin rash
+Rash
+
+rash
+Rash
+
+nausea and vomiting
+Nausea
+
+nausea
+Nausea
+
+vomiting
+Vomiting
+
+diarrhea
+Diarrhoea
+
+diarrhoea
+Diarrhoea
+
+loose stools
+Diarrhoea
+
+headache
+Headache
+
+dizziness
+Dizziness
+
+vertigo
+Dizziness
+
+fatigue
+Fatigue
+
+tiredness
+Fatigue
+
+jaundice
+Jaundice
+
+elevated liver enzymes
+Hepatotoxicity
+
+liver damage
+Hepatotoxicity
+
+anaphylaxis
+Anaphylaxis
+
+anaphylactic reaction
+Anaphylaxis
+
+hives
+Urticaria
+
+urticaria
+Urticaria
+
+swelling
+Oedema
+
+facial swelling
+Angioedema
+
+angioedema
+Angioedema
+
+itching
+Pruritus
+
+pruritus
+Pruritus
+
+shortness of breath
+Dyspnoea
+
+difficulty breathing
+Dyspnoea
+
+dyspnea
+Dyspnoea
+
+chest pain
+Chest pain
+
+bleeding
+Haemorrhage
+
+bruising
+Contusion
+
+muscle pain
+Myalgia
+
+myalgia
+Myalgia
+
+rhabdomyolysis
+Rhabdomyolysis
+
+low blood sugar
+Hypoglycaemia
+
+hypoglycemia
+Hypoglycaemia
+
+seizure
+Seizure
+
+convulsion
+Seizure
+
+insomnia
+Insomnia
+
+depression
+Depression
+
+anxiety
+Anxiety
+
+confusion
+Confusional state
+
