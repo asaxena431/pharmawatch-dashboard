@@ -124,3 +124,639 @@ Anxiety
 confusion
 Confusional state
 
+confusional state
+Confusional state
+
+disorientation
+Confusional state
+
+memory loss
+Amnesia
+
+amnesia
+Amnesia
+
+loss of memory
+Amnesia
+
+somnolence
+Somnolence
+
+drowsiness
+Somnolence
+
+sleepiness
+Somnolence
+
+tremor
+Tremor
+
+shaking
+Tremor
+
+numbness
+Hypoaesthesia
+
+tingling
+Paraesthesia
+
+paraesthesia
+Paraesthesia
+
+pins and needles
+Paraesthesia
+
+loss of feeling
+Hypoaesthesia
+
+hypoaesthesia
+Hypoaesthesia
+
+weakness
+Asthenia
+
+asthenia
+Asthenia
+
+malaise
+Malaise
+
+feeling unwell
+Malaise
+
+fever
+Pyrexia
+
+pyrexia
+Pyrexia
+
+high temperature
+Pyrexia
+
+chills
+Chills
+
+rigors
+Chills
+
+sweating
+Hyperhidrosis
+
+night sweats
+Hyperhidrosis
+
+hyperhidrosis
+Hyperhidrosis
+
+weight gain
+Weight increased
+
+weight loss
+Weight decreased
+
+weight increased
+Weight increased
+
+weight decreased
+Weight decreased
+
+oedema
+Oedema
+
+edema
+Oedema
+
+fluid retention
+Oedema
+
+peripheral oedema
+Peripheral oedema
+
+peripheral edema
+Peripheral oedema
+
+leg swelling
+Peripheral oedema
+
+ankle swelling
+Peripheral oedema
+
+blurry vision
+Vision blurred
+
+blurred vision
+Vision blurred
+
+vision blurred
+Vision blurred
+
+visual disturbance
+Visual impairment
+
+visual impairment
+Visual impairment
+
+double vision
+Diplopia
+
+diplopia
+Diplopia
+
+eye pain
+Eye pain
+
+dry eyes
+Dry eye
+
+dry eye
+Dry eye
+
+eye irritation
+Eye irritation
+
+ringing in ears
+Tinnitus
+
+tinnitus
+Tinnitus
+
+hearing loss
+Hearing impaired
+
+hearing impaired
+Hearing impaired
+
+deafness
+Deafness
+
+ear pain
+Ear pain
+
+high blood pressure
+Hypertension
+
+hypertension
+Hypertension
+
+elevated blood pressure
+Hypertension
+
+low blood pressure
+Hypotension
+
+hypotension
+Hypotension
+
+palpitations
+Palpitations
+
+heart palpitations
+Palpitations
+
+rapid heart rate
+Tachycardia
+
+tachycardia
+Tachycardia
+
+slow heart rate
+Bradycardia
+
+bradycardia
+Bradycardia
+
+irregular heartbeat
+Arrhythmia
+
+arrhythmia
+Arrhythmia
+
+heart attack
+Myocardial infarction
+
+myocardial infarction
+Myocardial infarction
+
+cardiac arrest
+Cardiac arrest
+
+stroke
+Cerebrovascular accident
+
+cerebrovascular accident
+Cerebrovascular accident
+
+blood clot
+Thrombosis
+
+thrombosis
+Thrombosis
+
+deep vein thrombosis
+Deep vein thrombosis
+
+pulmonary embolism
+Pulmonary embolism
+
+flushing
+Flushing
+
+hot flushes
+Hot flush
+
+hot flush
+Hot flush
+
+abdominal pain
+Abdominal pain
+
+stomach pain
+Abdominal pain
+
+stomach ache
+Abdominal pain
+
+belly pain
+Abdominal pain
+
+cramps
+Abdominal pain
+
+stomach cramps
+Abdominal pain
+
+constipation
+Constipation
+
+gas
+Flatulence
+
+flatulence
+Flatulence
+
+bloating
+Abdominal distension
+
+abdominal distension
+Abdominal distension
+
+indigestion
+Dyspepsia
+
+dyspepsia
+Dyspepsia
+
+heartburn
+Dyspepsia
+
+acid reflux
+Gastrooesophageal reflux disease
+
+gastrooesophageal reflux disease
+Gastrooesophageal reflux disease
+
+gerd
+Gastrooesophageal reflux disease
+
+gastrointestinal bleeding
+Gastrointestinal haemorrhage
+
+gi bleeding
+Gastrointestinal haemorrhage
+
+gastrointestinal haemorrhage
+Gastrointestinal haemorrhage
+
+ulcer
+Peptic ulcer
+
+peptic ulcer
+Peptic ulcer
+
+stomach ulcer
+Peptic ulcer
+
+loss of appetite
+Decreased appetite
+
+decreased appetite
+Decreased appetite
+
+anorexia
+Decreased appetite
+
+dry mouth
+Dry mouth
+
+mouth sores
+Stomatitis
+
+stomatitis
+Stomatitis
+
+sore throat
+Pharyngitis
+
+pharyngitis
+Pharyngitis
+
+cough
+Cough
+
+dry cough
+Cough
+
+wheezing
+Wheezing
+
+bronchospasm
+Bronchospasm
+
+pneumonia
+Pneumonia
+
+respiratory failure
+Respiratory failure
+
+nasal congestion
+Nasal congestion
+
+runny nose
+Rhinorrhoea
+
+rhinorrhoea
+Rhinorrhoea
+
+sneezing
+Sneezing
+
+back pain
+Back pain
+
+joint pain
+Arthralgia
+
+arthralgia
+Arthralgia
+
+arthritis
+Arthritis
+
+bone pain
+Bone pain
+
+neck pain
+Neck pain
+
+shoulder pain
+Musculoskeletal pain
+
+musculoskeletal pain
+Musculoskeletal pain
+
+muscle weakness
+Muscle weakness
+
+muscle cramps
+Muscle spasms
+
+muscle spasms
+Muscle spasms
+
+stiffness
+Musculoskeletal stiffness
+
+musculoskeletal stiffness
+Musculoskeletal stiffness
+
+high cholesterol
+Hypercholesterolaemia
+
+hypercholesterolaemia
+Hypercholesterolaemia
+
+hypercholesterolemia
+Hypercholesterolaemia
+
+elevated cholesterol
+Hypercholesterolaemia
+
+high triglycerides
+Hypertriglyceridaemia
+
+hypertriglyceridaemia
+Hypertriglyceridaemia
+
+diabetes
+Diabetes mellitus
+
+diabetes mellitus
+Diabetes mellitus
+
+high blood glucose
+Hyperglycaemia
+
+hyperglycaemia
+Hyperglycaemia
+
+hyperglycemia
+Hyperglycaemia
+
+low blood glucose
+Hypoglycaemia
+
+hypoglycaemia
+Hypoglycaemia
+
+kidney damage
+Renal failure
+
+renal failure
+Renal failure
+
+kidney failure
+Renal failure
+
+acute renal failure
+Acute kidney injury
+
+acute kidney injury
+Acute kidney injury
+
+urinary tract infection
+Urinary tract infection
+
+uti
+Urinary tract infection
+
+urinary retention
+Urinary retention
+
+frequent urination
+Pollakiuria
+
+pollakiuria
+Pollakiuria
+
+blood in urine
+Haematuria
+
+haematuria
+Haematuria
+
+liver failure
+Hepatic failure
+
+hepatic failure
+Hepatic failure
+
+hepatitis
+Hepatitis
+
+abnormal liver function
+Liver function test abnormal
+
+liver function test abnormal
+Liver function test abnormal
+
+pancreatitis
+Pancreatitis
+
+hair loss
+Alopecia
+
+alopecia
+Alopecia
+
+acne
+Acne
+
+eczema
+Eczema
+
+dermatitis
+Dermatitis
+
+contact dermatitis
+Dermatitis
+
+psoriasis
+Psoriasis
+
+blistering
+Blister
+
+blister
+Blister
+
+stevens-johnson syndrome
+Stevens-Johnson syndrome
+
+toxic epidermal necrolysis
+Toxic epidermal necrolysis
+
+photosensitivity
+Photosensitivity reaction
+
+photosensitivity reaction
+Photosensitivity reaction
+
+sun sensitivity
+Photosensitivity reaction
+
+infection
+Infection
+
+sepsis
+Sepsis
+
+low white blood cell count
+Leukopenia
+
+leukopenia
+Leukopenia
+
+low platelet count
+Thrombocytopenia
+
+thrombocytopenia
+Thrombocytopenia
+
+anaemia
+Anaemia
+
+anemia
+Anaemia
+
+low red blood cell count
+Anaemia
+
+agranulocytosis
+Agranulocytosis
+
+mood changes
+Mood altered
+
+mood altered
+Mood altered
+
+irritability
+Irritability
+
+agitation
+Agitation
+
+hallucinations
+Hallucination
+
+hallucination
+Hallucination
+
+suicidal thoughts
+Suicidal ideation
+
+suicidal ideation
+Suicidal ideation
+
+panic attack
+Panic attack
+
+nervousness
+Nervousness
+
+loss of consciousness
+Loss of consciousness
+
+syncope
+Syncope
+
+fainting
+Syncope
+
+migraine
+Migraine
+
+pain
+Pain
+
+injection site reaction
+Injection site reaction
+
+injection site pain
+Injection site pain
+
+injection site swelling
+Injection site swelling
+
+allergic reaction
+Hypersensitivity
+
+hypersensitivity
+Hypersensitivity
+
+drug reaction
+Drug hypersensitivity
+
+drug hypersensitivity
+Drug hypersensitivity
+
