@@ -116,7 +116,37 @@ _UNCERTAIN = {"possible", "possibly", "probable", "probably", "may", "might", "s
 _FAMILY    = {"mother", "father", "sister", "brother", "family", "parent", "grandfather", "grandmother"}
 _WINDOW    = 8  # slightly wider to catch "history of"
 
-_HISTORY_RE = re.compile(r"\bhistory\s+of\b", re.IGNORECASE)
+_HISTORY_RE      = re.compile(r"\bhistory\s+of\b", re.IGNORECASE)
+_MED_HISTORY_RE  = re.compile(
+    r"(medical\s+history|past\s+medical\s+history|historical\s+diagnosis|concomitant\s+condition|"
+    r"pre-?existing|background\s+condition|prior\s+condition|history\s+includes?)\s*[:\-]?",
+    re.IGNORECASE
+)
+# Pattern that marks end of a medical history section (start of a new section)
+_SECTION_END_RE  = re.compile(
+    r"(suspect\s+drug|concomitant\s+drug|adverse\s+event|progression\s+of|outcome\s+of|"
+    r"suspect\s+drug\(s\)|administration\s+began|dose\s+of)\s*[:\-]?",
+    re.IGNORECASE
+)
+
+
+def _med_history_ranges(text: str) -> list:
+    """Return list of (start, end) char ranges that are medical history sections.
+    Ends at the next sentence boundary (period) after the section keyword.
+    """
+    ranges = []
+    for m in _MED_HISTORY_RE.finditer(text):
+        start = m.start()
+        # Find end of sentence (next period) — medical history is typically one sentence
+        rest  = text[m.end():]
+        period = rest.find(".")
+        end   = m.end() + period + 1 if period != -1 else m.end() + 200
+        ranges.append((start, end))
+    return ranges
+
+
+def _in_med_history(char_pos: int, ranges: list) -> bool:
+    return any(s <= char_pos <= e for s, e in ranges)
 
 
 def _context(tokens: list, idx: int, text: str = "", char_pos: int = 0) -> dict:
@@ -223,6 +253,9 @@ def parse_narrative(text: str,
     found_drugs  = _dedup_drugs(found_drugs, _TRADE_TO_GENERIC)
     drug_matches = [(pos, d) for pos, d in drug_matches if d in found_drugs]
 
+    # Detect medical history sections to exclude pre-existing conditions
+    med_history_ranges = _med_history_ranges(text)
+
     found_reactions = []
     reaction_hits   = []
     if rxn_pat:
@@ -231,7 +264,10 @@ def parse_narrative(text: str,
             pt      = llt_to_pt.get(llt, m.group().title())
             tok_idx = len(re.findall(r"[\w'\-]+", text[:m.start()]))
             flags   = _context(tokens, tok_idx, text, m.start())
+            # Skip negated / family history / "history of" / medical history section
             if flags["negated"] or flags["family"] or flags["history"]:
+                continue
+            if _in_med_history(m.start(), med_history_ranges):
                 continue
             if pt not in found_reactions:
                 found_reactions.append(pt)
