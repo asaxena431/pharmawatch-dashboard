@@ -117,6 +117,10 @@ _FAMILY    = {"mother", "father", "sister", "brother", "family", "parent", "gran
 _WINDOW    = 8  # slightly wider to catch "history of"
 
 _HISTORY_RE      = re.compile(r"\bhistory\s+of\b", re.IGNORECASE)
+_INDICATION_RE   = re.compile(
+    r"\b(for|to\s+treat|to\s+relieve|indicated\s+for|prescribed\s+for|used\s+for|taken\s+for)\s+$",
+    re.IGNORECASE
+)
 _MED_HISTORY_RE  = re.compile(
     r"(medical\s+history|past\s+medical\s+history|historical\s+diagnosis|concomitant\s+condition|"
     r"pre-?existing|background\s+condition|prior\s+condition|history\s+includes?)\s*[:\-]?",
@@ -153,11 +157,14 @@ def _context(tokens: list, idx: int, text: str = "", char_pos: int = 0) -> dict:
     window = set(t.lower() for t in tokens[max(0, idx - _WINDOW): idx])
     # Check "history of" in a 60-char window before the match position
     preceding_text = text[max(0, char_pos - 60): char_pos] if text else ""
+    # Strip trailing whitespace to check last word before match
+    preceding_stripped = preceding_text.rstrip()
     return {
-        "negated":   bool(window & _NEGATION),
-        "uncertain": bool(window & _UNCERTAIN),
-        "family":    bool(window & _FAMILY),
-        "history":   bool(_HISTORY_RE.search(preceding_text)),
+        "negated":    bool(window & _NEGATION),
+        "uncertain":  bool(window & _UNCERTAIN),
+        "family":     bool(window & _FAMILY),
+        "history":    bool(_HISTORY_RE.search(preceding_text)),
+        "indication": bool(_INDICATION_RE.search(preceding_stripped + " ")),
     }
 
 
@@ -264,8 +271,8 @@ def parse_narrative(text: str,
             pt      = llt_to_pt.get(llt, m.group().title())
             tok_idx = len(re.findall(r"[\w'\-]+", text[:m.start()]))
             flags   = _context(tokens, tok_idx, text, m.start())
-            # Skip negated / family history / "history of" / medical history section
-            if flags["negated"] or flags["family"] or flags["history"]:
+            # Skip negated / family history / "history of" / indication / medical history section
+            if flags["negated"] or flags["family"] or flags["history"] or flags["indication"]:
                 continue
             if _in_med_history(m.start(), med_history_ranges):
                 continue
