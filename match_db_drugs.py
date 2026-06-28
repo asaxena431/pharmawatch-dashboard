@@ -19,8 +19,10 @@ CLI:
 import os
 import json
 
-ORANGE_BOOK_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                                "orange_book.json")
+ORANGE_BOOK_FILE   = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                  "orange_book.json")
+BIOLOGICS_MAP_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                  "biologics_map.json")
 
 # Salt / counter-ion suffixes stripped so "naproxen sodium" also matches "naproxen".
 _SALTS = ("sodium", "hydrochloride", "hcl", "sulfate", "phosphate", "potassium",
@@ -39,13 +41,27 @@ def _strip_salt(name: str) -> str:
     return " ".join(parts)
 
 
-def load_orange_book(path: str = ORANGE_BOOK_FILE) -> tuple:
-    """Return (tradeToGeneric, genericToBrands) from orange_book.json."""
-    if not os.path.exists(path):
-        return {}, {}
-    with open(path, encoding="utf-8") as f:
-        ob = json.load(f)
-    return ob.get("tradeToGeneric", {}), ob.get("genericToBrands", {})
+def load_orange_book(path: str = ORANGE_BOOK_FILE,
+                     biologics_path: str = BIOLOGICS_MAP_FILE) -> tuple:
+    """Return (tradeToGeneric, genericToBrands), merging orange_book.json
+    (small molecules) with biologics_map.json (biologics, e.g. Dupixent<->dupilumab)."""
+    t2g, g2b = {}, {}
+    if os.path.exists(path):
+        with open(path, encoding="utf-8") as f:
+            ob = json.load(f)
+        t2g.update(ob.get("tradeToGeneric", {}))
+        g2b.update(ob.get("genericToBrands", {}))
+    # Merge biologics: it only stores brand->generic, so build the reverse
+    # (generic->brands) too, enabling matches in both directions.
+    if os.path.exists(biologics_path):
+        with open(biologics_path, encoding="utf-8") as f:
+            bio = json.load(f).get("tradeToGeneric", {})
+        for brand, generic in bio.items():
+            t2g.setdefault(brand, generic)
+            g2b.setdefault(generic, [])
+            if brand not in g2b[generic]:
+                g2b[generic] = list(g2b[generic]) + [brand]
+    return t2g, g2b
 
 
 def drug_synonyms(name: str, trade_to_generic: dict, generic_to_brands: dict) -> set:
