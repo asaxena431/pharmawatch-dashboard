@@ -28,6 +28,7 @@ from extraction_common import (
     to_generic,
     link_reactions_to_drugs,
     print_report,
+    print_lists,
 )
 
 _DRUG_KP = None
@@ -177,11 +178,16 @@ def main():
                         help="Disable context filters (show raw dictionary hits)")
     parser.add_argument("--show-filtered", action="store_true",
                         help="Also list reactions removed by the context filters")
+    parser.add_argument("--report", action="store_true",
+                        help="Print the verbose report instead of Python lists")
     args = parser.parse_args()
 
     text = _read_input(args)
     result = extract(text, apply_filters=not args.raw)
-    print_report("METHOD 1: DICTIONARY EXTRACTION", result, show_causality=False)
+    if args.report:
+        print_report("METHOD 1: DICTIONARY EXTRACTION", result, show_causality=False)
+    else:
+        print_lists(result)
 
     if args.show_filtered:
         filtered = result.get("filtered")

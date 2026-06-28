@@ -137,29 +137,63 @@ def link_reactions_to_drugs(drug_spans, reaction_spans):
     return reaction_spans
 
 
+def collapse_trade_generic(drugs):
+    """Drop a generic-name entry when its trade name is also present.
+
+    e.g. if both "aleve" (trade, generic=naproxen sodium) and "naproxen sodium"
+    matched, keep only "aleve".
+    """
+    names = {d["name"] for d in drugs}
+    drop = set()
+    for d in drugs:
+        g = d.get("generic")
+        if g and g != d["name"] and g in names:
+            drop.add(g)
+    return [d for d in drugs if d["name"] not in drop]
+
+
+def result_lists(result, include_negated=False):
+    """Return (drug_names, reaction_pts) as plain Python lists.
+
+    Drugs are collapsed to trade names; reactions are their Preferred Terms.
+    Negated reactions are excluded unless include_negated is True.
+    """
+    drugs = [d["name"] for d in collapse_trade_generic(result.get("drugs", []))]
+    reactions = []
+    for r in result.get("reactions", []):
+        if r.get("negated") and not include_negated:
+            continue
+        reactions.append(r.get("pt") or r["reaction"])
+    return drugs, reactions
+
+
+def print_lists(result, include_negated=False):
+    """Print the drugs and reactions as Python list literals."""
+    drugs, reactions = result_lists(result, include_negated=include_negated)
+    print(f"drugs = {drugs!r}")
+    print(f"reactions = {reactions!r}")
+
+
 def print_report(method_name, result, show_causality=True):
     """Pretty-print extraction results to stdout."""
     print("=" * 70)
     print(f"  {method_name}")
     print("=" * 70)
 
-    drugs = result.get("drugs", [])
+    drugs = collapse_trade_generic(result.get("drugs", []))
     reactions = result.get("reactions", [])
 
     print(f"\nDRUGS ({len(drugs)})")
     print("-" * 40)
     for d in drugs:
-        generic = d.get("generic")
-        extra = f"  [generic: {generic}]" if generic and generic != d["name"] else ""
-        print(f"  - {d['name']}{extra}")
+        print(f"  - {d['name']}")
 
     print(f"\nREACTIONS ({len(reactions)})")
     print("-" * 40)
     for r in reactions:
-        pt = r.get("pt")
-        pt_str = f"  (PT: {pt})" if pt and pt.lower() != r["reaction"].lower() else ""
+        pt = r.get("pt") or r["reaction"]
         neg = "  [NEGATED]" if r.get("negated") else ""
-        print(f"  - {r['reaction']}{pt_str}{neg}")
+        print(f"  - {pt}{neg}")
 
     if not show_causality:
         print()
