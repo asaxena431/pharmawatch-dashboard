@@ -243,7 +243,7 @@ def _processors(drugs_path, reactions_path, orange_book_path):
     return _CACHE[key]
 
 
-def format_case(s, case="camel"):
+def format_case(s, case="title"):
     """Reformat a term's casing.
 
     "camel" -> "visionBlurred"  (camelCase, no spaces)
@@ -264,7 +264,7 @@ def format_case(s, case="camel"):
 
 def analyze(text, drugs_path=DRUGS_FILE, reactions_path=REACTIONS_FILE,
             orange_book_path=ORANGE_BOOK_FILE, apply_filters=True,
-            include_negated=False, case="camel"):
+            include_negated=False, case="title"):
     """High-level entry point for use from other programs.
 
     Returns (drugs, reactions) as two plain Python lists, formatted in the
@@ -281,7 +281,7 @@ def analyze(text, drugs_path=DRUGS_FILE, reactions_path=REACTIONS_FILE,
     return to_lists(result, include_negated=include_negated, case=case)
 
 
-def to_lists(result, include_negated=False, case="camel"):
+def to_lists(result, include_negated=False, case="title"):
     """Collapse trade/generic duplicates and return (drugs, reaction_pts)."""
     drugs_in = result["drugs"]
     names = {d["name"] for d in drugs_in}
@@ -316,8 +316,8 @@ def main():
     p.add_argument("--orange-book", default=ORANGE_BOOK_FILE, help="Orange Book JSON")
     p.add_argument("--raw", action="store_true", help="Disable context filters")
     p.add_argument("--show-filtered", action="store_true", help="List filtered-out reactions")
-    p.add_argument("--case", choices=["camel", "title", "none"], default="camel",
-                   help="Output casing for drugs/reactions (default: camel)")
+    p.add_argument("--case", choices=["camel", "title", "none"], default="title",
+                   help="Output casing for drugs/reactions (default: title)")
     args = p.parse_args()
 
     text = _read_input(args)
