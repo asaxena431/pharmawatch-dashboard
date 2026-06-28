@@ -116,6 +116,14 @@ _UNCERTAIN = {"possible", "possibly", "probable", "probably", "may", "might", "s
 _FAMILY    = {"mother", "father", "sister", "brother", "family", "parent", "grandfather", "grandmother"}
 _WINDOW    = 8  # slightly wider to catch "history of"
 
+# Route / administration / device words that are never adverse events on their own.
+# e.g. "dupilumab injection", "pre-filled syringe", "subcutaneous infusion".
+_NON_REACTION_TERMS = {
+    "injection", "injections", "infusion", "infusions", "syringe", "syringes",
+    "subcutaneous", "intravenous", "intramuscular", "oral", "tablet", "tablets",
+    "capsule", "capsules", "dose", "doses", "device",
+}
+
 _HISTORY_RE      = re.compile(r"\bhistory\s+of\b", re.IGNORECASE)
 _INDICATION_RE   = re.compile(
     r"\b(for|to\s+treat|to\s+relieve|indicated\s+for|prescribed\s+for|used\s+for|taken\s+for)\s+$",
@@ -268,6 +276,8 @@ def parse_narrative(text: str,
     if rxn_pat:
         for m in rxn_pat.finditer(text):
             llt     = m.group().lower()
+            if llt in _NON_REACTION_TERMS:
+                continue
             pt      = llt_to_pt.get(llt, m.group().title())
             tok_idx = len(re.findall(r"[\w'\-]+", text[:m.start()]))
             flags   = _context(tokens, tok_idx, text, m.start())

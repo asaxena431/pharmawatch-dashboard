@@ -8788,3 +8788,5 @@ zyrtec hives
 zyrtec-d 12 hour
 zytiga
 zyvox
+dupilumab
+dupixent
