@@ -221,12 +221,38 @@ def get_drug_events(drug_name: str,
     }
  
  
+class _CaseInsensitiveCache(dict):
+    """dict whose key lookups are case-insensitive (keys stored lowercased)."""
+
+    @staticmethod
+    def _norm(key):
+        return key.lower() if isinstance(key, str) else key
+
+    def __init__(self, data=None):
+        super().__init__()
+        if data:
+            for k, v in data.items():
+                self[k] = v
+
+    def __setitem__(self, key, value):
+        super().__setitem__(self._norm(key), value)
+
+    def __getitem__(self, key):
+        return super().__getitem__(self._norm(key))
+
+    def __contains__(self, key):
+        return super().__contains__(self._norm(key))
+
+    def get(self, key, default=None):
+        return super().get(self._norm(key), default)
+
+
 def load_cache(cache_file: str = CACHE_FILE) -> dict:
     if os.path.exists(cache_file):
         with open(cache_file, encoding="utf-8") as f:
             data = json.load(f)
-        return {k.lower(): v for k, v in data.items()}
-    return {}
+        return _CaseInsensitiveCache(data)
+    return _CaseInsensitiveCache()
  
  
 def get_from_cache(drug_name: str, cache_file: str = CACHE_FILE) -> list:
