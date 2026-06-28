@@ -319,6 +319,18 @@ def parse_narrative(text: str,
     return result
 
 
+def analyze(text: str,
+            drugs_file: str     = DRUGS_FILE,
+            reactions_file: str = REACTIONS_FILE) -> tuple:
+    """Convenience wrapper: returns (drugs, reactions) as two lists.
+
+    Usage:
+        drugs, reactions = analyze(narrative_text)
+    """
+    r = parse_narrative(text, drugs_file=drugs_file, reactions_file=reactions_file)
+    return r["drugs"], r["reactions"]
+
+
 # ── CLI ───────────────────────────────────────────────────────────────────────
 
 if __name__ == "__main__":
