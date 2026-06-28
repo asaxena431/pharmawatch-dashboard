@@ -33,16 +33,20 @@ if sys.stdout.encoding != "utf-8":
 
 DRUGS_FILE       = os.path.join(os.path.dirname(os.path.abspath(__file__)), "drugs.txt")
 REACTIONS_FILE   = os.path.join(os.path.dirname(os.path.abspath(__file__)), "reactions.txt")
-ORANGE_BOOK_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "orange_book.json")
+ORANGE_BOOK_FILE   = os.path.join(os.path.dirname(os.path.abspath(__file__)), "orange_book.json")
+BIOLOGICS_MAP_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "biologics_map.json")
 
 
 def _load_trade_to_generic() -> dict:
-    """Load trade->generic mapping from orange_book.json if available."""
-    if not os.path.exists(ORANGE_BOOK_FILE):
-        return {}
-    with open(ORANGE_BOOK_FILE, encoding="utf-8") as f:
-        ob = json.load(f)
-    return ob.get("tradeToGeneric", {})
+    """Trade->generic mapping from orange_book.json (small molecules) merged with
+    biologics_map.json (biologics, e.g. Dupixent->dupilumab)."""
+    t2g = {}
+    for path, key in ((ORANGE_BOOK_FILE, "tradeToGeneric"),
+                      (BIOLOGICS_MAP_FILE, "tradeToGeneric")):
+        if os.path.exists(path):
+            with open(path, encoding="utf-8") as f:
+                t2g.update(json.load(f).get(key, {}))
+    return t2g
 
 
 def _dedup_drugs(found: list, trade_to_generic: dict) -> list:
