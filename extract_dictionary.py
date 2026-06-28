@@ -175,18 +175,22 @@ def main():
     parser.add_argument("--text", help="Narrative text passed directly")
     parser.add_argument("--raw", action="store_true",
                         help="Disable context filters (show raw dictionary hits)")
+    parser.add_argument("--show-filtered", action="store_true",
+                        help="Also list reactions removed by the context filters")
     args = parser.parse_args()
 
     text = _read_input(args)
     result = extract(text, apply_filters=not args.raw)
-    print_report("METHOD 1: DICTIONARY EXTRACTION", result)
+    print_report("METHOD 1: DICTIONARY EXTRACTION", result, show_causality=False)
 
-    filtered = result.get("filtered")
-    if filtered:
+    if args.show_filtered:
+        filtered = result.get("filtered")
         print("FILTERED OUT (context rules)")
         print("-" * 40)
-        for term, reason in filtered:
+        for term, reason in (filtered or []):
             print(f"  - {term}  [{reason}]")
+        if not filtered:
+            print("  (none)")
         print()
 
 

@@ -137,7 +137,7 @@ def link_reactions_to_drugs(drug_spans, reaction_spans):
     return reaction_spans
 
 
-def print_report(method_name, result):
+def print_report(method_name, result, show_causality=True):
     """Pretty-print extraction results to stdout."""
     print("=" * 70)
     print(f"  {method_name}")
@@ -160,6 +160,10 @@ def print_report(method_name, result):
         pt_str = f"  (PT: {pt})" if pt and pt.lower() != r["reaction"].lower() else ""
         neg = "  [NEGATED]" if r.get("negated") else ""
         print(f"  - {r['reaction']}{pt_str}{neg}")
+
+    if not show_causality:
+        print()
+        return
 
     print(f"\nDRUG -> REACTION CAUSALITY")
     print("-" * 40)
