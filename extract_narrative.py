@@ -126,6 +126,13 @@ _NON_REACTION_TERMS = {
     "injection", "injections", "infusion", "infusions", "syringe", "syringes",
     "subcutaneous", "intravenous", "intramuscular", "oral", "tablet", "tablets",
     "capsule", "capsules", "dose", "doses", "device",
+    # Salt / counter-ion words: part of drug names (e.g. "naproxen sodium"),
+    # never adverse events on their own (would wrongly map to lab terms).
+    "sodium", "potassium", "chloride", "calcium", "magnesium", "phosphate",
+    # Dechallenge / drug-action words: "drug was withdrawn", "discontinued",
+    # "stopped", "continued" — describe the medication, not a reaction.
+    "withdrawn", "withdrew", "discontinued", "discontinuation", "stopped",
+    "continued", "rechallenged", "rechallenge", "dechallenge",
 }
 
 _HISTORY_RE      = re.compile(r"\bhistory\s+of\b", re.IGNORECASE)
@@ -257,6 +264,7 @@ def parse_narrative(text: str,
     # ── Find drugs ────────────────────────────────────────────────────────────
     found_drugs  = []
     drug_matches = []
+    drug_spans   = []
     if drug_pat:
         for m in drug_pat.finditer(text):
             name = m.group().lower()
@@ -266,6 +274,7 @@ def parse_narrative(text: str,
             if display not in found_drugs:
                 found_drugs.append(display)
             drug_matches.append((m.start(), display))
+            drug_spans.append((m.start(), m.end()))
 
     # ── Find reactions ────────────────────────────────────────────────────────
     # Dedup: keep trade name, drop generic if trade name also found
@@ -281,6 +290,10 @@ def parse_narrative(text: str,
         for m in rxn_pat.finditer(text):
             llt     = m.group().lower()
             if llt in _NON_REACTION_TERMS:
+                continue
+            # Skip terms that fall inside a matched drug name (e.g. "sodium" in
+            # "naproxen sodium") — they're part of the drug, not a reaction.
+            if any(s <= m.start() < e for s, e in drug_spans):
                 continue
             pt      = llt_to_pt.get(llt, m.group().title())
             tok_idx = len(re.findall(r"[\w'\-]+", text[:m.start()]))
