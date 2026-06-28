@@ -302,6 +302,9 @@ if __name__ == "__main__":
  
     elif args.drug:
         result = get_drug_events(args.drug, api_key=args.api_key)
+        cache = load_cache(args.cache)
+        cache[result["drug"]] = result["reactions_from_warnings"]
+        save_cache(cache, args.cache)
         print(f"\nDrug     : {result['drug']}")
         print(f"Found    : {result['found']}")
         print(f"Brand    : {result['brand_name']}")
