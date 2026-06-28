@@ -243,13 +243,33 @@ def _processors(drugs_path, reactions_path, orange_book_path):
     return _CACHE[key]
 
 
+def format_case(s, case="camel"):
+    """Reformat a term's casing.
+
+    "camel" -> "visionBlurred"  (camelCase, no spaces)
+    "title" -> "Vision Blurred" (Title Case, spaces kept)
+    "none"  -> unchanged
+    """
+    words = [w for w in re.split(r'\s+', s.strip()) if w]
+    if not words:
+        return s
+    if case == "title":
+        return " ".join(w[:1].upper() + w[1:] for w in words)
+    if case == "camel":
+        first = words[0].lower()
+        rest = "".join(w[:1].upper() + w[1:].lower() for w in words[1:])
+        return first + rest
+    return s
+
+
 def analyze(text, drugs_path=DRUGS_FILE, reactions_path=REACTIONS_FILE,
             orange_book_path=ORANGE_BOOK_FILE, apply_filters=True,
-            include_negated=False):
+            include_negated=False, case="camel"):
     """High-level entry point for use from other programs.
 
-    Returns (drugs, reactions) as two plain Python lists. The reference files
-    are loaded once and cached, so repeated calls are fast.
+    Returns (drugs, reactions) as two plain Python lists, formatted in the
+    requested case ("camel", "title", or "none"). The reference files are loaded
+    once and cached, so repeated calls are fast.
 
         from extract_dictionary import analyze
         drugs, reactions = analyze("Patient took warfarin and developed a rash.")
@@ -258,17 +278,17 @@ def analyze(text, drugs_path=DRUGS_FILE, reactions_path=REACTIONS_FILE,
         drugs_path, reactions_path, orange_book_path)
     result = extract(text, drug_kp, reaction_kp, trade_to_generic, llt_to_pt,
                      apply_filters=apply_filters)
-    return to_lists(result, include_negated=include_negated)
+    return to_lists(result, include_negated=include_negated, case=case)
 
 
-def to_lists(result, include_negated=False):
+def to_lists(result, include_negated=False, case="camel"):
     """Collapse trade/generic duplicates and return (drugs, reaction_pts)."""
     drugs_in = result["drugs"]
     names = {d["name"] for d in drugs_in}
     drop = {d["generic"] for d in drugs_in
             if d["generic"] != d["name"] and d["generic"] in names}
-    drugs = [d["name"] for d in drugs_in if d["name"] not in drop]
-    reactions = [r["pt"] for r in result["reactions"]
+    drugs = [format_case(d["name"], case) for d in drugs_in if d["name"] not in drop]
+    reactions = [format_case(r["pt"], case) for r in result["reactions"]
                  if include_negated or not r["negated"]]
     return drugs, reactions
 
@@ -296,6 +316,8 @@ def main():
     p.add_argument("--orange-book", default=ORANGE_BOOK_FILE, help="Orange Book JSON")
     p.add_argument("--raw", action="store_true", help="Disable context filters")
     p.add_argument("--show-filtered", action="store_true", help="List filtered-out reactions")
+    p.add_argument("--case", choices=["camel", "title", "none"], default="camel",
+                   help="Output casing for drugs/reactions (default: camel)")
     args = p.parse_args()
 
     text = _read_input(args)
@@ -313,7 +335,7 @@ def main():
     result = extract(text, drug_kp, reaction_kp, trade_to_generic, llt_to_pt,
                      apply_filters=not args.raw)
 
-    drugs, reactions = to_lists(result)
+    drugs, reactions = to_lists(result, case=args.case)
     print(f"drugs = {drugs!r}")
     print(f"reactions = {reactions!r}")
 
