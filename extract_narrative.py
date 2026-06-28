@@ -33,16 +33,20 @@ if sys.stdout.encoding != "utf-8":
 
 DRUGS_FILE       = os.path.join(os.path.dirname(os.path.abspath(__file__)), "drugs.txt")
 REACTIONS_FILE   = os.path.join(os.path.dirname(os.path.abspath(__file__)), "reactions.txt")
-ORANGE_BOOK_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "orange_book.json")
+ORANGE_BOOK_FILE   = os.path.join(os.path.dirname(os.path.abspath(__file__)), "orange_book.json")
+BIOLOGICS_MAP_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "biologics_map.json")
 
 
 def _load_trade_to_generic() -> dict:
-    """Load trade->generic mapping from orange_book.json if available."""
-    if not os.path.exists(ORANGE_BOOK_FILE):
-        return {}
-    with open(ORANGE_BOOK_FILE, encoding="utf-8") as f:
-        ob = json.load(f)
-    return ob.get("tradeToGeneric", {})
+    """Trade->generic mapping from orange_book.json (small molecules) merged with
+    biologics_map.json (biologics, e.g. Dupixent->dupilumab)."""
+    t2g = {}
+    for path, key in ((ORANGE_BOOK_FILE, "tradeToGeneric"),
+                      (BIOLOGICS_MAP_FILE, "tradeToGeneric")):
+        if os.path.exists(path):
+            with open(path, encoding="utf-8") as f:
+                t2g.update(json.load(f).get(key, {}))
+    return t2g
 
 
 def _dedup_drugs(found: list, trade_to_generic: dict) -> list:
@@ -115,6 +119,21 @@ _NEGATION  = {"no", "not", "without", "denied", "denies", "negative", "absent", 
 _UNCERTAIN = {"possible", "possibly", "probable", "probably", "may", "might", "suspected", "likely"}
 _FAMILY    = {"mother", "father", "sister", "brother", "family", "parent", "grandfather", "grandmother"}
 _WINDOW    = 8  # slightly wider to catch "history of"
+
+# Route / administration / device words that are never adverse events on their own.
+# e.g. "dupilumab injection", "pre-filled syringe", "subcutaneous infusion".
+_NON_REACTION_TERMS = {
+    "injection", "injections", "infusion", "infusions", "syringe", "syringes",
+    "subcutaneous", "intravenous", "intramuscular", "oral", "tablet", "tablets",
+    "capsule", "capsules", "dose", "doses", "device",
+    # Salt / counter-ion words: part of drug names (e.g. "naproxen sodium"),
+    # never adverse events on their own (would wrongly map to lab terms).
+    "sodium", "potassium", "chloride", "calcium", "magnesium", "phosphate",
+    # Dechallenge / drug-action words: "drug was withdrawn", "discontinued",
+    # "stopped", "continued" — describe the medication, not a reaction.
+    "withdrawn", "withdrew", "discontinued", "discontinuation", "stopped",
+    "continued", "rechallenged", "rechallenge", "dechallenge",
+}
 
 _HISTORY_RE      = re.compile(r"\bhistory\s+of\b", re.IGNORECASE)
 _INDICATION_RE   = re.compile(
@@ -245,6 +264,7 @@ def parse_narrative(text: str,
     # ── Find drugs ────────────────────────────────────────────────────────────
     found_drugs  = []
     drug_matches = []
+    drug_spans   = []
     if drug_pat:
         for m in drug_pat.finditer(text):
             name = m.group().lower()
@@ -254,6 +274,7 @@ def parse_narrative(text: str,
             if display not in found_drugs:
                 found_drugs.append(display)
             drug_matches.append((m.start(), display))
+            drug_spans.append((m.start(), m.end()))
 
     # ── Find reactions ────────────────────────────────────────────────────────
     # Dedup: keep trade name, drop generic if trade name also found
@@ -268,6 +289,12 @@ def parse_narrative(text: str,
     if rxn_pat:
         for m in rxn_pat.finditer(text):
             llt     = m.group().lower()
+            if llt in _NON_REACTION_TERMS:
+                continue
+            # Skip terms that fall inside a matched drug name (e.g. "sodium" in
+            # "naproxen sodium") — they're part of the drug, not a reaction.
+            if any(s <= m.start() < e for s, e in drug_spans):
+                continue
             pt      = llt_to_pt.get(llt, m.group().title())
             tok_idx = len(re.findall(r"[\w'\-]+", text[:m.start()]))
             flags   = _context(tokens, tok_idx, text, m.start())
@@ -303,6 +330,18 @@ def parse_narrative(text: str,
         result["unattributed"] = unattributed
 
     return result
+
+
+def analyze(text: str,
+            drugs_file: str     = DRUGS_FILE,
+            reactions_file: str = REACTIONS_FILE) -> tuple:
+    """Convenience wrapper: returns (drugs, reactions) as two lists.
+
+    Usage:
+        drugs, reactions = analyze(narrative_text)
+    """
+    r = parse_narrative(text, drugs_file=drugs_file, reactions_file=reactions_file)
+    return r["drugs"], r["reactions"]
 
 
 # ── CLI ───────────────────────────────────────────────────────────────────────
