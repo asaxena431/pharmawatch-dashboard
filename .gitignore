@@ -3,5 +3,9 @@ __pycache__/
 *.pyo
 .env
 *.json
+!data/orange_book.json
 .venv/
 venv/
+
+# Raw 57MB MedDRA dump; the deduplicated data/reactions_llt_pt.tsv is committed instead
+data/reactions.txt
