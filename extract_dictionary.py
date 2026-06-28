@@ -1,40 +1,57 @@
-"""Method 1 - Dictionary-based extraction.
+"""Method 1 - Dictionary-based drug / reaction extraction (single self-contained file).
 
-Pure dictionary lookup: matches every drug name (drugs.txt + Orange Book) and
-every MedDRA LLT reaction term against the narrative using fast multi-pattern
-matching (flashtext), then links each reaction to the nearest preceding drug.
+Put this script in the SAME FOLDER as your reference files and run it:
 
-A set of lightweight, regex-only context filters reduce the false positives that
-naive dictionary matching produces in pharmacovigilance narratives (medical
-history, drug indication, drug-name substrings, negation). All filters are pure
-string/regex logic - no NLP model is used. Pass --raw to disable them.
+    drugs.txt            one drug name per line          (required)
+    reactions.txt        MedDRA terms, LLT/PT pairs       (required)
+    orange_book.json     trade<->generic mapping          (optional)
+
+The reaction file may be either:
+  * the raw dump - blocks of two lines (LLT then PT) separated by blank lines, or
+  * a TSV with a "LLT<TAB>PT" header and one pair per line.
+
+It matches every drug name and every reaction term against the narrative using
+fast multi-pattern matching (flashtext), applies regex-only context filters
+(medical history / indication / drug-name overlap / negation / blocklist) to cut
+false positives, and prints two Python lists: drugs and reactions (PT terms).
 
 Usage:
-    python extract_dictionary.py --narrative path/to/narrative.txt
+    python extract_dictionary.py --narrative case.txt
     python extract_dictionary.py --text "Patient took warfarin and developed a rash."
-    python extract_dictionary.py --narrative case.txt --raw   # no context filters
-    cat narrative.txt | python extract_dictionary.py
+    python extract_dictionary.py --narrative case.txt --raw            # no filters
+    python extract_dictionary.py --narrative case.txt --show-filtered   # show drops
+    cat case.txt | python extract_dictionary.py
 """
 
 import argparse
+import json
+import os
 import re
 import sys
 
 from flashtext import KeywordProcessor
 
-from extraction_common import (
-    load_drugs,
-    load_reactions,
-    to_generic,
-    link_reactions_to_drugs,
-    print_report,
-    print_lists,
-)
+# ---------------------------------------------------------------------------
+# Configuration
+# ---------------------------------------------------------------------------
+HERE = os.path.dirname(os.path.abspath(__file__))
+DRUGS_FILE = os.path.join(HERE, "drugs.txt")
+REACTIONS_FILE = os.path.join(HERE, "reactions.txt")
+ORANGE_BOOK_FILE = os.path.join(HERE, "orange_book.json")
 
-_DRUG_KP = None
-_REACTION_KP = None
-_TRADE_TO_GENERIC = None
-_LLT_TO_PT = None
+MIN_TERM_LEN = 3  # ignore very short names ("a/t/s") that cause false positives
+
+# Salt / hydrate suffixes to strip so a bare ingredient ("warfarin") matches a
+# reference entry stored only in salt form ("warfarin sodium").
+SALT_SUFFIXES = {
+    "hydrochloride", "hydrobromide", "hcl", "sodium", "potassium", "calcium",
+    "magnesium", "sulfate", "sulphate", "acetate", "citrate", "phosphate",
+    "tartrate", "bitartrate", "succinate", "maleate", "mesylate", "besylate",
+    "fumarate", "bromide", "chloride", "nitrate", "gluconate", "lactate",
+    "stearate", "palmitate", "valerate", "propionate", "dipropionate",
+    "furoate", "xinafoate", "pamoate", "embonate", "tosylate", "edisylate",
+    "monohydrate", "dihydrate", "trihydrate", "anhydrous", "hemihydrate",
+}
 
 # MedDRA LLTs that are also common English / administrative words and almost
 # always appear in these reports as something other than an adverse reaction.
@@ -57,108 +74,169 @@ _NEGATION = re.compile(
     re.IGNORECASE,
 )
 
-# Indication cue: a reaction mention introduced by "for " is the reason the drug
-# was given (e.g. "for shoulder pain"), not an adverse reaction.
+# Indication cue: a reaction introduced by "for " is why the drug was given
+# (e.g. "for shoulder pain"), not an adverse reaction.
 _INDICATION = re.compile(r'\bfor\s+$', re.IGNORECASE)
 
 
-def _build():
-    """Lazily build the flashtext keyword processors (one-time cost)."""
-    global _DRUG_KP, _REACTION_KP, _TRADE_TO_GENERIC, _LLT_TO_PT
-    if _DRUG_KP is not None:
-        return
-
-    drug_names, trade_to_generic = load_drugs()
-    llt_to_pt, reaction_terms = load_reactions()
-
-    drug_kp = KeywordProcessor(case_sensitive=False)
-    for name in drug_names:
-        drug_kp.add_keyword(name)
-
-    reaction_kp = KeywordProcessor(case_sensitive=False)
-    for term in reaction_terms:
-        reaction_kp.add_keyword(term)
-
-    _DRUG_KP = drug_kp
-    _REACTION_KP = reaction_kp
-    _TRADE_TO_GENERIC = trade_to_generic
-    _LLT_TO_PT = llt_to_pt
+# ---------------------------------------------------------------------------
+# Reference-data loading
+# ---------------------------------------------------------------------------
+def _salt_stripped(name):
+    """Return the base ingredient with a trailing salt/hydrate token removed."""
+    if ";" in name:
+        return None
+    tokens = name.split()
+    if len(tokens) >= 2 and tokens[-1] in SALT_SUFFIXES:
+        base = " ".join(tokens[:-1]).strip()
+        if len(base) >= MIN_TERM_LEN:
+            return base
+    return None
 
 
-def _history_spans(text):
-    """Return (start, end) char ranges covering medical-history clauses.
+def load_drugs(path=DRUGS_FILE, orange_book=ORANGE_BOOK_FILE):
+    """Return (drug_names, trade_to_generic).
 
-    A history clause runs from its header to the next period (end of sentence),
-    so reactions inside it can be excluded as pre-existing conditions.
+    drug_names is the lowercase match set (drugs file + Orange Book + salt
+    aliases); trade_to_generic maps any matched name to its generic when known.
     """
+    names, trade_to_generic = set(), {}
+
+    def _register(name, generic):
+        if len(name) >= MIN_TERM_LEN:
+            names.add(name)
+            if generic and generic != name:
+                trade_to_generic[name] = generic
+        base = _salt_stripped(name)
+        if base:
+            names.add(base)
+            trade_to_generic[base] = generic or name
+
+    if os.path.exists(path):
+        with open(path, encoding="utf-8") as f:
+            for line in f:
+                name = line.strip().lower()
+                if name:
+                    _register(name, None)
+
+    if os.path.exists(orange_book):
+        with open(orange_book, encoding="utf-8") as f:
+            ob = json.load(f)
+        for trade, generic in ob.get("tradeToGeneric", {}).items():
+            _register(trade.strip().lower(), generic.strip().lower())
+        for generic in ob.get("genericToBrands", {}):
+            _register(generic.strip().lower(), None)
+
+    return names, trade_to_generic
+
+
+def load_reactions(path=REACTIONS_FILE):
+    """Return (llt_to_pt, reaction_terms) from either the TSV or raw dump."""
+    llt_to_pt = {}
+    if not os.path.exists(path):
+        return llt_to_pt, set()
+
+    with open(path, encoding="utf-8") as f:
+        first = f.readline()
+        if "\t" in first:  # TSV format ("LLT<TAB>PT" header + rows)
+            for line in f:
+                parts = line.rstrip("\n").split("\t")
+                if len(parts) == 2 and len(parts[0]) >= MIN_TERM_LEN:
+                    llt_to_pt[parts[0].strip().lower()] = parts[1].strip()
+            return llt_to_pt, set(llt_to_pt)
+
+    # Raw dump: blocks of lines separated by blank lines; a block's last line is
+    # the PT, the preceding line(s) are the LLT (long LLTs wrap across lines).
+    with open(path, encoding="utf-8") as f:
+        groups, cur = [], []
+        for raw in f:
+            line = raw.rstrip("\r\n").strip()
+            if line:
+                cur.append(line)
+            elif cur:
+                groups.append(cur)
+                cur = []
+        if cur:
+            groups.append(cur)
+
+    for g in groups:
+        llt = g[0] if len(g) == 1 else "".join(g[:-1])
+        pt = g[-1]
+        if len(llt) >= MIN_TERM_LEN:
+            llt_to_pt[llt.lower()] = pt
+    return llt_to_pt, set(llt_to_pt)
+
+
+# ---------------------------------------------------------------------------
+# Extraction
+# ---------------------------------------------------------------------------
+def _history_spans(text):
     spans = []
     for m in _HISTORY_HEADER.finditer(text):
         end = text.find(".", m.end())
-        end = end if end != -1 else len(text)
-        spans.append((m.start(), end))
+        spans.append((m.start(), end if end != -1 else len(text)))
     return spans
 
 
-def _in_spans(pos, spans):
-    return any(s <= pos < e for s, e in spans)
-
-
-def extract(text, apply_filters=True):
-    _build()
-
-    drug_hits = _DRUG_KP.extract_keywords(text, span_info=True)
-    drugs, seen_drugs = [], set()
-    drug_ranges = []
+def extract(text, drug_kp, reaction_kp, trade_to_generic, llt_to_pt,
+            apply_filters=True):
+    drug_hits = drug_kp.extract_keywords(text, span_info=True)
+    drugs, seen_drugs, drug_ranges = [], set(), []
     for _, start, end in drug_hits:
         drug_ranges.append((start, end))
         name = text[start:end].lower()
         if name in seen_drugs:
             continue
         seen_drugs.add(name)
-        drugs.append({
-            "name": name,
-            "generic": to_generic(name, _TRADE_TO_GENERIC),
-            "start": start,
-        })
+        drugs.append({"name": name,
+                      "generic": trade_to_generic.get(name, name),
+                      "start": start})
 
     history = _history_spans(text) if apply_filters else []
 
-    reaction_hits = _REACTION_KP.extract_keywords(text, span_info=True)
-    reactions, seen_reactions = [], set()
-    filtered = []  # (term, reason) dropped by a filter
+    reaction_hits = reaction_kp.extract_keywords(text, span_info=True)
+    reactions, seen, filtered = [], set(), []
     for _, start, end in reaction_hits:
         term = text[start:end].lower()
-
         if apply_filters:
             reason = None
             if term in REACTION_BLOCKLIST:
                 reason = "blocklist"
             elif any(ds < end and start < de for ds, de in drug_ranges):
                 reason = "overlaps-drug-name"
-            elif _in_spans(start, history):
+            elif any(s <= start < e for s, e in history):
                 reason = "medical-history"
             elif _INDICATION.search(text[max(0, start - 5):start]):
                 reason = "indication"
             if reason:
                 filtered.append((term, reason))
                 continue
-
-        if term in seen_reactions:
+        if term in seen:
             continue
-        seen_reactions.add(term)
-
+        seen.add(term)
         negated = bool(_NEGATION.search(text[max(0, start - 40):start])) if apply_filters else False
-        reactions.append({
-            "reaction": term,
-            "pt": _LLT_TO_PT.get(term, term),
-            "start": start,
-            "negated": negated,
-        })
+        reactions.append({"reaction": term,
+                          "pt": llt_to_pt.get(term, term),
+                          "negated": negated})
 
-    link_reactions_to_drugs(drugs, reactions)
     return {"drugs": drugs, "reactions": reactions, "filtered": filtered}
 
 
+def to_lists(result, include_negated=False):
+    """Collapse trade/generic duplicates and return (drugs, reaction_pts)."""
+    drugs_in = result["drugs"]
+    names = {d["name"] for d in drugs_in}
+    drop = {d["generic"] for d in drugs_in
+            if d["generic"] != d["name"] and d["generic"] in names}
+    drugs = [d["name"] for d in drugs_in if d["name"] not in drop]
+    reactions = [r["pt"] for r in result["reactions"]
+                 if include_negated or not r["negated"]]
+    return drugs, reactions
+
+
+# ---------------------------------------------------------------------------
+# CLI
+# ---------------------------------------------------------------------------
 def _read_input(args):
     if args.text:
         return args.text
@@ -171,33 +249,39 @@ def _read_input(args):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Dictionary-based drug/reaction extraction")
-    parser.add_argument("--narrative", help="Path to a narrative text file")
-    parser.add_argument("--text", help="Narrative text passed directly")
-    parser.add_argument("--raw", action="store_true",
-                        help="Disable context filters (show raw dictionary hits)")
-    parser.add_argument("--show-filtered", action="store_true",
-                        help="Also list reactions removed by the context filters")
-    parser.add_argument("--report", action="store_true",
-                        help="Print the verbose report instead of Python lists")
-    args = parser.parse_args()
+    p = argparse.ArgumentParser(description="Dictionary-based drug/reaction extraction")
+    p.add_argument("--narrative", help="Path to a narrative text file")
+    p.add_argument("--text", help="Narrative text passed directly")
+    p.add_argument("--drugs", default=DRUGS_FILE, help="Drug list file")
+    p.add_argument("--reactions", default=REACTIONS_FILE, help="Reaction terms file")
+    p.add_argument("--orange-book", default=ORANGE_BOOK_FILE, help="Orange Book JSON")
+    p.add_argument("--raw", action="store_true", help="Disable context filters")
+    p.add_argument("--show-filtered", action="store_true", help="List filtered-out reactions")
+    args = p.parse_args()
 
     text = _read_input(args)
-    result = extract(text, apply_filters=not args.raw)
-    if args.report:
-        print_report("METHOD 1: DICTIONARY EXTRACTION", result, show_causality=False)
-    else:
-        print_lists(result)
+
+    drug_names, trade_to_generic = load_drugs(args.drugs, args.orange_book)
+    llt_to_pt, reaction_terms = load_reactions(args.reactions)
+
+    drug_kp = KeywordProcessor(case_sensitive=False)
+    for n in drug_names:
+        drug_kp.add_keyword(n)
+    reaction_kp = KeywordProcessor(case_sensitive=False)
+    for t in reaction_terms:
+        reaction_kp.add_keyword(t)
+
+    result = extract(text, drug_kp, reaction_kp, trade_to_generic, llt_to_pt,
+                     apply_filters=not args.raw)
+
+    drugs, reactions = to_lists(result)
+    print(f"drugs = {drugs!r}")
+    print(f"reactions = {reactions!r}")
 
     if args.show_filtered:
-        filtered = result.get("filtered")
-        print("FILTERED OUT (context rules)")
-        print("-" * 40)
-        for term, reason in (filtered or []):
+        print("\nFILTERED OUT (context rules)")
+        for term, reason in (result["filtered"] or [("(none)", "")]):
             print(f"  - {term}  [{reason}]")
-        if not filtered:
-            print("  (none)")
-        print()
 
 
 if __name__ == "__main__":
