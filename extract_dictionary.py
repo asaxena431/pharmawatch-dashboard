@@ -222,6 +222,45 @@ def extract(text, drug_kp, reaction_kp, trade_to_generic, llt_to_pt,
     return {"drugs": drugs, "reactions": reactions, "filtered": filtered}
 
 
+_CACHE = {}
+
+
+def _processors(drugs_path, reactions_path, orange_book_path):
+    """Build (and cache) the keyword processors + lookup tables for given files."""
+    key = (drugs_path, reactions_path, orange_book_path)
+    if key not in _CACHE:
+        drug_names, trade_to_generic = load_drugs(drugs_path, orange_book_path)
+        llt_to_pt, reaction_terms = load_reactions(reactions_path)
+
+        drug_kp = KeywordProcessor(case_sensitive=False)
+        for n in drug_names:
+            drug_kp.add_keyword(n)
+        reaction_kp = KeywordProcessor(case_sensitive=False)
+        for t in reaction_terms:
+            reaction_kp.add_keyword(t)
+
+        _CACHE[key] = (drug_kp, reaction_kp, trade_to_generic, llt_to_pt)
+    return _CACHE[key]
+
+
+def analyze(text, drugs_path=DRUGS_FILE, reactions_path=REACTIONS_FILE,
+            orange_book_path=ORANGE_BOOK_FILE, apply_filters=True,
+            include_negated=False):
+    """High-level entry point for use from other programs.
+
+    Returns (drugs, reactions) as two plain Python lists. The reference files
+    are loaded once and cached, so repeated calls are fast.
+
+        from extract_dictionary import analyze
+        drugs, reactions = analyze("Patient took warfarin and developed a rash.")
+    """
+    drug_kp, reaction_kp, trade_to_generic, llt_to_pt = _processors(
+        drugs_path, reactions_path, orange_book_path)
+    result = extract(text, drug_kp, reaction_kp, trade_to_generic, llt_to_pt,
+                     apply_filters=apply_filters)
+    return to_lists(result, include_negated=include_negated)
+
+
 def to_lists(result, include_negated=False):
     """Collapse trade/generic duplicates and return (drugs, reaction_pts)."""
     drugs_in = result["drugs"]
