@@ -80,6 +80,16 @@ def match_events(narrative_events: list, event_list: list,
     return results
 
 
+def match_events_map(narrative_events: list, event_list: list,
+                     reactions_file: str = None) -> dict:
+    """
+    Like match_events but returns an {event_name: "yes"/"no"} map, so callers can
+    do result["Vision Blurred"] -> "yes".
+    """
+    return {r["event"]: ("yes" if r["in_db"] else "no")
+            for r in match_events(narrative_events, event_list, reactions_file)}
+
+
 if __name__ == "__main__":
     import argparse
     import json

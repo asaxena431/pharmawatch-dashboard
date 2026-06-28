@@ -84,6 +84,16 @@ def match_drugs(narrative_drugs: list, drug_list: list,
     return results
 
 
+def match_drugs_map(narrative_drugs: list, drug_list: list,
+                    orange_book_path: str = ORANGE_BOOK_FILE) -> dict:
+    """
+    Like match_drugs but returns a {drug_name: "yes"/"no"} map, so callers can do
+    result["Aleve"] -> "yes".
+    """
+    return {r["drug"]: ("yes" if r["in_db"] else "no")
+            for r in match_drugs(narrative_drugs, drug_list, orange_book_path)}
+
+
 if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser(description="Match narrative drugs against a DB drug list.")
