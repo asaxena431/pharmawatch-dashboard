@@ -673,33 +673,74 @@ def extract_medspacy(text):
         if dm:
             drug_positions.append((dm.start(), d["name"]))
 
+    # Negation phrases to check in the window before a reaction mention
+    NEGATION_PATTERN = re.compile(
+        r'\b(no|not|without|denies|denied|deny|absence of|absent|free of|'
+        r'negative for|never|ruled out|unremarkable for|fails to|'
+        r'did not|does not|was not|were not|is not|are not)\b',
+        re.IGNORECASE
+    )
+
     for reaction in KNOWN_REACTIONS:
-        if reaction in text_lower:
-            m = re.search(re.escape(reaction), text_lower)
-            severity = onset = None
-            outcome = "unknown"
-            associated_drug = None
-            if m:
-                ctx = text[max(0, m.start()-30):m.end()+80]
-                sm  = SEVERITY_PATTERN.search(ctx)
-                om  = OUTCOME_PATTERN.search(ctx)
-                ons = re.search(r'after\s+([\w\s]+?)(?:,|\.|\s+(?:he|she|the|patient))', ctx, re.IGNORECASE)
-                severity = sm.group(0).lower() if sm else None
-                outcome  = om.group(0).lower() if om else "unknown"
-                onset    = ons.group(1).strip() if ons else None
-                # Associate with nearest preceding drug
-                preceding = [(pos, name) for pos, name in drug_positions if pos <= m.start()]
-                if preceding:
-                    associated_drug = max(preceding, key=lambda x: x[0])[1]
-            reactions.append({"reaction": reaction, "severity": severity, "onset": onset,
-                              "outcome": outcome, "drug": associated_drug})
+        # Use word-boundary regex match instead of substring search
+        pattern = r'(?<!\w)' + re.escape(reaction) + r'(?!\w)'
+        m = re.search(pattern, text_lower)
+        if not m:
+            continue
+        severity = onset = None
+        outcome = "unknown"
+        associated_drug = None
+        # Check for negation within the same sentence (up to 60 chars back)
+        pre_ctx = text[max(0, m.start()-60):m.start()]
+        sent_boundary = max(pre_ctx.rfind('. '), pre_ctx.rfind('.\n'),
+                            pre_ctx.rfind('! '), pre_ctx.rfind('? '))
+        if sent_boundary != -1:
+            pre_ctx = pre_ctx[sent_boundary+1:]
+        if NEGATION_PATTERN.search(pre_ctx):
+            continue  # skip negated reaction
+        # Skip if the match is sandwiched in a dosage context
+        surrounding = text[max(0, m.start()-40):m.end()+40]
+        if re.search(r'\d+\s*(?:mg|mcg|g|ml)\b.{0,10}' + re.escape(reaction), surrounding, re.IGNORECASE):
+            continue
+        ctx = text[max(0, m.start()-30):m.end()+80]
+        sm  = SEVERITY_PATTERN.search(ctx)
+        om  = OUTCOME_PATTERN.search(ctx)
+        ons = re.search(r'after\s+([\w\s]+?)(?:,|\.|\s+(?:he|she|the|patient))', ctx, re.IGNORECASE)
+        severity = sm.group(0).lower() if sm else None
+        outcome  = om.group(0).lower() if om else "unknown"
+        onset    = ons.group(1).strip() if ons else None
+        # Associate with nearest preceding drug
+        preceding = [(pos, name) for pos, name in drug_positions if pos <= m.start()]
+        if preceding:
+            associated_drug = max(preceding, key=lambda x: x[0])[1]
+        reactions.append({"reaction": reaction, "severity": severity, "onset": onset,
+                          "outcome": outcome, "drug": associated_drug})
 
     age_m  = AGE_PATTERN.search(text)
     sex_m  = SEX_PATTERN.search(text)
     caus_m = CAUSALITY_PATTERN.search(text)
     sev_m  = SEVERITY_PATTERN.search(text)
 
-    return {
+    # Build drug → reactions mapping
+    drug_reaction_map = {}
+    for d in drugs:
+        drug_reaction_map[d["name"]] = []
+    for r in reactions:
+        assoc = r.get("drug")
+        if assoc and assoc in drug_reaction_map:
+            drug_reaction_map[assoc].append({
+                "reaction": r["reaction"],
+                "severity": r.get("severity"),
+                "outcome":  r.get("outcome", "unknown"),
+            })
+        elif assoc is None:
+            drug_reaction_map.setdefault("unknown", []).append({
+                "reaction": r["reaction"],
+                "severity": r.get("severity"),
+                "outcome":  r.get("outcome", "unknown"),
+            })
+
+    result = {
         "drugs":    drugs,
         "reactions": reactions,
         "patient":  {"age": age_m.group(1) if age_m else None,
@@ -707,8 +748,14 @@ def extract_medspacy(text):
                      "relevant_history": None},
         "causality":        caus_m.group(0).lower() if caus_m else "unassessable",
         "overall_severity": sev_m.group(0).lower() if sev_m else None,
+        "drug_reaction_map": drug_reaction_map,
         "notes": f"Extracted using medspaCy rule-based NER. {len(drugs)} drug(s), {len(reactions)} reaction(s) found."
     }
+
+    # Attach confidence score
+    result["confidence"] = calculate_confidence(result)
+
+    return result
 
 
 # ── GPT-4 extraction ─────────────────────────────────────────────────────────
