@@ -4,10 +4,13 @@ Standalone medspaCy-style clinical narrative extractor.
 
 No external dependencies required — uses only Python standard library (re, json, sys).
 
+Output: JSON with drugs, drug->reaction mapping, and confidence score.
+
 Usage:
-    python medspacy_extract.py "A 65-year-old female was prescribed metformin 500 mg..."
-    python medspacy_extract.py              # runs built-in demo narrative
-    python medspacy_extract.py --file notes.txt   # read narrative from file
+    python medspacy_extract.py                             # demo narrative
+    python medspacy_extract.py "A 65-year-old female..."   # inline text
+    python medspacy_extract.py --file notes.txt            # read from file
+    python medspacy_extract.py --full                      # full JSON with all fields
 """
 
 import re
@@ -314,24 +317,35 @@ DEMO_NARRATIVE = (
 
 
 def main():
-    if len(sys.argv) > 1 and sys.argv[1] == "--file":
-        if len(sys.argv) < 3:
+    args = [a for a in sys.argv[1:] if a not in ("--json", "--full")]
+
+    if args and args[0] == "--file":
+        if len(args) < 2:
             print("Usage: python medspacy_extract.py --file <path>")
             sys.exit(1)
-        with open(sys.argv[2], "r") as f:
+        with open(args[1], "r") as f:
             narrative = f.read()
-    elif len(sys.argv) > 1 and sys.argv[1] != "--json":
-        narrative = " ".join(sys.argv[1:])
+    elif args:
+        narrative = " ".join(args)
     else:
         narrative = DEMO_NARRATIVE
 
     result = extract_medspacy(narrative)
 
-    if "--json" in sys.argv:
+    if "--full" in sys.argv:
+        # Full JSON with all fields
         print(json.dumps(result, indent=2))
     else:
-        print_report(result)
-        print("\n(Use --json flag for raw JSON output)")
+        # Default: focused JSON with only drugs, drug->reaction map, confidence
+        output = {
+            "drugs": [
+                {k: v for k, v in d.items() if v is not None}
+                for d in result["drugs"]
+            ],
+            "drug_reaction_map": result["drug_reaction_map"],
+            "confidence": result["confidence"],
+        }
+        print(json.dumps(output, indent=2))
 
 
 if __name__ == "__main__":
