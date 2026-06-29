@@ -249,25 +249,20 @@ def extract_medspacy(text):
     caus_m = CAUSALITY_PATTERN.search(text)
     sev_m = SEVERITY_PATTERN.search(text)
 
-    # ── Build drug -> reactions mapping with per-pair confidence ──
+    # ── Build drug -> reaction -> confidence lookup ──
+    # Structure: result["metformin"]["nausea"] -> {"score": 90, "max": 100, "verdict": "HIGH"}
     drugs_by_name = {d["name"]: d for d in drugs}
     drug_reaction_map = {}
     for d in drugs:
-        drug_reaction_map[d["name"]] = []
+        drug_reaction_map[d["name"]] = {}
     for r in reactions:
         assoc = r.get("drug")
         if assoc and assoc in drug_reaction_map:
             pair_conf = calculate_pair_confidence(drugs_by_name[assoc], r)
-            drug_reaction_map[assoc].append({
-                "reaction": r["reaction"],
-                "confidence": pair_conf,
-            })
+            drug_reaction_map[assoc][r["reaction"]] = pair_conf
         elif assoc is None:
             pair_conf = calculate_pair_confidence({}, r)
-            drug_reaction_map.setdefault("unknown", []).append({
-                "reaction": r["reaction"],
-                "confidence": pair_conf,
-            })
+            drug_reaction_map.setdefault("unknown", {})[r["reaction"]] = pair_conf
 
     result = {
         "drugs": drugs,
