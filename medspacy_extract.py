@@ -1,25 +1,55 @@
 #!/usr/bin/env python3
 """
-Standalone medspaCy-style clinical narrative extractor.
+medspacy_extract.py
+===================
+Extract drugs and reactions from clinical narratives.
+Pure regex - no NLP model, no external API calls.
 
-No external dependencies required — uses only Python standard library (re, json, sys).
+Loads vocabularies from external files (drugs.txt, reactions.txt) for broad
+coverage; falls back to a built-in list if files are not found.
 
-Output: JSON with drugs, drug->reaction mapping, and confidence score.
+Output: JSON dict where result[drug][reaction] -> confidence score,
+        or "NOT FOUND" if the pair doesn't exist.
+
+Files (optional, placed next to this script):
+  drugs.txt          - one drug name per line
+  reactions.txt      - MedDRA format: line1=LLT, line2=PT, blank separator
+  orange_book.json   - {"tradeToGeneric": {"aleve": "naproxen", ...}}
+  biologics_map.json - {"tradeToGeneric": {"dupixent": "dupilumab", ...}}
 
 Usage:
-    python medspacy_extract.py                             # demo narrative
-    python medspacy_extract.py "A 65-year-old female..."   # inline text
-    python medspacy_extract.py --file notes.txt            # read from file
-    python medspacy_extract.py --full                      # full JSON with all fields
+  python medspacy_extract.py "Patient took amoxicillin and developed rash."
+  python medspacy_extract.py --file note.txt
+  python medspacy_extract.py                          # demo narrative
+  python medspacy_extract.py --full                   # full JSON with all fields
+
+From Python:
+  from medspacy_extract import extract_medspacy
+  result = extract_medspacy("Patient took amoxicillin...")
+  drm = result["drug_reaction_map"]
+  print(drm["Amoxicillin"]["Rash"])            # {'score': 1.0, 'verdict': 'HIGH'}
+  print(drm["Amoxicillin"].get("Nausea", "NOT FOUND"))  # 'NOT FOUND'
 """
 
-import re
-import json
 import sys
+import os
+import json
+import re
 
-# ── Known drug and reaction vocabularies ──────────────────────────────────────
+if sys.stdout.encoding != "utf-8":
+    sys.stdout.reconfigure(encoding="utf-8")
 
-KNOWN_DRUGS = [
+# ── File paths (next to this script) ─────────────────────────────────────────
+
+_SCRIPT_DIR        = os.path.dirname(os.path.abspath(__file__))
+DRUGS_FILE         = os.path.join(_SCRIPT_DIR, "drugs.txt")
+REACTIONS_FILE     = os.path.join(_SCRIPT_DIR, "reactions.txt")
+ORANGE_BOOK_FILE   = os.path.join(_SCRIPT_DIR, "orange_book.json")
+BIOLOGICS_MAP_FILE = os.path.join(_SCRIPT_DIR, "biologics_map.json")
+
+# ── Built-in fallback vocabularies ────────────────────────────────────────────
+
+_BUILTIN_DRUGS = [
     "tylenol", "acetaminophen", "lipitor", "atorvastatin", "amoxicillin", "ibuprofen",
     "advil", "motrin", "warfarin", "coumadin", "aspirin", "metformin", "lisinopril",
     "omeprazole", "metoprolol", "amlodipine", "albuterol", "prednisone", "gabapentin",
@@ -27,309 +57,332 @@ KNOWN_DRUGS = [
     "simvastatin", "levothyroxine", "azithromycin", "ciprofloxacin", "doxycycline",
     "penicillin", "cephalexin", "clindamycin", "vancomycin", "lorazepam", "diazepam",
     "alprazolam", "zolpidem", "quetiapine", "risperidone", "olanzapine", "haloperidol",
-    "insulin", "methotrexate",
+    "insulin", "methotrexate", "naproxen", "naproxen sodium", "aleve",
+    "aleve caplets",
 ]
 
-KNOWN_REACTIONS = [
-    "nausea", "vomiting", "diarrhea", "diarrhoea", "headache", "dizziness", "fatigue",
-    "rash", "itching", "pruritus", "liver damage", "hepatotoxicity", "myalgia",
-    "muscle weakness", "muscle pain", "elevated liver enzymes", "elevated alt",
-    "elevated ast", "elevated ck", "jaundice", "abdominal pain", "chest pain",
-    "shortness of breath", "dyspnea", "dyspnoea", "anaphylaxis", "urticaria",
-    "angioedema", "stevens-johnson syndrome", "toxic epidermal necrolysis",
-    "renal failure", "kidney failure", "seizure", "confusion", "hallucination",
-    "insomnia", "depression", "anxiety", "palpitations", "tachycardia", "bradycardia",
-    "hypertension", "hypotension", "bleeding", "bruising", "thrombosis", "stroke",
-    "myocardial infarction", "heart attack", "back pain", "joint pain", "arthralgia",
-    "swelling", "edema", "fever", "pyrexia", "chills", "night sweats", "weight gain",
-    "weight loss", "hair loss", "alopecia", "blurred vision", "tinnitus", "hearing loss",
-    "blistering", "mucosal involvement", "muscle spasm", "myopathy", "rhabdomyolysis",
-    "pancreatitis", "peripheral neuropathy",
-    "liver damage", "skin reddening", "stomach bleeding", "allergic reaction",
-    "difficulty breathing", "serious skin reactions", "dark urine", "clay-colored stools",
-    "loss of appetite", "upper stomach pain",
-]
+_BUILTIN_REACTIONS = {
+    "nausea": "Nausea", "vomiting": "Vomiting", "diarrhea": "Diarrhoea",
+    "diarrhoea": "Diarrhoea", "headache": "Headache", "dizziness": "Dizziness",
+    "fatigue": "Fatigue", "rash": "Rash", "itching": "Pruritus", "pruritus": "Pruritus",
+    "liver damage": "Hepatotoxicity", "hepatotoxicity": "Hepatotoxicity",
+    "myalgia": "Myalgia", "muscle weakness": "Muscular Weakness",
+    "muscle pain": "Myalgia", "elevated liver enzymes": "Hepatic Enzymes Increased",
+    "jaundice": "Jaundice", "abdominal pain": "Abdominal Pain",
+    "chest pain": "Chest Pain", "shortness of breath": "Dyspnoea",
+    "dyspnea": "Dyspnoea", "dyspnoea": "Dyspnoea", "anaphylaxis": "Anaphylactic Reaction",
+    "urticaria": "Urticaria", "angioedema": "Angioedema",
+    "renal failure": "Renal Failure", "kidney failure": "Renal Failure",
+    "seizure": "Seizure", "confusion": "Confusional State",
+    "hallucination": "Hallucination", "insomnia": "Insomnia",
+    "depression": "Depression", "anxiety": "Anxiety",
+    "palpitations": "Palpitations", "tachycardia": "Tachycardia",
+    "bradycardia": "Bradycardia", "hypertension": "Hypertension",
+    "hypotension": "Hypotension", "bleeding": "Haemorrhage",
+    "bruising": "Contusion", "thrombosis": "Thrombosis", "stroke": "Cerebrovascular Accident",
+    "back pain": "Back Pain", "joint pain": "Arthralgia", "arthralgia": "Arthralgia",
+    "swelling": "Swelling", "edema": "Oedema", "fever": "Pyrexia", "pyrexia": "Pyrexia",
+    "chills": "Chills", "weight gain": "Weight Increased",
+    "weight loss": "Weight Decreased", "hair loss": "Alopecia", "alopecia": "Alopecia",
+    "blurred vision": "Vision Blurred", "blurry vision": "Vision Blurred",
+    "tinnitus": "Tinnitus", "hearing loss": "Deafness",
+    "pancreatitis": "Pancreatitis", "peripheral neuropathy": "Peripheral Neuropathy",
+    "stomach bleeding": "Gastrointestinal Haemorrhage",
+    "allergic reaction": "Hypersensitivity", "difficulty breathing": "Dyspnoea",
+    "dark urine": "Chromaturia", "loss of appetite": "Decreased Appetite",
+}
 
-# ── Regex patterns ────────────────────────────────────────────────────────────
+# ── Common stop words (never match as drug names) ─────────────────────────────
 
-DOSE_PATTERN = re.compile(
-    r'\b(\d+\.?\d*\s*(?:mg|mcg|ug|g|ml|units?|IU|mEq)(?:\s*/\s*(?:day|daily|kg|dose))?)\b',
+_STOP_WORDS = {
+    "a", "an", "as", "at", "by", "do", "go", "he", "if", "in", "is", "it",
+    "me", "my", "no", "of", "on", "or", "so", "to", "up", "us", "we",
+    "and", "are", "but", "can", "did", "for", "had", "has", "her", "him",
+    "his", "how", "its", "may", "not", "now", "off", "one", "our", "out",
+    "own", "per", "she", "the", "too", "two", "use", "was", "who", "why",
+    "with", "from", "have", "been", "that", "this", "then", "they", "were",
+    "also", "both", "each", "into", "more", "than", "them", "when", "your",
+}
+
+# Route / admin / device words that are never adverse events
+_NON_REACTION_TERMS = {
+    "injection", "injections", "infusion", "infusions", "syringe", "syringes",
+    "subcutaneous", "intravenous", "intramuscular", "oral", "tablet", "tablets",
+    "capsule", "capsules", "dose", "doses", "device",
+    "sodium", "potassium", "chloride", "calcium", "magnesium", "phosphate",
+    "withdrawn", "withdrew", "discontinued", "discontinuation", "stopped",
+    "continued", "rechallenged", "rechallenge", "dechallenge",
+}
+
+# ── File loaders ──────────────────────────────────────────────────────────────
+
+def load_drugs(path=DRUGS_FILE):
+    """Load drug names from file (one per line). Falls back to built-in list."""
+    if not os.path.exists(path):
+        return list(_BUILTIN_DRUGS)
+    with open(path, encoding="utf-8") as f:
+        drugs = [
+            l.strip().lower() for l in f
+            if l.strip() and len(l.strip()) >= 3 and l.strip().lower() not in _STOP_WORDS
+        ]
+    return drugs if drugs else list(_BUILTIN_DRUGS)
+
+
+def load_reactions(path=REACTIONS_FILE):
+    """Load MedDRA reactions (line1=LLT, line2=PT, blank separator).
+    Returns {llt_lower: PT_Title}. Falls back to built-in dict."""
+    if not os.path.exists(path):
+        return dict(_BUILTIN_REACTIONS)
+    llt_to_pt = {}
+    with open(path, encoding="utf-8") as f:
+        lines = [l.rstrip("\n") for l in f]
+    i = 0
+    while i < len(lines):
+        while i < len(lines) and not lines[i].strip():
+            i += 1
+        if i >= len(lines):
+            break
+        llt = lines[i].strip().lower()
+        i += 1
+        pt = lines[i].strip().title() if i < len(lines) and lines[i].strip() else llt.title()
+        if i < len(lines) and lines[i].strip():
+            i += 1
+        if llt:
+            llt_to_pt[llt] = pt
+        while i < len(lines) and not lines[i].strip():
+            i += 1
+    return llt_to_pt if llt_to_pt else dict(_BUILTIN_REACTIONS)
+
+
+_BUILTIN_TRADE_TO_GENERIC = {
+    "tylenol": "acetaminophen", "advil": "ibuprofen", "motrin": "ibuprofen",
+    "lipitor": "atorvastatin", "coumadin": "warfarin", "aleve": "naproxen",
+    "aleve caplets": "naproxen", "naproxen sodium": "naproxen",
+}
+
+
+def _load_trade_to_generic():
+    """Trade->generic mapping from orange_book.json and biologics_map.json.
+    Falls back to built-in mapping for common drugs."""
+    t2g = dict(_BUILTIN_TRADE_TO_GENERIC)
+    for path, key in ((ORANGE_BOOK_FILE, "tradeToGeneric"),
+                      (BIOLOGICS_MAP_FILE, "tradeToGeneric")):
+        if os.path.exists(path):
+            with open(path, encoding="utf-8") as f:
+                t2g.update(json.load(f).get(key, {}))
+    return t2g
+
+
+def _dedup_drugs(found, trade_to_generic):
+    """If multiple found drugs resolve to the same generic, keep only one
+    (prefer the shortest / most recognisable trade name)."""
+    # Group by canonical generic
+    generic_groups = {}
+    for d in found:
+        gen = trade_to_generic.get(d.lower(), d.lower())
+        generic_groups.setdefault(gen, []).append(d)
+    # For each group with >1 member, keep the shortest name (trade name)
+    keep = set()
+    for gen, members in generic_groups.items():
+        if len(members) == 1:
+            keep.add(members[0])
+        else:
+            keep.add(min(members, key=len))
+    return [d for d in found if d in keep]
+
+
+# ── Negation / context detection ──────────────────────────────────────────────
+
+_NEGATION  = {"no", "not", "without", "denied", "denies", "negative", "absent", "never", "none"}
+_UNCERTAIN = {"possible", "possibly", "probable", "probably", "may", "might", "suspected", "likely"}
+_FAMILY    = {"mother", "father", "sister", "brother", "family", "parent", "grandfather", "grandmother"}
+_WINDOW    = 8
+
+_HISTORY_RE = re.compile(r"\bhistory\s+of\b", re.IGNORECASE)
+_INDICATION_RE = re.compile(
+    r"\b(for|to\s+treat|to\s+relieve|indicated\s+for|prescribed\s+for|used\s+for|taken\s+for)\s+$",
     re.IGNORECASE,
 )
-SEVERITY_PATTERN = re.compile(
-    r'\b(mild|moderate|severe|serious|fatal|life[\s-]threatening)\b', re.IGNORECASE
-)
-OUTCOME_PATTERN = re.compile(
-    r'\b(resolv\w+|recover\w+|discharged|improved|died|fatal|death|ongoing|persistent|hospitali\w+)\b',
-    re.IGNORECASE,
-)
-AGE_PATTERN = re.compile(r'\b(\d+)[\s-]*(year|yr)s?[\s-]*old\b', re.IGNORECASE)
-SEX_PATTERN = re.compile(r'\b(male|female|man|woman|boy|girl)\b', re.IGNORECASE)
-CAUSALITY_PATTERN = re.compile(
-    r'\b(probable|possible|unlikely|definite|suspected|associated with|caused by)\b',
-    re.IGNORECASE,
-)
-NEGATION_PATTERN = re.compile(
-    r'\b(no|not|without|denies|denied|deny|absence of|absent|free of|'
-    r'negative for|never|ruled out|unremarkable for|fails to|'
-    r'did not|does not|was not|were not|is not|are not)\b',
+_MED_HISTORY_RE = re.compile(
+    r"(medical\s+history|past\s+medical\s+history|historical\s+diagnosis|concomitant\s+condition|"
+    r"pre-?existing|background\s+condition|prior\s+condition|history\s+includes?)\s*[:\-]?",
     re.IGNORECASE,
 )
 
 
-# ── Confidence scoring ────────────────────────────────────────────────────────
-
-def calculate_confidence(extracted):
-    score = 0
-    drugs = extracted.get("drugs", [])
-    reactions = extracted.get("reactions", [])
-
-    if drugs:
-        score += 15
-    if any(d.get("dose") for d in drugs):
-        score += 10
-    if reactions:
-        score += 15
-    if any(r.get("severity") for r in reactions):
-        score += 8
-    if any(r.get("onset") for r in reactions):
-        score += 4
-    if any(r.get("outcome", "unknown") != "unknown" for r in reactions):
-        score += 3
-    if extracted.get("patient", {}).get("age"):
-        score += 10
-    if extracted.get("patient", {}).get("sex"):
-        score += 10
-    if extracted.get("causality", "unassessable") != "unassessable":
-        score += 10
-    if extracted.get("overall_severity"):
-        score += 10
-
-    if score >= 80:
-        verdict, needs_gpt = "HIGH", False
-    elif score >= 50:
-        verdict, needs_gpt = "MEDIUM", True
-    else:
-        verdict, needs_gpt = "LOW", True
-
-    return {"score": score, "max": 100, "verdict": verdict, "needs_gpt": needs_gpt}
+def _med_history_ranges(text):
+    """Return (start, end) char ranges that are medical history sections."""
+    ranges = []
+    for m in _MED_HISTORY_RE.finditer(text):
+        start = m.start()
+        rest = text[m.end():]
+        period = rest.find(".")
+        end = m.end() + period + 1 if period != -1 else m.end() + 200
+        ranges.append((start, end))
+    return ranges
 
 
-def calculate_pair_confidence(drug_info, reaction_info):
-    """Calculate confidence score for a specific drug-reaction pair."""
-    score = 0
-    max_score = 100
+def _in_med_history(char_pos, ranges):
+    return any(s <= char_pos <= e for s, e in ranges)
 
-    # Drug evidence (up to 40 points)
-    score += 15                                          # drug was identified
-    if drug_info.get("dose"):       score += 15          # dose found
-    if drug_info.get("route"):      score += 5           # route found
-    if drug_info.get("indication"): score += 5           # indication found
 
-    # Reaction evidence (up to 35 points)
-    score += 15                                          # reaction was identified
-    if reaction_info.get("severity"): score += 10        # severity mentioned
-    if reaction_info.get("onset"):    score += 5         # temporal info
-    if reaction_info.get("outcome") and reaction_info["outcome"] != "unknown":
-        score += 5                                       # outcome known
+def _context(tokens, idx, text="", char_pos=0):
+    window = set(t.lower() for t in tokens[max(0, idx - _WINDOW):idx])
+    preceding_text = text[max(0, char_pos - 60):char_pos] if text else ""
+    preceding_stripped = preceding_text.rstrip()
+    return {
+        "negated":    bool(window & _NEGATION),
+        "uncertain":  bool(window & _UNCERTAIN),
+        "family":     bool(window & _FAMILY),
+        "history":    bool(_HISTORY_RE.search(preceding_text)),
+        "indication": bool(_INDICATION_RE.search(preceding_stripped + " ")),
+    }
 
-    # Association strength (up to 25 points)
-    if reaction_info.get("drug") == drug_info.get("name"):
-        score += 25                                      # directly associated
 
-    if score >= 80:
-        verdict = "HIGH"
-    elif score >= 50:
-        verdict = "MEDIUM"
-    else:
-        verdict = "LOW"
+def _score(flags):
+    s = 1.0
+    if flags["negated"]:   s -= 0.6
+    if flags["uncertain"]: s -= 0.2
+    if flags["family"]:    s -= 0.3
+    return round(max(0.0, min(1.0, s)), 2)
 
-    return {"score": score, "max": max_score, "verdict": verdict}
+
+def _confidence_label(score):
+    if score >= 0.9: return "HIGH"
+    if score >= 0.6: return "MEDIUM"
+    if score >= 0.3: return "LOW"
+    return "VERY LOW"
+
+
+# ── Pattern cache ─────────────────────────────────────────────────────────────
+
+_cache = {}
+
+
+def _get_patterns(drugs_file, reactions_file):
+    """Compile regex patterns once per file pair, then serve from cache."""
+    key = (drugs_file, reactions_file)
+    if key not in _cache:
+        drugs = load_drugs(drugs_file)
+        llt_to_pt = load_reactions(reactions_file)
+
+        drug_pat = re.compile(
+            r"(?<![\w-])(?:" +
+            "|".join(re.escape(d) for d in sorted(drugs, key=len, reverse=True)) +
+            r")(?![\w-])",
+            re.IGNORECASE,
+        ) if drugs else None
+
+        rxn_pat = re.compile(
+            r"(?<![\w-])(?:" +
+            "|".join(re.escape(l) for l in sorted(llt_to_pt.keys(), key=len, reverse=True)) +
+            r")(?![\w-])",
+            re.IGNORECASE,
+        ) if llt_to_pt else None
+
+        _cache[key] = (drugs, llt_to_pt, drug_pat, rxn_pat)
+    return _cache[key]
+
+
+# Preload default files at import time
+_get_patterns(DRUGS_FILE, REACTIONS_FILE)
+_TRADE_TO_GENERIC = _load_trade_to_generic()
 
 
 # ── Main extraction function ─────────────────────────────────────────────────
 
-def extract_medspacy(text):
+def extract_medspacy(text, drugs_file=DRUGS_FILE, reactions_file=REACTIONS_FILE):
     """
-    Rule-based extraction of drugs, adverse reactions, patient demographics,
-    and confidence score from a clinical narrative.
+    Extract drugs and reactions from a clinical narrative.
 
-    Returns a dict with:
-        - drugs: list of detected drugs with dose/route/indication
-        - drug_reaction_map: {drug_name: [reactions caused by that drug]}
-        - confidence: {score, max, verdict, needs_gpt}
-        - reactions, patient, causality, overall_severity (full details)
+    Default output structure:
+        result["drug_reaction_map"]["Aleve"]["Vision Blurred"]
+        -> {"score": 1.0, "verdict": "HIGH"}
+
+        result["drug_reaction_map"]["Aleve"].get("Nausea", "NOT FOUND")
+        -> "NOT FOUND"
+
+    Args:
+        text:           Clinical narrative string
+        drugs_file:     Path to drugs.txt (one drug per line)
+        reactions_file: Path to reactions.txt (MedDRA LLT/PT format)
+
+    Returns:
+        dict with drug_reaction_map, drugs, reactions, and full extraction details
     """
-    text_lower = text.lower()
-    drugs, reactions = [], []
+    drugs_list, llt_to_pt, drug_pat, rxn_pat = _get_patterns(drugs_file, reactions_file)
+    tokens = re.findall(r"[\w'\-]+", text)
 
-    # ── Extract drugs ──
-    for drug in KNOWN_DRUGS:
-        if drug in text_lower:
-            m = re.search(re.escape(drug), text_lower)
-            dose = route = indication = None
-            if m:
-                ctx = text[max(0, m.start() - 10) : m.end() + 80]
-                dm = DOSE_PATTERN.search(ctx)
-                rm = re.search(
-                    r'\b(oral(?:ly)?|IV|intravenous(?:ly)?|IM|subcutaneous(?:ly)?|SC|topical(?:ly)?|inhaled?)\b',
-                    ctx,
-                    re.IGNORECASE,
-                )
-                im = re.search(r'for\s+([\w\s]+?)(?:\.|,|;|$)', ctx, re.IGNORECASE)
-                dose = dm.group(0) if dm else None
-                route = rm.group(0).lower() if rm else None
-                indication = im.group(1).strip() if im else None
-            drugs.append({"name": drug, "dose": dose, "route": route, "indication": indication})
+    # ── Find drugs ────────────────────────────────────────────────────────────
+    found_drugs = []
+    drug_matches = []
+    drug_spans = []
+    if drug_pat:
+        for m in drug_pat.finditer(text):
+            name = m.group().lower()
+            if len(name) < 3 or name in _STOP_WORDS:
+                continue
+            display = name.title()
+            if display not in found_drugs:
+                found_drugs.append(display)
+            drug_matches.append((m.start(), display))
+            drug_spans.append((m.start(), m.end()))
 
-    # Build drug position map for nearest-drug association
-    drug_positions = []
-    for d in drugs:
-        dm = re.search(re.escape(d["name"]), text_lower)
-        if dm:
-            drug_positions.append((dm.start(), d["name"]))
+    # Dedup: keep trade name, drop generic if both found
+    found_drugs = _dedup_drugs(found_drugs, _TRADE_TO_GENERIC)
+    drug_matches = [(pos, d) for pos, d in drug_matches if d in found_drugs]
 
-    # ── Extract reactions (with negation detection) ──
-    for reaction in KNOWN_REACTIONS:
-        pattern = r'(?<!\w)' + re.escape(reaction) + r'(?!\w)'
-        m = re.search(pattern, text_lower)
-        if not m:
-            continue
+    # ── Find reactions ────────────────────────────────────────────────────────
+    med_history_ranges = _med_history_ranges(text)
 
-        severity = onset = None
-        outcome = "unknown"
-        associated_drug = None
+    found_reactions = []
+    reaction_hits = []
+    if rxn_pat:
+        for m in rxn_pat.finditer(text):
+            llt = m.group().lower()
+            if llt in _NON_REACTION_TERMS:
+                continue
+            # Skip terms inside a matched drug name span
+            if any(s <= m.start() < e for s, e in drug_spans):
+                continue
+            pt = llt_to_pt.get(llt, m.group().title())
+            tok_idx = len(re.findall(r"[\w'\-]+", text[:m.start()]))
+            flags = _context(tokens, tok_idx, text, m.start())
+            # Skip negated / family history / "history of" / indication / med history section
+            if flags["negated"] or flags["family"] or flags["history"] or flags["indication"]:
+                continue
+            if _in_med_history(m.start(), med_history_ranges):
+                continue
+            if pt not in found_reactions:
+                found_reactions.append(pt)
+            reaction_hits.append((m.start(), llt, pt, flags))
 
-        # Check for negation within the same sentence (up to 60 chars back)
-        pre_ctx = text[max(0, m.start() - 60) : m.start()]
-        sent_boundary = max(
-            pre_ctx.rfind('. '), pre_ctx.rfind('.\n'),
-            pre_ctx.rfind('! '), pre_ctx.rfind('? '),
-        )
-        if sent_boundary != -1:
-            pre_ctx = pre_ctx[sent_boundary + 1 :]
-        if NEGATION_PATTERN.search(pre_ctx):
-            continue  # skip negated reaction
+    # ── Build drug[reaction] -> confidence lookup ─────────────────────────────
+    drug_reaction_map = {d: {} for d in found_drugs}
+    unattributed = {}
 
-        # Skip if the match is sandwiched in a dosage context
-        surrounding = text[max(0, m.start() - 40) : m.end() + 40]
-        if re.search(
-            r'\d+\s*(?:mg|mcg|g|ml)\b.{0,10}' + re.escape(reaction),
-            surrounding,
-            re.IGNORECASE,
-        ):
-            continue
+    for char_pos, llt, pt, flags in reaction_hits:
+        score = _score(flags)
+        conf = {"score": score, "verdict": _confidence_label(score)}
 
-        ctx = text[max(0, m.start() - 30) : m.end() + 80]
-        sm = SEVERITY_PATTERN.search(ctx)
-        om = OUTCOME_PATTERN.search(ctx)
-        ons = re.search(
-            r'after\s+([\w\s]+?)(?:,|\.|\s+(?:he|she|the|patient))', ctx, re.IGNORECASE
-        )
-        severity = sm.group(0).lower() if sm else None
-        outcome = om.group(0).lower() if om else "unknown"
-        onset = ons.group(1).strip() if ons else None
-
-        # Associate with nearest preceding drug
-        preceding = [(pos, name) for pos, name in drug_positions if pos <= m.start()]
+        preceding = [(pos, d) for pos, d in drug_matches if pos < char_pos]
         if preceding:
-            associated_drug = max(preceding, key=lambda x: x[0])[1]
-
-        reactions.append({
-            "reaction": reaction,
-            "severity": severity,
-            "onset": onset,
-            "outcome": outcome,
-            "drug": associated_drug,
-        })
-
-    # ── Patient demographics ──
-    age_m = AGE_PATTERN.search(text)
-    sex_m = SEX_PATTERN.search(text)
-    caus_m = CAUSALITY_PATTERN.search(text)
-    sev_m = SEVERITY_PATTERN.search(text)
-
-    # ── Build drug -> reaction -> confidence lookup ──
-    # Structure: result["metformin"]["nausea"] -> {"score": 90, "max": 100, "verdict": "HIGH"}
-    drugs_by_name = {d["name"]: d for d in drugs}
-    drug_reaction_map = {}
-    for d in drugs:
-        drug_reaction_map[d["name"]] = {}
-    for r in reactions:
-        assoc = r.get("drug")
-        if assoc and assoc in drug_reaction_map:
-            pair_conf = calculate_pair_confidence(drugs_by_name[assoc], r)
-            drug_reaction_map[assoc][r["reaction"]] = pair_conf
-        elif assoc is None:
-            pair_conf = calculate_pair_confidence({}, r)
-            drug_reaction_map.setdefault("unknown", {})[r["reaction"]] = pair_conf
-
-    result = {
-        "drugs": drugs,
-        "reactions": reactions,
-        "patient": {
-            "age": age_m.group(1) if age_m else None,
-            "sex": sex_m.group(0).lower() if sex_m else None,
-            "relevant_history": None,
-        },
-        "causality": caus_m.group(0).lower() if caus_m else "unassessable",
-        "overall_severity": sev_m.group(0).lower() if sev_m else None,
-        "drug_reaction_map": drug_reaction_map,
-        "notes": f"Extracted using medspaCy rule-based NER. {len(drugs)} drug(s), {len(reactions)} reaction(s) found.",
-    }
-
-    result["confidence"] = calculate_confidence(result)
-    return result
-
-
-# ── Pretty printer ────────────────────────────────────────────────────────────
-
-def print_report(result):
-    """Print a human-readable report of the extraction results."""
-    print("=" * 60)
-    print("  MEDSPACY EXTRACTION REPORT")
-    print("=" * 60)
-
-    # Drugs
-    print("\nDRUGS FOUND:")
-    if result["drugs"]:
-        for d in result["drugs"]:
-            info = f"  - {d['name']}"
-            if d.get("dose"):
-                info += f" ({d['dose']})"
-            if d.get("route"):
-                info += f" [{d['route']}]"
-            if d.get("indication"):
-                info += f" for {d['indication']}"
-            print(info)
-    else:
-        print("  (none detected)")
-
-    # Drug -> Reaction mapping
-    print("\nDRUG -> REACTION MAPPING:")
-    drm = result["drug_reaction_map"]
-    if drm:
-        for drug, rxns in drm.items():
-            print(f"  {drug}:")
-            if rxns:
-                for r in rxns:
-                    sev = f" [{r['severity']}]" if r.get("severity") else ""
-                    out = f" -> {r['outcome']}" if r.get("outcome") and r["outcome"] != "unknown" else ""
-                    print(f"    - {r['reaction']}{sev}{out}")
+            nearest_drug = max(preceding, key=lambda x: x[0])[1]
+            if nearest_drug in drug_reaction_map:
+                drug_reaction_map[nearest_drug][pt] = conf
             else:
-                print("    (no reactions)")
-    else:
-        print("  (no drug-reaction associations)")
+                drug_reaction_map.setdefault(nearest_drug, {})[pt] = conf
+        else:
+            unattributed[pt] = conf
 
-    # Patient
-    patient = result.get("patient", {})
-    if patient.get("age") or patient.get("sex"):
-        print(f"\nPATIENT: {patient.get('age', '?')}-year-old {patient.get('sex', 'unknown')}")
+    if unattributed:
+        drug_reaction_map["unattributed"] = unattributed
 
-    # Confidence
-    c = result["confidence"]
-    print(f"\nCONFIDENCE: {c['score']}/{c['max']} ({c['verdict']})")
-    print("=" * 60)
+    return {
+        "drug_reaction_map": drug_reaction_map,
+        "drugs": found_drugs,
+        "reactions": found_reactions,
+    }
 
 
 # ── CLI entry point ───────────────────────────────────────────────────────────
@@ -345,27 +398,46 @@ DEMO_NARRATIVE = (
 
 
 def main():
-    args = [a for a in sys.argv[1:] if a not in ("--json", "--full")]
+    args = [a for a in sys.argv[1:] if a not in ("--full",)]
+
+    drugs_file = DRUGS_FILE
+    reactions_file = REACTIONS_FILE
+
+    # Parse --drugs and --reactions flags
+    filtered_args = []
+    i = 0
+    while i < len(args):
+        if args[i] == "--drugs" and i + 1 < len(args):
+            drugs_file = args[i + 1]
+            i += 2
+        elif args[i] == "--reactions" and i + 1 < len(args):
+            reactions_file = args[i + 1]
+            i += 2
+        else:
+            filtered_args.append(args[i])
+            i += 1
+    args = filtered_args
 
     if args and args[0] == "--file":
         if len(args) < 2:
-            print("Usage: python medspacy_extract.py --file <path>")
+            print("Usage: python medspacy_extract.py --file <path>", file=sys.stderr)
             sys.exit(1)
-        with open(args[1], "r") as f:
+        if not os.path.exists(args[1]):
+            print(f"Error: file not found: {args[1]}", file=sys.stderr)
+            sys.exit(1)
+        with open(args[1], "r", encoding="utf-8") as f:
             narrative = f.read()
     elif args:
         narrative = " ".join(args)
     else:
         narrative = DEMO_NARRATIVE
 
-    result = extract_medspacy(narrative)
+    result = extract_medspacy(narrative, drugs_file=drugs_file, reactions_file=reactions_file)
 
     if "--full" in sys.argv:
-        # Full JSON with all fields
-        print(json.dumps(result, indent=2))
+        print(json.dumps(result, indent=2, ensure_ascii=False))
     else:
-        # Default: drug_reaction_map with per-pair confidence only
-        print(json.dumps(result["drug_reaction_map"], indent=2))
+        print(json.dumps(result["drug_reaction_map"], indent=2, ensure_ascii=False))
 
 
 if __name__ == "__main__":
