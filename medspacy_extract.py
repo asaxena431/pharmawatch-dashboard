@@ -224,17 +224,9 @@ def extract_medspacy(text):
     for r in reactions:
         assoc = r.get("drug")
         if assoc and assoc in drug_reaction_map:
-            drug_reaction_map[assoc].append({
-                "reaction": r["reaction"],
-                "severity": r.get("severity"),
-                "outcome": r.get("outcome", "unknown"),
-            })
+            drug_reaction_map[assoc].append(r["reaction"])
         elif assoc is None:
-            drug_reaction_map.setdefault("unknown", []).append({
-                "reaction": r["reaction"],
-                "severity": r.get("severity"),
-                "outcome": r.get("outcome", "unknown"),
-            })
+            drug_reaction_map.setdefault("unknown", []).append(r["reaction"])
 
     result = {
         "drugs": drugs,
@@ -339,7 +331,7 @@ def main():
         # Default: focused JSON with only drugs, drug->reaction map, confidence
         output = {
             "drugs": [
-                {k: v for k, v in d.items() if v is not None}
+                {k: v for k, v in d.items() if k != "route" and v is not None}
                 for d in result["drugs"]
             ],
             "drug_reaction_map": result["drug_reaction_map"],
