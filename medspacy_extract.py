@@ -115,6 +115,38 @@ def calculate_confidence(extracted):
     return {"score": score, "max": 100, "verdict": verdict, "needs_gpt": needs_gpt}
 
 
+def calculate_pair_confidence(drug_info, reaction_info):
+    """Calculate confidence score for a specific drug-reaction pair."""
+    score = 0
+    max_score = 100
+
+    # Drug evidence (up to 40 points)
+    score += 15                                          # drug was identified
+    if drug_info.get("dose"):       score += 15          # dose found
+    if drug_info.get("route"):      score += 5           # route found
+    if drug_info.get("indication"): score += 5           # indication found
+
+    # Reaction evidence (up to 35 points)
+    score += 15                                          # reaction was identified
+    if reaction_info.get("severity"): score += 10        # severity mentioned
+    if reaction_info.get("onset"):    score += 5         # temporal info
+    if reaction_info.get("outcome") and reaction_info["outcome"] != "unknown":
+        score += 5                                       # outcome known
+
+    # Association strength (up to 25 points)
+    if reaction_info.get("drug") == drug_info.get("name"):
+        score += 25                                      # directly associated
+
+    if score >= 80:
+        verdict = "HIGH"
+    elif score >= 50:
+        verdict = "MEDIUM"
+    else:
+        verdict = "LOW"
+
+    return {"score": score, "max": max_score, "verdict": verdict}
+
+
 # ── Main extraction function ─────────────────────────────────────────────────
 
 def extract_medspacy(text):
@@ -217,16 +249,25 @@ def extract_medspacy(text):
     caus_m = CAUSALITY_PATTERN.search(text)
     sev_m = SEVERITY_PATTERN.search(text)
 
-    # ── Build drug -> reactions mapping ──
+    # ── Build drug -> reactions mapping with per-pair confidence ──
+    drugs_by_name = {d["name"]: d for d in drugs}
     drug_reaction_map = {}
     for d in drugs:
         drug_reaction_map[d["name"]] = []
     for r in reactions:
         assoc = r.get("drug")
         if assoc and assoc in drug_reaction_map:
-            drug_reaction_map[assoc].append(r["reaction"])
+            pair_conf = calculate_pair_confidence(drugs_by_name[assoc], r)
+            drug_reaction_map[assoc].append({
+                "reaction": r["reaction"],
+                "confidence": pair_conf,
+            })
         elif assoc is None:
-            drug_reaction_map.setdefault("unknown", []).append(r["reaction"])
+            pair_conf = calculate_pair_confidence({}, r)
+            drug_reaction_map.setdefault("unknown", []).append({
+                "reaction": r["reaction"],
+                "confidence": pair_conf,
+            })
 
     result = {
         "drugs": drugs,
@@ -328,16 +369,8 @@ def main():
         # Full JSON with all fields
         print(json.dumps(result, indent=2))
     else:
-        # Default: focused JSON with only drugs, drug->reaction map, confidence
-        output = {
-            "drugs": [
-                {k: v for k, v in d.items() if k != "route" and v is not None}
-                for d in result["drugs"]
-            ],
-            "drug_reaction_map": result["drug_reaction_map"],
-            "confidence": result["confidence"],
-        }
-        print(json.dumps(output, indent=2))
+        # Default: drug_reaction_map with per-pair confidence only
+        print(json.dumps(result["drug_reaction_map"], indent=2))
 
 
 if __name__ == "__main__":
