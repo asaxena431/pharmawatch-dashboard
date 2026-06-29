@@ -721,7 +721,26 @@ def extract_medspacy(text):
     caus_m = CAUSALITY_PATTERN.search(text)
     sev_m  = SEVERITY_PATTERN.search(text)
 
-    return {
+    # Build drug → reactions mapping
+    drug_reaction_map = {}
+    for d in drugs:
+        drug_reaction_map[d["name"]] = []
+    for r in reactions:
+        assoc = r.get("drug")
+        if assoc and assoc in drug_reaction_map:
+            drug_reaction_map[assoc].append({
+                "reaction": r["reaction"],
+                "severity": r.get("severity"),
+                "outcome":  r.get("outcome", "unknown"),
+            })
+        elif assoc is None:
+            drug_reaction_map.setdefault("unknown", []).append({
+                "reaction": r["reaction"],
+                "severity": r.get("severity"),
+                "outcome":  r.get("outcome", "unknown"),
+            })
+
+    result = {
         "drugs":    drugs,
         "reactions": reactions,
         "patient":  {"age": age_m.group(1) if age_m else None,
@@ -729,8 +748,14 @@ def extract_medspacy(text):
                      "relevant_history": None},
         "causality":        caus_m.group(0).lower() if caus_m else "unassessable",
         "overall_severity": sev_m.group(0).lower() if sev_m else None,
+        "drug_reaction_map": drug_reaction_map,
         "notes": f"Extracted using medspaCy rule-based NER. {len(drugs)} drug(s), {len(reactions)} reaction(s) found."
     }
+
+    # Attach confidence score
+    result["confidence"] = calculate_confidence(result)
+
+    return result
 
 
 # ── GPT-4 extraction ─────────────────────────────────────────────────────────
