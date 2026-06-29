@@ -711,6 +711,120 @@ def extract_medspacy(text):
     }
 
 
+# ── OpenAI extraction (same interface as extract_medspacy) ────────────────────
+OPENAI_EXTRACT_SYSTEM = """You are a clinical pharmacovigilance expert.
+Extract all drugs and adverse reactions from the clinical narrative.
+
+CRITICAL RULES:
+- ONLY include reactions that are AFFIRMED/PRESENT — do NOT include reactions that are negated, denied, absent, or ruled out.
+- Examples of negated reactions to EXCLUDE: "no nausea", "denies headache", "without fever", "no evidence of bleeding", "ruled out hepatotoxicity".
+- If a reaction is mentioned only in a negative context, omit it entirely from the output.
+
+Return ONLY valid JSON with this EXACT structure:
+{
+  "drugs": [{"name": "", "dose": null, "route": null, "indication": null}],
+  "reactions": [{"reaction": "", "drug": null, "severity": null, "onset": null, "outcome": "unknown"}],
+  "patient": {"age": null, "sex": null, "relevant_history": null},
+  "causality": null,
+  "overall_severity": null,
+  "notes": ""
+}
+
+Rules for each field:
+- drugs[].name: lowercase drug name
+- drugs[].dose: dosage string (e.g. "500 mg") or null
+- drugs[].route: one of "oral", "iv", "intravenous", "im", "subcutaneous", "sc", "topical", "inhaled" (lowercase) or null
+- drugs[].indication: reason for use or null
+- reactions[].reaction: lowercase reaction name
+- reactions[].drug: name of the drug most likely responsible (lowercase) or null
+- reactions[].severity: one of "mild", "moderate", "severe", "life-threatening" (lowercase) or null
+- reactions[].onset: time after drug administration (e.g. "2 days") or null
+- reactions[].outcome: one of "recovered", "recovering", "not recovered", "fatal", "unknown" (lowercase)
+- patient.age: age as string (e.g. "65") or null
+- patient.sex: "male" or "female" (lowercase) or null
+- patient.relevant_history: brief relevant medical history or null
+- causality: one of "certain", "probable", "possible", "unlikely", "conditional", "unassessable" (lowercase)
+- overall_severity: one of "mild", "moderate", "severe", "life-threatening" (lowercase) or null
+- notes: brief extraction summary
+"""
+
+
+def extract_openai(text):
+    """OpenAI-based extraction with the same output format as extract_medspacy."""
+    api_key = os.environ.get("OPENAI_API_KEY")
+    if not api_key or not OPENAI_AVAILABLE:
+        return {
+            "drugs": [],
+            "reactions": [],
+            "patient": {"age": None, "sex": None, "relevant_history": None},
+            "causality": "unassessable",
+            "overall_severity": None,
+            "notes": "OpenAI API key not configured or openai package unavailable."
+        }
+
+    safe_text, _ = deidentify_text(text)
+    try:
+        client = OpenAI(api_key=api_key, timeout=30.0)
+        resp = client.chat.completions.create(
+            model="gpt-4o",
+            messages=[
+                {"role": "system", "content": OPENAI_EXTRACT_SYSTEM},
+                {"role": "user",   "content": f"Clinical Narrative:\n\n{safe_text}"}
+            ],
+            temperature=0,
+            response_format={"type": "json_object"},
+            max_tokens=1500,
+        )
+        result = json.loads(resp.choices[0].message.content)
+
+        # Normalize to guarantee exact same structure as extract_medspacy
+        drugs = []
+        for d in result.get("drugs", []):
+            drugs.append({
+                "name":       (d.get("name") or "").lower().strip(),
+                "dose":       d.get("dose"),
+                "route":      (d.get("route") or "").lower().strip() or None,
+                "indication": d.get("indication"),
+            })
+
+        reactions = []
+        for r in result.get("reactions", []):
+            reactions.append({
+                "reaction": (r.get("reaction") or "").lower().strip(),
+                "severity": (r.get("severity") or "").lower().strip() or None,
+                "onset":    r.get("onset"),
+                "outcome":  (r.get("outcome") or "unknown").lower().strip(),
+                "drug":     (r.get("drug") or "").lower().strip() or None,
+            })
+
+        patient = result.get("patient", {})
+        age = patient.get("age")
+        sex = (patient.get("sex") or "").lower().strip() or None
+        relevant_history = patient.get("relevant_history")
+
+        causality = (result.get("causality") or "unassessable").lower().strip()
+        overall_severity = (result.get("overall_severity") or "").lower().strip() or None
+
+        return {
+            "drugs":            drugs,
+            "reactions":        reactions,
+            "patient":          {"age": age, "sex": sex, "relevant_history": relevant_history},
+            "causality":        causality,
+            "overall_severity": overall_severity,
+            "notes":            f"Extracted using OpenAI GPT-4o. {len(drugs)} drug(s), {len(reactions)} reaction(s) found."
+        }
+    except Exception as e:
+        print(f"[OPENAI EXTRACT ERROR] {e}")
+        return {
+            "drugs": [],
+            "reactions": [],
+            "patient": {"age": None, "sex": None, "relevant_history": None},
+            "causality": "unassessable",
+            "overall_severity": None,
+            "notes": f"OpenAI extraction failed: {e}"
+        }
+
+
 # ── GPT-4 extraction ─────────────────────────────────────────────────────────
 GPT_SYSTEM = """You are a clinical pharmacovigilance expert.
 Extract all drugs and adverse reactions from the clinical narrative.
@@ -984,7 +1098,7 @@ def api_compare_engines():
 
     try:
         ms_result  = extract_medspacy(narrative)
-        gpt_result = extract_huggingface(narrative) if engine == "huggingface" else extract_gpt(narrative)
+        gpt_result = extract_huggingface(narrative) if engine == "huggingface" else extract_openai(narrative)
         diff       = diff_extractions(ms_result, gpt_result)
 
         ms_conf  = calculate_confidence(ms_result)
