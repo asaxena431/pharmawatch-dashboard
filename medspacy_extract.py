@@ -240,17 +240,17 @@ def _context(tokens, idx, text="", char_pos=0):
 
 
 def _score(flags):
-    s = 1.0
-    if flags["negated"]:   s -= 0.6
-    if flags["uncertain"]: s -= 0.2
-    if flags["family"]:    s -= 0.3
-    return round(max(0.0, min(1.0, s)), 2)
+    s = 100
+    if flags["negated"]:   s -= 60
+    if flags["uncertain"]: s -= 20
+    if flags["family"]:    s -= 30
+    return max(0, min(100, s))
 
 
 def _confidence_label(score):
-    if score >= 0.9: return "HIGH"
-    if score >= 0.6: return "MEDIUM"
-    if score >= 0.3: return "LOW"
+    if score >= 90: return "HIGH"
+    if score >= 60: return "MEDIUM"
+    if score >= 30: return "LOW"
     return "VERY LOW"
 
 
@@ -363,7 +363,7 @@ def extract_medspacy(text, drugs_file=DRUGS_FILE, reactions_file=REACTIONS_FILE)
 
     for char_pos, llt, pt, flags in reaction_hits:
         score = _score(flags)
-        conf = {"score": score, "verdict": _confidence_label(score)}
+        conf = {"score": f"{score}%", "verdict": _confidence_label(score)}
 
         preceding = [(pos, d) for pos, d in drug_matches if pos < char_pos]
         if preceding:
