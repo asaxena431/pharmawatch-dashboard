@@ -101,13 +101,50 @@ def match_drugs(narrative_drugs: list, drug_list: list,
 
 
 def match_drugs_map(narrative_drugs: list, drug_list: list,
+                    drug_roles: dict = None,
                     orange_book_path: str = ORANGE_BOOK_FILE) -> dict:
     """
-    Like match_drugs but returns a {drug_name: "yes"/"no"} map, so callers can do
-    result["Aleve"] -> "yes".
+    Like match_drugs but returns a {drug_name: role_or_no} map.
+
+    Parameters
+    ----------
+    narrative_drugs : list of str
+        Drug names extracted from the narrative.
+    drug_list : list of str
+        Drug names present in the DB.
+    drug_roles : dict, optional
+        Mapping of DB drug name (case-insensitive) -> role string
+        (e.g. {"Aspirin": "primary suspect", "Lisinopril": "concomitant"}).
+        When a narrative drug matches a DB drug whose role is provided,
+        the result value is that role.  If drug_roles is None or the
+        matched DB drug has no role entry, falls back to "yes"/"no".
+    orange_book_path : str
+        Path to the orange_book.json file.
+
+    Returns
+    -------
+    dict
+        {drug_name: role} for matched drugs, {drug_name: "no"} for unmatched.
+        Example: {"Aleve": "primary suspect", "Tylenol": "no"}
     """
-    return {r["drug"]: ("yes" if r["in_db"] else "no")
-            for r in match_drugs(narrative_drugs, drug_list, orange_book_path)}
+    roles_lower = {_norm(k): v for k, v in drug_roles.items()} if drug_roles else {}
+    results = {}
+    for r in match_drugs(narrative_drugs, drug_list, orange_book_path):
+        drug = r["drug"]
+        if r["in_db"]:
+            # Look up role via matched DB names
+            role = None
+            for matched_name in r["matched_on"]:
+                role = roles_lower.get(_norm(matched_name))
+                if role:
+                    break
+            # Also try the narrative drug name itself in the roles map
+            if not role:
+                role = roles_lower.get(_norm(drug))
+            results[drug] = role if role else "yes"
+        else:
+            results[drug] = "no"
+    return results
 
 
 if __name__ == "__main__":
