@@ -100,11 +100,31 @@ def match_drugs(narrative_drugs: list, drug_list: list,
     return results
 
 
+def _resolve_generic(name: str, t2g: dict, g2b: dict) -> str:
+    """Return the generic name for a drug, or the name itself if it is already generic."""
+    n = _norm(name)
+    # If it's a trade name, look up its generic
+    generic = t2g.get(n, "")
+    if generic:
+        return generic.split(";")[0].strip()
+    # If it's already a generic (has brands mapped), return as-is
+    if n in g2b:
+        return n
+    # Try salt-stripped form
+    stripped = _strip_salt(n)
+    generic = t2g.get(stripped, "")
+    if generic:
+        return generic.split(";")[0].strip()
+    if stripped in g2b:
+        return stripped
+    return n
+
+
 def match_drugs_map(narrative_drugs: list, drug_list: list,
-                    drug_roles: dict = None,
+                    drug_roles=None,
                     orange_book_path: str = ORANGE_BOOK_FILE) -> dict:
     """
-    Like match_drugs but returns a {drug_name: role_or_no} map.
+    Like match_drugs but returns a {drug_name: {"role": ..., "generic": ...}} map.
 
     Parameters
     ----------
@@ -112,20 +132,23 @@ def match_drugs_map(narrative_drugs: list, drug_list: list,
         Drug names extracted from the narrative.
     drug_list : list of str
         Drug names present in the DB.
-    drug_roles : dict, optional
-        Mapping of DB drug name (case-insensitive) -> role string
-        (e.g. {"Aspirin": "primary suspect", "Lisinopril": "concomitant"}).
-        When a narrative drug matches a DB drug whose role is provided,
-        the result value is that role.  If drug_roles is None or the
-        matched DB drug has no role entry, falls back to "yes"/"no".
+    drug_roles : dict or list, optional
+        Mapping of DB drug name -> role string.  Accepts a dict
+        (e.g. {"Aspirin": "primary suspect"}) or a list parallel to
+        drug_list (e.g. ["primary suspect", "concomitant"]).
     orange_book_path : str
         Path to the orange_book.json file.
 
     Returns
     -------
     dict
-        {drug_name: role} for matched drugs, {drug_name: "no"} for unmatched.
-        Example: {"Aleve": "primary suspect", "Tylenol": "no"}
+        {drug_name: {"role": role_str, "generic": generic_name}}
+        role is the matched role, "yes" if matched but no role given, or "no" if unmatched.
+        generic is the resolved generic name from orange_book / biologics_map.
+
+        Example:
+            drug_results["Aleve"]["role"]    -> "primary suspect"
+            drug_results["Aleve"]["generic"] -> "naproxen"
     """
     # drug_roles can be a dict {drug_name: role} or a list parallel to drug_list
     if drug_roles and isinstance(drug_roles, list):
@@ -136,9 +159,11 @@ def match_drugs_map(narrative_drugs: list, drug_list: list,
         roles_lower = {_norm(k): v for k, v in drug_roles.items()}
     else:
         roles_lower = {}
+    t2g, g2b = load_orange_book(orange_book_path)
     results = {}
     for r in match_drugs(narrative_drugs, drug_list, orange_book_path):
         drug = r["drug"]
+        generic = _resolve_generic(drug, t2g, g2b)
         if r["in_db"]:
             # Look up role via matched DB names
             role = None
@@ -149,9 +174,9 @@ def match_drugs_map(narrative_drugs: list, drug_list: list,
             # Also try the narrative drug name itself in the roles map
             if not role:
                 role = roles_lower.get(_norm(drug))
-            results[drug] = role if role else "yes"
+            results[drug] = {"role": role if role else "yes", "generic": generic}
         else:
-            results[drug] = "no"
+            results[drug] = {"role": "no", "generic": generic}
     return results
 
 
