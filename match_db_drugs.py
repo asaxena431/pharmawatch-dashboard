@@ -127,7 +127,15 @@ def match_drugs_map(narrative_drugs: list, drug_list: list,
         {drug_name: role} for matched drugs, {drug_name: "no"} for unmatched.
         Example: {"Aleve": "primary suspect", "Tylenol": "no"}
     """
-    roles_lower = {_norm(k): v for k, v in drug_roles.items()} if drug_roles else {}
+    # drug_roles can be a dict {drug_name: role} or a list parallel to drug_list
+    if drug_roles and isinstance(drug_roles, list):
+        roles_lower = {_norm(drug_list[i]): drug_roles[i]
+                       for i in range(min(len(drug_list), len(drug_roles)))
+                       if drug_roles[i]}
+    elif drug_roles and isinstance(drug_roles, dict):
+        roles_lower = {_norm(k): v for k, v in drug_roles.items()}
+    else:
+        roles_lower = {}
     results = {}
     for r in match_drugs(narrative_drugs, drug_list, orange_book_path):
         drug = r["drug"]
