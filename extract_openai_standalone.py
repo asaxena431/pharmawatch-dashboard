@@ -155,9 +155,12 @@ def extract_openai(text):
         causality = (result.get("causality") or "unassessable").lower().strip()
         overall_severity = (result.get("overall_severity") or "").lower().strip() or None
 
+        drug_reaction_map = build_drug_reaction_map(drugs, reactions)
+
         return {
             "drugs": drugs,
             "reactions": reactions,
+            "drug_reaction_map": drug_reaction_map,
             "patient": {"age": age, "sex": sex, "relevant_history": relevant_history},
             "causality": causality,
             "overall_severity": overall_severity,
@@ -171,6 +174,69 @@ def extract_openai(text):
             "causality": "unassessable", "overall_severity": None,
             "notes": f"OpenAI extraction failed: {e}"
         }
+
+
+# ── Confidence scoring ────────────────────────────────────────────────────
+
+def calculate_pair_confidence(drug_info, reaction_info):
+    """Calculate confidence score for a specific drug-reaction pair."""
+    score = 0
+    max_score = 100
+
+    # Drug evidence (up to 40 points)
+    score += 15                                          # drug was identified
+    if drug_info.get("dose"):       score += 15          # dose found
+    if drug_info.get("route"):      score += 5           # route found
+    if drug_info.get("indication"): score += 5           # indication found
+
+    # Reaction evidence (up to 35 points)
+    score += 15                                          # reaction was identified
+    if reaction_info.get("severity"): score += 10        # severity mentioned
+    if reaction_info.get("onset"):    score += 5         # temporal info
+    if reaction_info.get("outcome") and reaction_info["outcome"] != "unknown":
+        score += 5                                       # outcome known
+
+    # Association strength (up to 25 points)
+    if reaction_info.get("drug") == drug_info.get("name"):
+        score += 25                                      # directly associated
+
+    if score >= 80:
+        verdict = "HIGH"
+    elif score >= 50:
+        verdict = "MEDIUM"
+    else:
+        verdict = "LOW"
+
+    return {"score": score, "max": max_score, "verdict": verdict}
+
+
+def build_drug_reaction_map(drugs, reactions):
+    """Build drug -> reactions mapping with per-pair confidence scores."""
+    drugs_by_name = {d["name"]: d for d in drugs}
+    drug_reaction_map = {}
+    for d in drugs:
+        drug_reaction_map[d["name"]] = []
+    for r in reactions:
+        assoc = r.get("drug")
+        if assoc and assoc in drug_reaction_map:
+            pair_conf = calculate_pair_confidence(drugs_by_name[assoc], r)
+            drug_reaction_map[assoc].append({
+                "reaction": r["reaction"],
+                "severity": r.get("severity"),
+                "onset": r.get("onset"),
+                "outcome": r.get("outcome", "unknown"),
+                "confidence": pair_conf,
+            })
+        else:
+            pair_conf = calculate_pair_confidence({}, r)
+            drug_reaction_map.setdefault("unattributed", []).append({
+                "reaction": r["reaction"],
+                "severity": r.get("severity"),
+                "onset": r.get("onset"),
+                "outcome": r.get("outcome", "unknown"),
+                "confidence": pair_conf,
+            })
+    return drug_reaction_map
 
 
 # ── Results file management ──────────────────────────────────────────────────
@@ -270,7 +336,23 @@ def main():
     print(f"  Patient: age={result.get('patient', {}).get('age')}, sex={result.get('patient', {}).get('sex')}")
     print(f"  Causality: {result.get('causality')}")
     print(f"  Severity:  {result.get('overall_severity')}")
-    print(f"  Notes: {result.get('notes')}")
+
+    # Display drug_reaction_map
+    drm = result.get("drug_reaction_map", {})
+    if drm:
+        print(f"\n  Drug-Reaction Map:")
+        for drug_name, rxns in drm.items():
+            print(f"    {drug_name}:")
+            if rxns:
+                for rx in rxns:
+                    conf = rx.get("confidence", {})
+                    conf_str = f" [confidence: {conf.get('score', '?')}/{conf.get('max', 100)} {conf.get('verdict', '')}]"
+                    sev = f" ({rx['severity']})" if rx.get("severity") else ""
+                    print(f"      - {rx['reaction']}{sev}{conf_str}")
+            else:
+                print(f"      (no reactions)")
+
+    print(f"\n  Notes: {result.get('notes')}")
 
     # Save to results file
     all_cases = load_results(results_file)
