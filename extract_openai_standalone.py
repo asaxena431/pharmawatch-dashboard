@@ -99,14 +99,14 @@ def extract_openai(text):
     api_key = os.environ.get("OPENAI_API_KEY")
     if not api_key:
         return {
-            "drugs": [], "reactions": [],
+            "drugs": [], "reactions": [], "drug_reaction_map": {},
             "patient": {"age": None, "sex": None, "relevant_history": None},
             "causality": "unassessable", "overall_severity": None,
             "notes": "OpenAI API key not configured. Set OPENAI_API_KEY environment variable."
         }
     if not OPENAI_AVAILABLE:
         return {
-            "drugs": [], "reactions": [],
+            "drugs": [], "reactions": [], "drug_reaction_map": {},
             "patient": {"age": None, "sex": None, "relevant_history": None},
             "causality": "unassessable", "overall_severity": None,
             "notes": "openai package not installed. Run: pip install openai"
@@ -169,7 +169,7 @@ def extract_openai(text):
         }
     except Exception as e:
         return {
-            "drugs": [], "reactions": [],
+            "drugs": [], "reactions": [], "drug_reaction_map": {},
             "patient": {"age": None, "sex": None, "relevant_history": None},
             "causality": "unassessable", "overall_severity": None,
             "notes": f"OpenAI extraction failed: {e}"
