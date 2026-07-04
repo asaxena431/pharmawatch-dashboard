@@ -54,6 +54,14 @@ def load_case_result(results_file, case_id=None):
     If ``case_id`` is None, the first case is returned.
     """
     all_cases = load_results(results_file)
+
+    # Support both a list of case objects and a dict keyed by case_id.
+    if isinstance(all_cases, dict):
+        all_cases = [
+            {"case_id": k, **(v if isinstance(v, dict) else {"result": v})}
+            for k, v in all_cases.items()
+        ]
+
     if not all_cases:
         raise ValueError(f"No cases found in {results_file}")
 
@@ -66,13 +74,21 @@ def load_case_result(results_file, case_id=None):
                 case = c
                 break
         if case is None:
-            raise KeyError(f"Case ID {case_id!r} not found in {results_file}")
+            available = [str(c.get("case_id")) for c in all_cases]
+            raise KeyError(
+                f"Case ID {case_id!r} not found in {results_file}. "
+                f"Available case IDs: {available}"
+            )
 
     result = case.get("result", {})
     result["drug_reaction_map"] = index_drug_reaction_map(
         result.get("drug_reaction_map", {})
     )
     return result
+
+
+# Alias for convenience / backwards compatibility.
+get_case_result = load_case_result
 
 
 def main():
@@ -83,7 +99,17 @@ def main():
     parser.add_argument("--results", default=DEFAULT_RESULTS_FILE, help="Results JSON file path")
     parser.add_argument("--drug", help="Drug name to look up in drug_reaction_map")
     parser.add_argument("--event", help="Reaction/event name to look up for the drug")
+    parser.add_argument("--list", action="store_true", help="List available case IDs and exit")
     args = parser.parse_args()
+
+    if args.list:
+        cases = load_results(args.results)
+        if isinstance(cases, dict):
+            ids = list(cases.keys())
+        else:
+            ids = [c.get("case_id") for c in cases]
+        print(json.dumps(ids, indent=2, ensure_ascii=False))
+        return
 
     result = load_case_result(args.results, args.case_id)
 
