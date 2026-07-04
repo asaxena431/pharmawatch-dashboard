@@ -131,7 +131,7 @@ def extract_openai(text):
         drugs = []
         for d in result.get("drugs", []):
             drugs.append({
-                "name": (d.get("name") or "").lower().strip(),
+                "name": (d.get("name") or "").strip().title(),
                 "dose": d.get("dose"),
                 "route": (d.get("route") or "").lower().strip() or None,
                 "indication": d.get("indication"),
@@ -140,11 +140,11 @@ def extract_openai(text):
         reactions = []
         for r in result.get("reactions", []):
             reactions.append({
-                "reaction": (r.get("reaction") or "").lower().strip(),
+                "reaction": (r.get("reaction") or "").strip().title(),
                 "severity": (r.get("severity") or "").lower().strip() or None,
                 "onset": r.get("onset"),
                 "outcome": (r.get("outcome") or "unknown").lower().strip(),
-                "drug": (r.get("drug") or "").lower().strip() or None,
+                "drug": (r.get("drug") or "").strip().title() or None,
             })
 
         patient = result.get("patient", {})
