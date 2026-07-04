@@ -289,6 +289,9 @@ def main():
     parser.add_argument("--no-summary", action="store_true", help="Skip printing summary table")
     args = parser.parse_args()
 
+    # Normalize case ID (strip whitespace and any trailing ':')
+    args.case_id = str(args.case_id).strip().rstrip(":").strip()
+
     # Determine narrative source
     if args.text:
         narrative = args.text

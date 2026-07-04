@@ -23,6 +23,11 @@ import argparse
 DEFAULT_RESULTS_FILE = os.path.join("output", "results.json")
 
 
+def normalize_case_id(case_id):
+    """Normalize a case ID for comparison (strip whitespace and trailing ':')."""
+    return str(case_id).strip().rstrip(":").strip()
+
+
 def load_results(results_file):
     """Load all cases from the results JSON file (UTF-8)."""
     if not os.path.exists(results_file):
@@ -69,8 +74,9 @@ def load_case_result(results_file, case_id=None):
     if case_id is None:
         case = all_cases[0]
     else:
+        target = normalize_case_id(case_id)
         for c in all_cases:
-            if str(c.get("case_id")) == str(case_id):
+            if normalize_case_id(c.get("case_id")) == target:
                 case = c
                 break
         if case is None:
