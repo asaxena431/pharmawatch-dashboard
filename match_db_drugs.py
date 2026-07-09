@@ -17,6 +17,7 @@ CLI:
 """
 
 import os
+import re
 import json
 
 ORANGE_BOOK_FILE   = os.path.join(os.path.dirname(os.path.abspath(__file__)),
@@ -39,6 +40,20 @@ def _strip_salt(name: str) -> str:
     while len(parts) > 1 and parts[-1] in _SALTS:
         parts = parts[:-1]
     return " ".join(parts)
+
+
+def _split_combo(name: str) -> list:
+    """Split a combination product name into its component ingredients.
+
+    DB drug names use separators like backslash, forward slash, or '+' to join
+    the ingredients of a combination product, e.g.
+    "Estrogens, Conjugated\\Medroxyprogesterone Acetate". Returns the individual
+    component names (plus the whole name) so each ingredient can be matched.
+    """
+    parts = [p.strip() for p in re.split(r"[\\/+]", name) if p.strip()]
+    if len(parts) <= 1:
+        return [name.strip()] if name.strip() else []
+    return [name.strip()] + parts
 
 
 def load_orange_book(path: str = ORANGE_BOOK_FILE,
@@ -92,7 +107,11 @@ def match_drugs(narrative_drugs: list, drug_list: list,
     Returns a list of {"drug", "in_db", "matched_on"}.
     """
     t2g, g2b = load_orange_book(orange_book_path)
-    drug_db = {_norm(d) for d in drug_list} | {_strip_salt(_norm(d)) for d in drug_list}
+    drug_db = set()
+    for d in drug_list:
+        for comp in _split_combo(d):
+            drug_db.add(_norm(comp))
+            drug_db.add(_strip_salt(_norm(comp)))
     results = []
     for d in narrative_drugs:
         matched = sorted(drug_synonyms(d, t2g, g2b) & drug_db)
@@ -152,15 +171,23 @@ def match_drugs_map(narrative_drugs: list, drug_list: list,
             drug_results["Aleve"]["role"]    -> "primary suspect"
             drug_results["Aleve"]["generic"] -> "naproxen"
     """
-    # drug_roles can be a dict {drug_name: role} or a list parallel to drug_list
+    # drug_roles can be a dict {drug_name: role} or a list parallel to drug_list.
+    # Combination products are expanded so each component inherits the role,
+    # e.g. "Estrogens, Conjugated\\Medroxyprogesterone Acetate" -> "PS" makes
+    # both "estrogens, conjugated" and "medroxyprogesterone acetate" map to "PS".
+    roles_lower = {}
     if drug_roles and isinstance(drug_roles, list):
-        roles_lower = {_norm(drug_list[i]): drug_roles[i]
-                       for i in range(min(len(drug_list), len(drug_roles)))
-                       if drug_roles[i]}
+        pairs = [(drug_list[i], drug_roles[i])
+                 for i in range(min(len(drug_list), len(drug_roles)))
+                 if drug_roles[i]]
     elif drug_roles and isinstance(drug_roles, dict):
-        roles_lower = {_norm(k): v for k, v in drug_roles.items()}
+        pairs = list(drug_roles.items())
     else:
-        roles_lower = {}
+        pairs = []
+    for name, role_val in pairs:
+        for comp in _split_combo(name):
+            roles_lower[_norm(comp)] = role_val
+            roles_lower.setdefault(_strip_salt(_norm(comp)), role_val)
     t2g, g2b = load_orange_book(orange_book_path)
     results = {}
     for r in match_drugs(narrative_drugs, drug_list, orange_book_path):
