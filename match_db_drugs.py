@@ -143,7 +143,9 @@ def match_drugs_map(narrative_drugs: list, drug_list: list,
     -------
     dict
         {drug_name: {"role": role_str, "generic": generic_name}}
-        role is the matched role, "yes" if matched but no role given, or "no" if unmatched.
+        role is the role passed for the drug (matched by DB name, narrative
+        name, or generic) when one was supplied; otherwise "yes" if the drug is
+        in the DB but no role was given, or "no" if it is not in the DB.
         generic is the resolved generic name from orange_book / biologics_map.
 
         Example:
@@ -164,19 +166,19 @@ def match_drugs_map(narrative_drugs: list, drug_list: list,
     for r in match_drugs(narrative_drugs, drug_list, orange_book_path):
         drug = r["drug"]
         generic = _resolve_generic(drug, t2g, g2b)
-        if r["in_db"]:
-            # Look up role via matched DB names
-            role = None
-            for matched_name in r["matched_on"]:
-                role = roles_lower.get(_norm(matched_name))
-                if role:
-                    break
-            # Also try the narrative drug name itself in the roles map
-            if not role:
-                role = roles_lower.get(_norm(drug))
-            results[drug] = {"role": role if role else "yes", "generic": generic}
+        # Resolve the role from any of the drug's known names: the matched DB
+        # names, the narrative drug name itself, or its resolved generic. This
+        # is done regardless of DB membership so an explicitly passed role is
+        # always honored.
+        role = None
+        for name in list(r["matched_on"]) + [drug, generic]:
+            role = roles_lower.get(_norm(name))
+            if role:
+                break
+        if role:
+            results[drug] = {"role": role, "generic": generic}
         else:
-            results[drug] = {"role": "no", "generic": generic}
+            results[drug] = {"role": "yes" if r["in_db"] else "no", "generic": generic}
     return results
 
 
