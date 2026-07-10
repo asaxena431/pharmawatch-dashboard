@@ -54,13 +54,15 @@ def _dedup_drugs(found: list, trade_to_generic: dict) -> list:
     If both a trade name and its generic are found, keep only the trade name.
     e.g. found=["Ibuprofen", "Advil"] -> ["Advil"]  (Advil's generic is ibuprofen)
     """
-    # Build set of generics that have a trade name present
+    # Build set of generics that have a *distinct* trade name present. Some
+    # entries map a drug to itself (e.g. amoxicillin -> amoxicillin); those must
+    # not be dropped, so only cover a generic when a different trade name exists.
     found_lower   = {d.lower() for d in found}
     generics_covered = set()
     for d in found:
-        generic = trade_to_generic.get(d.lower(), "")
-        if generic and generic.lower() in found_lower:
-            generics_covered.add(generic.lower())
+        generic = trade_to_generic.get(d.lower(), "").lower()
+        if generic and generic != d.lower() and generic in found_lower:
+            generics_covered.add(generic)
     return [d for d in found if d.lower() not in generics_covered]
 
 # Common English words — never match as drug names
@@ -74,18 +76,45 @@ _STOP_WORDS = {
     "also", "both", "each", "into", "more", "than", "them", "when", "your",
 }
 
+# Salt / counter-ion suffixes. A drug list entry like "phentermine hydrochloride"
+# also yields its salt-stripped base "phentermine" so a narrative that names the
+# bare ingredient still matches.
+_SALTS = ("sodium", "hydrochloride", "hcl", "sulfate", "phosphate", "potassium",
+          "calcium", "magnesium", "maleate", "tartrate", "mesylate", "besylate",
+          "citrate", "acetate", "succinate", "fumarate", "bromide", "chloride")
+
+
+def _strip_salt(name: str) -> str:
+    parts = name.split()
+    while len(parts) > 1 and parts[-1] in _SALTS:
+        parts = parts[:-1]
+    return " ".join(parts)
+
 
 # ── File loaders ──────────────────────────────────────────────────────────────
 
 def load_drugs(path: str = DRUGS_FILE) -> list:
-    """Load drug names from file, one per line."""
+    """Load drug names from file, one per line.
+
+    Each entry also contributes its salt-stripped base name (e.g.
+    "phentermine hydrochloride" -> "phentermine") so narratives that mention the
+    bare ingredient are matched too. Longer forms are kept and, since patterns
+    are matched longest-first, still take precedence when both appear.
+    """
     if not os.path.exists(path):
         return []
+    names, seen = [], set()
     with open(path, encoding="utf-8") as f:
-        return [
-            l.strip().lower() for l in f
-            if l.strip() and len(l.strip()) >= 3 and l.strip().lower() not in _STOP_WORDS
-        ]
+        for l in f:
+            base = l.strip().lower()
+            if not base:
+                continue
+            for variant in (base, _strip_salt(base)):
+                if (len(variant) >= 3 and variant not in _STOP_WORDS
+                        and variant not in seen):
+                    seen.add(variant)
+                    names.append(variant)
+    return names
 
 
 def load_reactions(path: str = REACTIONS_FILE) -> dict:
