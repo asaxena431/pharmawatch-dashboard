@@ -16,6 +16,13 @@ except ImportError:
 
 app = Flask(__name__)
 
+try:
+    from medwatch_ocr.web import medwatch_bp
+    app.register_blueprint(medwatch_bp)
+    MEDWATCH_AVAILABLE = True
+except ImportError:
+    MEDWATCH_AVAILABLE = False
+
 # ── Shared lists ─────────────────────────────────────────────────────────────
 KNOWN_DRUGS = [
     "tylenol","acetaminophen","lipitor","atorvastatin","amoxicillin","ibuprofen",

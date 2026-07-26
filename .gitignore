@@ -5,3 +5,6 @@ __pycache__/
 *.json
 .venv/
 venv/
+.pytest_cache/
+out/
+samples/

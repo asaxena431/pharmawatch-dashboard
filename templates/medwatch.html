@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>PharmaWatch — MedWatch 3500A OCR → XML</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+  <style>
+    body { font-family: 'Inter', sans-serif; background: #0f172a; }
+    .glass { background: rgba(255,255,255,0.05); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.1); }
+    .spinner { border: 3px solid rgba(255,255,255,0.1); border-top-color: #3b82f6; border-radius: 50%; width: 24px; height: 24px; animation: spin 0.8s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    pre.out { max-height: 460px; overflow: auto; font-size: 11px; line-height: 1.45; }
+  </style>
+</head>
+<body class="text-slate-200 min-h-screen">
+
+<nav class="border-b border-slate-700/50 px-6 py-4 flex items-center justify-between">
+  <div class="flex items-center gap-3">
+    <div class="w-9 h-9 rounded-lg bg-blue-600 flex items-center justify-center">
+      <i class="fa-solid fa-file-lines text-white"></i>
+    </div>
+    <div>
+      <h1 class="text-lg font-bold text-white">MedWatch 3500A → XML</h1>
+      <p class="text-xs text-slate-400">PaddleOCR extraction · E2B(R2) ICSR for CDER · MDR XML for CDRH</p>
+    </div>
+  </div>
+  <a href="/" class="text-xs text-slate-400 hover:text-white"><i class="fa-solid fa-arrow-left mr-1"></i>PharmaWatch</a>
+</nav>
+
+<div class="max-w-6xl mx-auto px-6 py-10 space-y-8">
+
+  <div class="glass rounded-2xl p-6 space-y-5">
+    <h2 class="text-sm font-semibold text-slate-400 uppercase tracking-wider">
+      <i class="fa-solid fa-flask-vial mr-2 text-blue-400"></i>1. Pick a sample 3500A or upload your own PDF
+    </h2>
+
+    <div class="grid md:grid-cols-2 gap-4">
+      {% for key, meta in samples.items() %}
+      <label class="cursor-pointer border rounded-xl p-4 flex items-start gap-3 border-slate-600 bg-slate-800/60 hover:border-blue-500 transition">
+        <input type="radio" name="sample" value="{{ key }}" class="mt-1 accent-blue-500" {% if loop.first %}checked{% endif %}/>
+        <div>
+          <div class="text-sm font-semibold text-white">{{ meta.title }}</div>
+          <div class="text-xs text-slate-400 mt-1">
+            {{ meta.center }} · {{ meta.stage }} · output <span class="font-mono">{{ meta.format }}</span>
+          </div>
+          <a href="/medwatch/sample/{{ key }}" target="_blank" class="text-xs text-blue-400 hover:underline mt-2 inline-block">
+            <i class="fa-solid fa-file-pdf mr-1"></i>view sample PDF
+          </a>
+        </div>
+      </label>
+      {% endfor %}
+    </div>
+
+    <div class="grid md:grid-cols-4 gap-4 items-end">
+      <div class="md:col-span-2">
+        <label class="block text-xs text-slate-400 mb-1">Or upload a filled 3500A PDF</label>
+        <input id="pdfInput" type="file" accept="application/pdf"
+          class="w-full text-xs bg-slate-800 border border-slate-600 rounded-xl px-3 py-2 file:mr-3 file:px-3 file:py-1 file:rounded-lg file:border-0 file:bg-blue-600 file:text-white"/>
+      </div>
+      <div>
+        <label class="block text-xs text-slate-400 mb-1">OCR engine</label>
+        <select id="engineInput" class="w-full bg-slate-800 border border-slate-600 rounded-xl px-3 py-2 text-sm">
+          <option value="paddleocr">PaddleOCR</option>
+          <option value="auto" selected>PaddleOCR (text-layer fallback)</option>
+          <option value="text-layer">PDF text layer only</option>
+        </select>
+      </div>
+      <div>
+        <label class="block text-xs text-slate-400 mb-1">Output format</label>
+        <select id="formatInput" class="w-full bg-slate-800 border border-slate-600 rounded-xl px-3 py-2 text-sm">
+          <option value="">auto (CDER → E2B R2, CDRH → MDR)</option>
+          <option value="e2b-r2">E2B(R2) ICSR</option>
+          <option value="mdr">FDA MDR</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="flex items-center gap-4">
+      <button id="runBtn" onclick="runConvert()"
+        class="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-sm font-semibold flex items-center gap-2">
+        <i class="fa-solid fa-play"></i> Run OCR &amp; convert
+      </button>
+      <div id="spinner" class="spinner hidden"></div>
+      <span id="status" class="text-xs text-slate-400"></span>
+    </div>
+  </div>
+
+  <div id="results" class="hidden space-y-6">
+    <div class="glass rounded-2xl p-6">
+      <h2 class="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-4">
+        <i class="fa-solid fa-circle-info mr-2 text-blue-400"></i>2. Extraction summary
+      </h2>
+      <div id="summary" class="grid sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs"></div>
+    </div>
+
+    <div class="glass rounded-2xl p-6">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-sm font-semibold text-slate-400 uppercase tracking-wider">
+          <i class="fa-solid fa-code mr-2 text-blue-400"></i>3. Output
+        </h2>
+        <div class="flex gap-2 text-xs">
+          <button onclick="showTab('xml')" id="tab-xml" class="tab px-3 py-1.5 rounded-lg bg-blue-600 text-white">XML</button>
+          <button onclick="showTab('fields')" id="tab-fields" class="tab px-3 py-1.5 rounded-lg bg-slate-800 text-slate-400">Parsed fields</button>
+          <button onclick="showTab('ocr')" id="tab-ocr" class="tab px-3 py-1.5 rounded-lg bg-slate-800 text-slate-400">OCR text</button>
+          <button onclick="downloadXml()" class="px-3 py-1.5 rounded-lg bg-slate-800 text-slate-300 hover:text-white">
+            <i class="fa-solid fa-download mr-1"></i>Download
+          </button>
+        </div>
+      </div>
+      <pre id="pane-xml" class="out bg-slate-900/80 rounded-xl p-4 text-emerald-300 whitespace-pre-wrap"></pre>
+      <pre id="pane-fields" class="out hidden bg-slate-900/80 rounded-xl p-4 text-sky-300 whitespace-pre-wrap"></pre>
+      <pre id="pane-ocr" class="out hidden bg-slate-900/80 rounded-xl p-4 text-slate-300 whitespace-pre-wrap"></pre>
+    </div>
+  </div>
+</div>
+
+<script>
+let lastResult = null;
+
+function showTab(name) {
+  ['xml', 'fields', 'ocr'].forEach(function (key) {
+    document.getElementById('pane-' + key).classList.toggle('hidden', key !== name);
+    const tab = document.getElementById('tab-' + key);
+    tab.className = 'tab px-3 py-1.5 rounded-lg ' + (key === name ? 'bg-blue-600 text-white' : 'bg-slate-800 text-slate-400');
+  });
+}
+
+function card(label, value) {
+  return '<div class="bg-slate-800/70 rounded-xl px-3 py-2"><div class="text-slate-500 uppercase tracking-wide">' +
+    label + '</div><div class="text-slate-100 mt-0.5 break-words">' + (value || '—') + '</div></div>';
+}
+
+async function runConvert() {
+  const button = document.getElementById('runBtn');
+  const spinner = document.getElementById('spinner');
+  const status = document.getElementById('status');
+  const form = new FormData();
+  const file = document.getElementById('pdfInput').files[0];
+  if (file) {
+    form.append('pdf', file);
+  } else {
+    form.append('sample', document.querySelector('input[name="sample"]:checked').value);
+  }
+  form.append('engine', document.getElementById('engineInput').value);
+  const format = document.getElementById('formatInput').value;
+  if (format) form.append('format', format);
+
+  button.disabled = true;
+  spinner.classList.remove('hidden');
+  status.textContent = 'Rasterising pages and running OCR…';
+
+  try {
+    const response = await fetch('/api/medwatch/convert', { method: 'POST', body: form });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || ('HTTP ' + response.status));
+    lastResult = data;
+    const s = data.summary;
+    document.getElementById('summary').innerHTML = [
+      card('Center', s.center), card('Stage', s.stage),
+      card('Output', s.output_format), card('OCR engine', s.ocr_engine),
+      card('Pages', s.pages), card('OCR lines', s.ocr_lines),
+      card('Report ID', s.report_id), card('Patient', s.patient),
+      card('Event terms', (s.event_terms || []).join(', ')),
+      card('Outcomes', (s.outcomes || []).join(', ')),
+      card('Suspect product', (s.products || []).join(', ')),
+      card('Suspect device', s.device)
+    ].join('');
+    document.getElementById('pane-xml').textContent = data.xml;
+    document.getElementById('pane-fields').textContent = JSON.stringify(data.fields, null, 2);
+    document.getElementById('pane-ocr').textContent = data.ocr_text;
+    document.getElementById('results').classList.remove('hidden');
+    showTab('xml');
+    status.textContent = 'Done — ' + s.output_format + ' XML generated with ' + s.ocr_engine + '.';
+  } catch (error) {
+    status.textContent = 'Error: ' + error.message;
+  } finally {
+    button.disabled = false;
+    spinner.classList.add('hidden');
+  }
+}
+
+function downloadXml() {
+  if (!lastResult) return;
+  const blob = new Blob([lastResult.xml], { type: 'application/xml' });
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = (lastResult.summary.output_format === 'mdr' ? 'mdr_report' : 'e2b_r2_icsr') + '.xml';
+  link.click();
+  URL.revokeObjectURL(link.href);
+}
+</script>
+</body>
+</html>
