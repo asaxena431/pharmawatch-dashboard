@@ -2,19 +2,19 @@
 
 Examples::
 
-    # write the two sample 3500A PDFs
+    # fill the genuine FDA fillable 3500A form with both sample cases
     python -m medwatch_ocr.cli samples --output-dir samples
 
     # CDER premarket drug report -> ICH E2B(R2) ICSR
-    python -m medwatch_ocr.cli convert samples/3500A_cder_premarket.pdf \
+    python -m medwatch_ocr.cli convert samples/FDA-3500A_cder_premarket.pdf \
         --center CDER --stage premarket -o out/cder_premarket_e2b_r2.xml
 
     # CDRH postmarket device report -> FDA MDR XML
-    python -m medwatch_ocr.cli convert samples/3500A_cdrh_postmarket.pdf \
+    python -m medwatch_ocr.cli convert samples/FDA-3500A_cdrh_postmarket.pdf \
         --center CDRH --stage postmarket -o out/cdrh_postmarket_mdr.xml
 
     # inspect the raw OCR text only
-    python -m medwatch_ocr.cli ocr samples/3500A_cdrh_postmarket.pdf
+    python -m medwatch_ocr.cli ocr samples/FDA-3500A_cdrh_postmarket.pdf
 """
 
 import argparse
@@ -25,7 +25,8 @@ from typing import List, Optional
 
 from .models import CENTER_CDER, CENTER_CDRH, STAGE_POSTMARKET, STAGE_PREMARKET
 from .ocr import OcrError, ocr_pdf
-from .pipeline import FORMAT_E2B, FORMAT_MDR, convert_pdf
+from .official_form import generate_official_samples
+from .pipeline import FORMAT_E2B, FORMAT_MDR, LAYOUT_AUTO, LAYOUTS, convert_pdf
 from .samples import generate_samples
 
 
@@ -34,6 +35,17 @@ def _add_common_ocr_args(parser: argparse.ArgumentParser) -> None:
                         help="extraction engine (default: paddleocr; 'auto' falls back to the PDF text layer)")
     parser.add_argument("--dpi", type=int, default=200, help="rasterisation DPI for PaddleOCR (default: 200)")
     parser.add_argument("--lang", default="en", help="PaddleOCR recognition language (default: en)")
+
+
+def _add_layout_arg(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument("--layout", choices=list(LAYOUTS), default=LAYOUT_AUTO,
+                        help="input geometry: 'official' (genuine FDA 3500A field template), "
+                             "'flat' (label/value facsimile), 'auto' (default, detects the official form)")
+
+
+def _add_sample_args(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument("--facsimile", action="store_true",
+                        help="generate the flat label/value facsimile instead of the genuine FDA form")
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -45,6 +57,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     samples = sub.add_parser("samples", help="generate the sample 3500A PDFs (CDER premarket, CDRH postmarket)")
     samples.add_argument("--output-dir", "-d", default="samples", help="directory for the generated PDFs")
+    _add_sample_args(samples)
 
     ocr = sub.add_parser("ocr", help="run OCR on a 3500A PDF and print the extracted lines")
     ocr.add_argument("pdf")
@@ -63,10 +76,12 @@ def build_parser() -> argparse.ArgumentParser:
     convert.add_argument("--json", dest="json_path", help="also write the parsed 3500A fields as JSON")
     convert.add_argument("--quiet", "-q", action="store_true", help="suppress the extraction summary on stderr")
     _add_common_ocr_args(convert)
+    _add_layout_arg(convert)
 
     batch = sub.add_parser("demo", help="generate both samples and convert them end-to-end")
     batch.add_argument("--output-dir", "-d", default="out", help="directory for samples and XML output")
     _add_common_ocr_args(batch)
+    _add_sample_args(batch)
 
     return parser
 
@@ -90,6 +105,7 @@ def _run_convert(args: argparse.Namespace) -> int:
         engine=args.engine,
         dpi=args.dpi,
         lang=args.lang,
+        layout=args.layout,
     )
     _write(args.output, result.xml)
     if args.json_path:
@@ -101,9 +117,14 @@ def _run_convert(args: argparse.Namespace) -> int:
     return 0
 
 
+def _make_samples(output_dir: str, facsimile: bool) -> dict:
+    """Genuine FDA form by default; the flat facsimile with ``--facsimile``."""
+    return generate_samples(output_dir) if facsimile else generate_official_samples(output_dir)
+
+
 def _run_demo(args: argparse.Namespace) -> int:
     sample_dir = os.path.join(args.output_dir, "samples")
-    pdfs = generate_samples(sample_dir)
+    pdfs = _make_samples(sample_dir, args.facsimile)
     print(f"samples: {', '.join(pdfs.values())}", file=sys.stderr)
 
     plan = [
@@ -131,7 +152,7 @@ def main(argv: Optional[List[str]] = None) -> int:
     args = build_parser().parse_args(argv)
     try:
         if args.command == "samples":
-            for name, path in generate_samples(args.output_dir).items():
+            for name, path in _make_samples(args.output_dir, args.facsimile).items():
                 print(f"{name}: {path}")
             return 0
         if args.command == "ocr":

@@ -41,6 +41,12 @@ def rasterize_pdf(pdf_path: str, dpi: int = DEFAULT_DPI) -> List["object"]:
     scale = dpi / 72.0
     document = pdfium.PdfDocument(pdf_path)
     try:
+        # AcroForm field values live in widget annotations; without the form
+        # environment pdfium renders the blank form only.
+        try:
+            document.init_forms()
+        except Exception:  # pragma: no cover - PDFs without an AcroForm
+            pass
         return [document[i].render(scale=scale).to_pil() for i in range(len(document))]
     finally:
         document.close()
@@ -116,6 +122,50 @@ def _boxes_from_paddle(engine, image) -> List[Tuple[float, float, float, str]]:
             xs = [float(p[0]) for p in poly]
             boxes.append((min(ys), max(ys), min(xs), str(text)))
     return boxes
+
+
+def _words_from_paddle(engine, image) -> List[Tuple[float, float, float, float, str]]:
+    """Return (x0, y0, x1, y1, text) word boxes in image pixels for one page."""
+    import numpy as np
+
+    array = np.array(image.convert("RGB"))
+    raw = engine.predict(array) if hasattr(engine, "predict") else engine.ocr(array)
+
+    words: List[Tuple[float, float, float, float, str]] = []
+    for page in raw or []:
+        if isinstance(page, dict) or hasattr(page, "get"):
+            texts = page.get("rec_texts") or []
+            polys = page.get("rec_polys")
+            if polys is None:
+                polys = page.get("dt_polys") or page.get("rec_boxes") or []
+            for text, poly in zip(texts, polys):
+                xs = [float(p[0]) for p in poly]
+                ys = [float(p[1]) for p in poly]
+                words.append((min(xs), min(ys), max(xs), max(ys), str(text)))
+            continue
+        for entry in page or []:
+            poly, rec = entry[0], entry[1]
+            text = rec[0] if isinstance(rec, (list, tuple)) else str(rec)
+            xs = [float(p[0]) for p in poly]
+            ys = [float(p[1]) for p in poly]
+            words.append((min(xs), min(ys), max(xs), max(ys), str(text)))
+    return words
+
+
+def ocr_page_words(
+    pdf_path: str,
+    dpi: int = DEFAULT_DPI,
+    lang: str = "en",
+) -> Tuple[List[List[Tuple[float, float, float, float, str]]], List["object"]]:
+    """OCR each page and return per-page word boxes plus the rendered images.
+
+    Word boxes are ``(x0, y0, x1, y1, text)`` in the pixel space of the matching
+    rendered page image, so callers can map them onto known field rectangles.
+    """
+    paddle = _get_paddle_engine(lang=lang)
+    images = rasterize_pdf(pdf_path, dpi=dpi)
+    per_page = [_words_from_paddle(paddle, image) for image in images]
+    return per_page, images
 
 
 def group_boxes_into_lines(boxes: Sequence[Tuple[float, float, float, str]]) -> List[str]:

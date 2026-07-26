@@ -15,6 +15,12 @@ from .parser import build_report
 FORMAT_E2B = "e2b-r2"
 FORMAT_MDR = "mdr"
 
+# Input layouts: the genuine boxed FDA form vs. the flat label/value facsimile.
+LAYOUT_OFFICIAL = "official"
+LAYOUT_FLAT = "flat"
+LAYOUT_AUTO = "auto"
+LAYOUTS = (LAYOUT_AUTO, LAYOUT_OFFICIAL, LAYOUT_FLAT)
+
 
 @dataclass
 class ConversionResult:
@@ -22,6 +28,7 @@ class ConversionResult:
     ocr: OcrResult
     xml: str
     output_format: str
+    layout: str = LAYOUT_FLAT
 
     @property
     def summary(self) -> dict:
@@ -29,6 +36,7 @@ class ConversionResult:
         return {
             "center": report.center,
             "stage": report.stage,
+            "layout": self.layout,
             "output_format": self.output_format,
             "ocr_engine": self.ocr.engine,
             "pages": self.ocr.pages,
@@ -66,8 +74,21 @@ def convert_pdf(
     engine: str = "auto",
     dpi: int = 200,
     lang: str = "en",
+    layout: str = LAYOUT_AUTO,
 ) -> ConversionResult:
-    """OCR a 3500A PDF and convert it to E2B(R2) or MDR XML."""
+    """OCR a 3500A PDF and convert it to E2B(R2) or MDR XML.
+
+    ``layout`` selects the input geometry: ``official`` uses the committed
+    FDA-3500A field template (boxed form, checkboxes), ``flat`` uses the
+    label/value line parser, and ``auto`` detects the official form.
+    """
+    from .form_extract import is_official_form
+
+    if layout not in LAYOUTS:
+        raise ValueError(f"unknown layout: {layout}")
+    if layout == LAYOUT_OFFICIAL or (layout == LAYOUT_AUTO and is_official_form(pdf_path)):
+        return _convert_official(pdf_path, center, stage, output_format, engine, dpi, lang)
+
     ocr = ocr_pdf(pdf_path, dpi=dpi, lang=lang, engine=engine)
     report = build_report(
         ocr.lines,
@@ -77,7 +98,50 @@ def convert_pdf(
         pages=ocr.pages,
     )
     fmt = output_format or default_format(report.center)
-    return ConversionResult(report=report, ocr=ocr, xml=render_xml(report, fmt), output_format=fmt)
+    return ConversionResult(
+        report=report,
+        ocr=ocr,
+        xml=render_xml(report, fmt),
+        output_format=fmt,
+        layout=LAYOUT_FLAT,
+    )
+
+
+def _convert_official(
+    pdf_path: str,
+    center: Optional[str],
+    stage: Optional[str],
+    output_format: Optional[str],
+    engine: str,
+    dpi: int,
+    lang: str,
+) -> ConversionResult:
+    """Template-guided conversion of the genuine FDA 3500A form."""
+    from .form_extract import extract_form, extract_form_fields, map_report
+
+    if engine == "text-layer":
+        form = extract_form_fields(pdf_path)
+    else:
+        try:
+            form = extract_form(pdf_path, dpi=dpi, lang=lang)
+        except Exception as exc:
+            if engine == "paddleocr":
+                raise
+            form = extract_form_fields(pdf_path)
+            form.engine = f"acroform (PaddleOCR unavailable: {exc})"
+
+    report = map_report(form, center=center, stage=stage, ocr_engine=form.engine)
+    lines = [f"{key} = {value}" for key, value in sorted(form.values.items())]
+    lines += [f"[x] {key}" for key in sorted(form.checks)]
+    ocr = OcrResult(lines=lines, pages=form.pages, engine=form.engine)
+    fmt = output_format or default_format(report.center)
+    return ConversionResult(
+        report=report,
+        ocr=ocr,
+        xml=render_xml(report, fmt),
+        output_format=fmt,
+        layout=LAYOUT_OFFICIAL,
+    )
 
 
 def convert_lines(

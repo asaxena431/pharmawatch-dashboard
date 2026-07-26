@@ -17,7 +17,8 @@ from flask import Blueprint, Flask, Response, jsonify, redirect, render_template
 
 from .models import CENTER_CDER, CENTER_CDRH, STAGE_POSTMARKET, STAGE_PREMARKET
 from .ocr import OcrError
-from .pipeline import FORMAT_E2B, FORMAT_MDR, convert_pdf
+from .official_form import OFFICIAL_SAMPLES, fill_official_form
+from .pipeline import FORMAT_E2B, FORMAT_MDR, LAYOUT_AUTO, LAYOUTS, convert_pdf
 from .samples import SAMPLES, render_sample
 
 medwatch_bp = Blueprint("medwatch", __name__)
@@ -40,15 +41,30 @@ SAMPLE_LABELS = {
 _SAMPLE_DIR = os.path.join(tempfile.gettempdir(), "medwatch_samples")
 
 
-def _sample_pdf(name: str) -> str:
-    """Render the requested sample PDF on demand and return its path."""
-    if name not in SAMPLES:
-        raise KeyError(name)
+def _sample_pdf(name: str, facsimile: bool = False) -> str:
+    """Render the requested sample PDF on demand and return its path.
+
+    By default this fills the genuine FDA fillable 3500A form; ``facsimile``
+    renders the flat label/value layout instead.
+    """
     os.makedirs(_SAMPLE_DIR, exist_ok=True)
-    path = os.path.join(_SAMPLE_DIR, f"3500A_{name}.pdf")
+    if facsimile:
+        if name not in SAMPLES:
+            raise KeyError(name)
+        path = os.path.join(_SAMPLE_DIR, f"3500A_{name}.pdf")
+        if not os.path.exists(path):
+            render_sample(SAMPLES[name], path)
+        return path
+    if name not in OFFICIAL_SAMPLES:
+        raise KeyError(name)
+    path = os.path.join(_SAMPLE_DIR, f"FDA-3500A_{name}.pdf")
     if not os.path.exists(path):
-        render_sample(SAMPLES[name], path)
+        fill_official_form(OFFICIAL_SAMPLES[name], path)
     return path
+
+
+def _is_facsimile(value) -> bool:
+    return str(value).lower() in ("1", "true", "yes", "on", "facsimile")
 
 
 @medwatch_bp.route("/medwatch", methods=["GET"])
@@ -58,8 +74,9 @@ def medwatch_home():
 
 @medwatch_bp.route("/medwatch/sample/<name>", methods=["GET"])
 def medwatch_sample(name: str):
+    facsimile = _is_facsimile(request.args.get("layout", ""))
     try:
-        path = _sample_pdf(name)
+        path = _sample_pdf(name, facsimile=facsimile)
     except KeyError:
         return jsonify({"error": f"unknown sample: {name}"}), 404
     with open(path, "rb") as handle:
@@ -67,7 +84,7 @@ def medwatch_sample(name: str):
     return Response(
         data,
         mimetype="application/pdf",
-        headers={"Content-Disposition": f'inline; filename="3500A_{name}.pdf"'},
+        headers={"Content-Disposition": f'inline; filename="{os.path.basename(path)}"'},
     )
 
 
@@ -81,6 +98,10 @@ def api_medwatch_convert():
     output_format = request.form.get("format") or payload.get("format") or None
     engine = request.form.get("engine") or payload.get("engine") or "auto"
     dpi = int(request.form.get("dpi") or payload.get("dpi") or 200)
+    layout = request.form.get("layout") or payload.get("layout") or LAYOUT_AUTO
+    if layout not in LAYOUTS:
+        return jsonify({"error": f"unknown layout: {layout}"}), 400
+    facsimile = _is_facsimile(request.form.get("facsimile") or payload.get("facsimile") or "")
 
     temp_path = None
     try:
@@ -93,7 +114,7 @@ def api_medwatch_convert():
         else:
             sample = sample or "cder_premarket"
             try:
-                pdf_path = _sample_pdf(sample)
+                pdf_path = _sample_pdf(sample, facsimile=facsimile)
             except KeyError:
                 return jsonify({"error": f"unknown sample: {sample}"}), 400
             defaults = SAMPLE_LABELS[sample]
@@ -108,6 +129,7 @@ def api_medwatch_convert():
             output_format=output_format or None,
             engine=engine,
             dpi=dpi,
+            layout=layout,
         )
         return jsonify(
             {

@@ -7,7 +7,16 @@ from .models import (
     STAGE_PREMARKET,
     MedWatchReport,
 )
-from .pipeline import FORMAT_E2B, FORMAT_MDR, convert_lines, convert_pdf, render_xml
+from .official_form import generate_official_samples
+from .pipeline import (
+    FORMAT_E2B,
+    FORMAT_MDR,
+    LAYOUT_FLAT,
+    LAYOUT_OFFICIAL,
+    convert_lines,
+    convert_pdf,
+    render_xml,
+)
 from .samples import generate_samples
 
 __all__ = [
@@ -18,8 +27,11 @@ __all__ = [
     "MedWatchReport",
     "FORMAT_E2B",
     "FORMAT_MDR",
+    "LAYOUT_OFFICIAL",
+    "LAYOUT_FLAT",
     "convert_pdf",
     "convert_lines",
     "render_xml",
     "generate_samples",
+    "generate_official_samples",
 ]
