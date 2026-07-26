@@ -92,7 +92,7 @@ def test_cder_official_form_to_e2b_r2(official_pdfs):
     assert report.patient.age == "63"
     assert report.patient.age_unit == "Year"
     assert report.patient.sex == "Male"
-    assert report.patient.weight_kg == "78.5 kg"
+    assert report.patient.weight_kg == "78.5"
     assert "Hospitalization" in report.event.outcomes
     assert "Life-threatening" in report.event.outcomes
     assert report.event.reactions == ["Acute hepatic failure", "Jaundice", "Elevated ALT"]

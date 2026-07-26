@@ -296,11 +296,7 @@ def map_report(
     elif form.checked("p0.ageDays"):
         age_unit = "Day"
     sex = "Male" if form.checked("p0.sexM") else ("Female" if form.checked("p0.sexF") else None)
-    weight = form.get("p0.patWeight")
-    if weight and form.checked("p0.weightLB"):
-        weight = f"{weight} lb"
-    elif weight:
-        weight = f"{weight} kg"
+    weight = _weight_in_kg(form.get("p0.patWeight"), pounds=form.checked("p0.weightLB"))
     report.patient = Patient(
         identifier=form.get("p0.patID"),
         age=form.get("p0.patAge"),
@@ -423,6 +419,19 @@ def map_report(
     )
 
     return report
+
+
+def _weight_in_kg(value: Optional[str], pounds: bool) -> Optional[str]:
+    """Normalise block A.4 to kilograms; both XML formats state the unit themselves."""
+    if not value:
+        return None
+    match = re.search(r"\d+(?:\.\d+)?", value)
+    if not match:
+        return None
+    weight = float(match.group(0))
+    if pounds:
+        weight = round(weight * 0.45359237, 1)
+    return f"{weight:g}"
 
 
 def _join_parts(*values: Optional[str]) -> Optional[str]:
