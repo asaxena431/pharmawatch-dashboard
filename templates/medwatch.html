@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>PharmaWatch — MedWatch 3500A OCR → XML</title>
+  <title>PharmaWatch — MedWatch 3500A / FDA 1932 OCR → XML</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
   <style>
@@ -22,8 +22,8 @@
       <i class="fa-solid fa-file-lines text-white"></i>
     </div>
     <div>
-      <h1 class="text-lg font-bold text-white">MedWatch 3500A → XML</h1>
-      <p class="text-xs text-slate-400">PaddleOCR extraction · E2B(R2) ICSR for CDER · MDR XML for CDRH</p>
+      <h1 class="text-lg font-bold text-white">MedWatch 3500A / FDA 1932 → XML</h1>
+      <p class="text-xs text-slate-400">Text-layer or PaddleOCR extraction · E2B(R2) ICSR for CDER · MDR XML for CDRH · VICH GL42 AER for CVM</p>
     </div>
   </div>
   <a href="/" class="text-xs text-slate-400 hover:text-white"><i class="fa-solid fa-arrow-left mr-1"></i>PharmaWatch</a>
@@ -33,10 +33,10 @@
 
   <div class="glass rounded-2xl p-6 space-y-5">
     <h2 class="text-sm font-semibold text-slate-400 uppercase tracking-wider">
-      <i class="fa-solid fa-flask-vial mr-2 text-blue-400"></i>1. Pick a sample 3500A or upload your own PDF
+      <i class="fa-solid fa-flask-vial mr-2 text-blue-400"></i>1. Pick a sample form or upload your own PDF
     </h2>
 
-    <div class="grid md:grid-cols-2 gap-4">
+    <div class="grid md:grid-cols-3 gap-4">
       {% for key, meta in samples.items() %}
       <label class="cursor-pointer border rounded-xl p-4 flex items-start gap-3 border-slate-600 bg-slate-800/60 hover:border-blue-500 transition">
         <input type="radio" name="sample" value="{{ key }}" class="mt-1 accent-blue-500" {% if loop.first %}checked{% endif %}/>
@@ -48,9 +48,11 @@
           <a href="/medwatch/sample/{{ key }}" target="_blank" class="text-xs text-blue-400 hover:underline mt-2 inline-block">
             <i class="fa-solid fa-file-pdf mr-1"></i>view filled FDA form (9 pages)
           </a>
+          {% if meta.center != 'CVM' %}
           <a href="/medwatch/sample/{{ key }}?layout=facsimile" target="_blank" class="text-xs text-slate-500 hover:underline mt-1 block">
             <i class="fa-solid fa-align-left mr-1"></i>flat facsimile
           </a>
+          {% endif %}
         </div>
       </label>
       {% endfor %}
@@ -58,16 +60,16 @@
 
     <div class="grid md:grid-cols-5 gap-4 items-end">
       <div class="md:col-span-2">
-        <label class="block text-xs text-slate-400 mb-1">Or upload a filled 3500A PDF</label>
+        <label class="block text-xs text-slate-400 mb-1">Or upload a filled 3500A / 1932 PDF</label>
         <input id="pdfInput" type="file" accept="application/pdf"
           class="w-full text-xs bg-slate-800 border border-slate-600 rounded-xl px-3 py-2 file:mr-3 file:px-3 file:py-1 file:rounded-lg file:border-0 file:bg-blue-600 file:text-white"/>
       </div>
       <div>
         <label class="block text-xs text-slate-400 mb-1">OCR engine</label>
         <select id="engineInput" class="w-full bg-slate-800 border border-slate-600 rounded-xl px-3 py-2 text-sm">
+          <option value="text-layer" selected>PDF text layer only</option>
+          <option value="auto">PaddleOCR (text-layer fallback)</option>
           <option value="paddleocr">PaddleOCR</option>
-          <option value="auto" selected>PaddleOCR (text-layer fallback)</option>
-          <option value="text-layer">PDF text layer only</option>
         </select>
       </div>
       <div>
@@ -75,15 +77,17 @@
         <select id="layoutInput" class="w-full bg-slate-800 border border-slate-600 rounded-xl px-3 py-2 text-sm">
           <option value="auto" selected>auto-detect</option>
           <option value="official">official FDA 3500A template</option>
+          <option value="1932">official FDA 1932 template</option>
           <option value="flat">flat label/value</option>
         </select>
       </div>
       <div>
         <label class="block text-xs text-slate-400 mb-1">Output format</label>
         <select id="formatInput" class="w-full bg-slate-800 border border-slate-600 rounded-xl px-3 py-2 text-sm">
-          <option value="">auto (CDER → E2B R2, CDRH → MDR)</option>
+          <option value="">auto (CDER → E2B R2, CDRH → MDR, CVM → GL42)</option>
           <option value="e2b-r2">E2B(R2) ICSR</option>
           <option value="mdr">FDA MDR</option>
+          <option value="gl42">VICH GL42 AER</option>
         </select>
       </div>
     </div>

@@ -15,10 +15,11 @@ import traceback
 
 from flask import Blueprint, Flask, Response, jsonify, redirect, render_template, request
 
-from .models import CENTER_CDER, CENTER_CDRH, STAGE_POSTMARKET, STAGE_PREMARKET
+from .form_1932 import VETERINARY_SAMPLES, fill_1932_form
+from .models import CENTER_CDER, CENTER_CDRH, CENTER_CVM, STAGE_POSTMARKET, STAGE_PREMARKET
 from .ocr import OcrError
 from .official_form import OFFICIAL_SAMPLES, fill_official_form
-from .pipeline import FORMAT_E2B, FORMAT_MDR, LAYOUT_AUTO, LAYOUTS, convert_pdf
+from .pipeline import ENGINE_TEXT_LAYER, FORMAT_E2B, FORMAT_GL42, FORMAT_MDR, LAYOUT_AUTO, LAYOUTS, convert_pdf
 from .samples import SAMPLES, render_sample
 
 medwatch_bp = Blueprint("medwatch", __name__)
@@ -36,6 +37,12 @@ SAMPLE_LABELS = {
         "stage": STAGE_POSTMARKET,
         "format": FORMAT_MDR,
     },
+    "cvm_veterinary": {
+        "title": "CVM veterinary (Form FDA 1932 / VICH GL42)",
+        "center": CENTER_CVM,
+        "stage": STAGE_POSTMARKET,
+        "format": FORMAT_GL42,
+    },
 }
 
 _SAMPLE_DIR = os.path.join(tempfile.gettempdir(), "medwatch_samples")
@@ -48,12 +55,15 @@ def _sample_pdf(name: str, facsimile: bool = False) -> str:
     renders the flat label/value layout instead.
     """
     os.makedirs(_SAMPLE_DIR, exist_ok=True)
-    if facsimile:
-        if name not in SAMPLES:
-            raise KeyError(name)
+    if facsimile and name in SAMPLES:
         path = os.path.join(_SAMPLE_DIR, f"3500A_{name}.pdf")
         if not os.path.exists(path):
             render_sample(SAMPLES[name], path)
+        return path
+    if name in VETERINARY_SAMPLES:
+        path = os.path.join(_SAMPLE_DIR, f"FDA-1932_{name}.pdf")
+        if not os.path.exists(path):
+            fill_1932_form(VETERINARY_SAMPLES[name], path)
         return path
     if name not in OFFICIAL_SAMPLES:
         raise KeyError(name)
@@ -96,7 +106,7 @@ def api_medwatch_convert():
     center = request.form.get("center") or payload.get("center") or None
     stage = request.form.get("stage") or payload.get("stage") or None
     output_format = request.form.get("format") or payload.get("format") or None
-    engine = request.form.get("engine") or payload.get("engine") or "auto"
+    engine = request.form.get("engine") or payload.get("engine") or ENGINE_TEXT_LAYER
     dpi = int(request.form.get("dpi") or payload.get("dpi") or 200)
     layout = request.form.get("layout") or payload.get("layout") or LAYOUT_AUTO
     if layout not in LAYOUTS:

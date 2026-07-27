@@ -1,14 +1,15 @@
-# medwatch_ocr — FDA 3500A (MedWatch) OCR → E2B(R2) / MDR XML
+# medwatch_ocr — FDA 3500A / FDA 1932 OCR → E2B(R2) / MDR / VICH GL42 XML
 
-Reads a filled FDA Form 3500A PDF with **PaddleOCR** and emits a regulatory XML
-message:
+Reads a filled FDA adverse-event form PDF (text layer or **PaddleOCR**) and emits
+a regulatory XML message:
 
 | Sample | Center / stage | Output |
 | --- | --- | --- |
 | `FDA-3500A_cder_premarket.pdf` | CDER, premarket (IND safety report, drug) | ICH **E2B(R2)** ICSR (`<ichicsr>`) |
 | `FDA-3500A_cdrh_postmarket.pdf` | CDRH, postmarket (manufacturer MDR, device) | FDA **MDR** XML (`<mdrReports>`) |
+| `FDA-1932_cvm_veterinary.pdf` | CVM, postmarket (veterinary ADE / lack of effectiveness / product defect) | **VICH GL42** AER (`<vichAdverseEventReport>`) |
 
-## Sample inputs are the real FDA form
+## Sample inputs are the real FDA forms
 
 `official_form.py` downloads the genuine fillable **Form FDA-3500A MedWatch
 (09/2025)** (`fda.gov/media/69876`, OMB 0910-0291), caches it under
@@ -16,6 +17,15 @@ message:
 data. The OCR input is therefore the real 9-page boxed form — official cells,
 checkboxes, dropdowns and pagination — not a facsimile. Checkbox "on" states are
 looked up per field (the form mixes `/1` and `/Yes`).
+
+`form_1932.py` does the same for the veterinary case with **FORM FDA 1932
+(8/23)** "Veterinary Adverse Drug Reaction, Lack of Effectiveness, Product
+Defect Report" (`fda.gov/media/124792`, OMB 0910-0284) — 9 pages, 347 widgets,
+172 checkboxes, laid out directly on the VICH GL42 data elements (A.1.1, B.1.x,
+B.2.x …). FDA's alternative *1932a* is a dynamic **XFA** PDF: it has no page
+content and no AcroForm fields outside Adobe Reader, so it cannot be filled,
+rendered or OCR'd by any library; the static 1932 carries the same content and
+is used instead.
 
 The older flat `label: value` facsimile (`samples.py`) is still available via
 `--facsimile` and is handled by the line parser.
@@ -36,7 +46,7 @@ layer).
 ## CLI
 
 ```bash
-# 1. fill the genuine FDA 3500A form with both sample cases
+# 1. fill the genuine FDA forms with the sample cases (3500A x2, 1932 x1)
 python -m medwatch_ocr.cli samples --output-dir samples
 python -m medwatch_ocr.cli samples --output-dir samples --facsimile   # flat layout instead
 
@@ -50,21 +60,31 @@ python -m medwatch_ocr.cli convert samples/FDA-3500A_cdrh_postmarket.pdf \
     --center CDRH --stage postmarket --engine paddleocr \
     -o out/cdrh_postmarket_mdr.xml
 
+# 4. CVM veterinary report (Form FDA 1932) -> VICH GL42 AER XML
+python -m medwatch_ocr.cli convert samples/FDA-1932_cvm_veterinary.pdf \
+    --center CVM -o out/cvm_veterinary_gl42.xml
+
 # raw OCR text only
 python -m medwatch_ocr.cli ocr samples/FDA-3500A_cdrh_postmarket.pdf --engine paddleocr
 
-# everything at once (samples + both conversions)
+# everything at once (samples + all three conversions)
 python -m medwatch_ocr.cli demo --output-dir out --engine paddleocr
 ```
 
-`--layout` picks the input geometry — `official` (the FDA form template), `flat`
-(label/value facsimile) or `auto`, the default, which detects the official form
-from its AcroForm fields or its 9-page letter-size shape.
+`--layout` picks the input geometry — `official` (the FDA 3500A template),
+`1932` (the FDA 1932 veterinary template), `flat` (label/value facsimile) or
+`auto`, the default, which detects which official form was supplied from its
+AcroForm fields or its 9-page letter-size shape.
+
+`--engine` defaults to **`text-layer`**: the PDF text layer / AcroForm is read
+directly, which is exact and takes under a second on a fillable form. Use
+`--engine paddleocr` (or `auto`, which falls back to the text layer) for printed
+or scanned copies, which have no text layer.
 
 `--center` / `--stage` / `--format` are optional: the center is inferred from
-the form content (device blocks ⇒ CDRH) and the output format defaults to
-E2B(R2) for CDER and MDR for CDRH. Either format can be forced with
-`--format e2b-r2|mdr`.
+the form content (device blocks ⇒ CDRH, Form 1932 ⇒ CVM) and the output format
+defaults to E2B(R2) for CDER, MDR for CDRH and GL42 for CVM. It can be forced
+with `--format e2b-r2|mdr|gl42`.
 
 ## Flask demo GUI
 
@@ -78,11 +98,13 @@ python app.py            # -> http://localhost:5050/medwatch
 python -m medwatch_ocr.web   # -> http://localhost:5060/medwatch
 ```
 
-The page lets you pick either sample (or upload your own 3500A PDF), choose the
-OCR engine and output format, and shows the generated XML, the parsed 3500A
-fields and the raw OCR text, with a download button.
+The page lets you pick any of the three samples (or upload your own 3500A/1932
+PDF), choose the extraction engine — *PDF text layer only* is first and
+selected by default — and the output format, and shows the generated XML, the
+parsed fields and the raw OCR text, with a download button.
 
-API: `POST /api/medwatch/convert` with `sample=cder_premarket|cdrh_postmarket`
+API: `POST /api/medwatch/convert` with
+`sample=cder_premarket|cdrh_postmarket|cvm_veterinary`
 or a `pdf` file part, plus optional `center`, `stage`, `format`, `engine`,
 `dpi`, `layout`, `facsimile`. Returns `{summary, xml, fields, ocr_text}`.
 `GET /medwatch/sample/<name>` serves the filled official form
@@ -90,8 +112,8 @@ or a `pdf` file part, plus optional `center`, `stage`, `format`, `engine`,
 
 ## How the extraction works
 
-There are two extraction paths behind one `pipeline.convert_pdf()`; the layout is
-detected automatically.
+There are three extraction paths behind one `pipeline.convert_pdf()`; the layout
+is detected automatically.
 
 ### Official form (template-guided, `form_extract.py`)
 
@@ -117,6 +139,30 @@ checkboxes, all matching what was written into the form:
 
 ```bash
 python scripts/verify_official_roundtrip.py
+```
+
+### Veterinary form (`vet_extract.py` → `gl42.py`)
+
+The same template-guided mechanism, driven by
+`templates/fda_1932_2023.json` (347 widgets of the blank Form FDA 1932,
+regenerate with `python scripts/build_1932_template.py`). Fields map onto a
+dedicated `VeterinaryReport` model — animal (species, breed, sex, reproductive
+and physiological status, age/weight with measured-vs-estimated basis, numbers
+treated/affected), veterinary medicinal product (brand, NADA/ANADA number,
+ATCvet code, active ingredients with strength numerator/denominator, dose,
+route, interval, exposure dates, lot, expiry, on/off-label use), the event
+(narrative, clinical manifestations with animals affected, time to onset,
+duration, seriousness, outcomes, previous exposure/reaction),
+dechallenge/rechallenge, and the attending-veterinarian, MAH and regulatory
+authority assessments.
+
+`gl42.py` serialises that into a VICH GL42 AER; every element carries the GL42
+data-element number it came from (`<brandName gl42="B.2.1">`), which is also the
+number printed on the form, so the XML can be checked against the source
+document element by element.
+
+```bash
+python scripts/verify_1932_roundtrip.py     # PaddleOCR vs. the filled values
 ```
 
 ### Flat facsimile (line parser)
@@ -153,6 +199,7 @@ message header, `safetyreport`, `primarysource`, `patient`, `reaction`, `test`,
 python -m pytest tests -q            # parsing + XML assertions (no PaddleOCR needed)
 python -m medwatch_ocr.cli demo -d /tmp/out --engine paddleocr   # real OCR run
 python scripts/verify_official_roundtrip.py                      # OCR vs. filled values
+python scripts/verify_1932_roundtrip.py                          # same for Form FDA 1932
 ```
 
 The PaddleOCR run of both samples produces XML identical to the direct field

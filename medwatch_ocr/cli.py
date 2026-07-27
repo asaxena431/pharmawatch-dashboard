@@ -1,8 +1,8 @@
-"""Command line interface for the MedWatch 3500A OCR -> XML pipeline.
+"""Command line interface for the MedWatch OCR -> XML pipeline.
 
 Examples::
 
-    # fill the genuine FDA fillable 3500A form with both sample cases
+    # fill the genuine FDA forms with the sample cases (3500A x2, 1932 x1)
     python -m medwatch_ocr.cli samples --output-dir samples
 
     # CDER premarket drug report -> ICH E2B(R2) ICSR
@@ -12,6 +12,10 @@ Examples::
     # CDRH postmarket device report -> FDA MDR XML
     python -m medwatch_ocr.cli convert samples/FDA-3500A_cdrh_postmarket.pdf \
         --center CDRH --stage postmarket -o out/cdrh_postmarket_mdr.xml
+
+    # CVM veterinary report (Form FDA 1932) -> VICH GL42 AER XML
+    python -m medwatch_ocr.cli convert samples/FDA-1932_cvm_veterinary.pdf \
+        --center CVM -o out/cvm_veterinary_gl42.xml
 
     # inspect the raw OCR text only
     python -m medwatch_ocr.cli ocr samples/FDA-3500A_cdrh_postmarket.pdf
@@ -23,16 +27,27 @@ import os
 import sys
 from typing import List, Optional
 
-from .models import CENTER_CDER, CENTER_CDRH, STAGE_POSTMARKET, STAGE_PREMARKET
+from .form_1932 import generate_1932_samples
+from .models import CENTER_CDER, CENTER_CDRH, CENTER_CVM, STAGE_POSTMARKET, STAGE_PREMARKET
 from .ocr import OcrError, ocr_pdf
 from .official_form import generate_official_samples
-from .pipeline import FORMAT_E2B, FORMAT_MDR, LAYOUT_AUTO, LAYOUTS, convert_pdf
+from .pipeline import (
+    ENGINE_TEXT_LAYER,
+    ENGINES,
+    FORMAT_E2B,
+    FORMAT_GL42,
+    FORMAT_MDR,
+    LAYOUT_AUTO,
+    LAYOUTS,
+    convert_pdf,
+)
 from .samples import generate_samples
 
 
 def _add_common_ocr_args(parser: argparse.ArgumentParser) -> None:
-    parser.add_argument("--engine", choices=["paddleocr", "text-layer", "auto"], default="paddleocr",
-                        help="extraction engine (default: paddleocr; 'auto' falls back to the PDF text layer)")
+    parser.add_argument("--engine", choices=list(ENGINES), default=ENGINE_TEXT_LAYER,
+                        help="extraction engine (default: text-layer, the PDF text layer / AcroForm; "
+                             "'paddleocr' runs OCR, 'auto' runs OCR and falls back to the text layer)")
     parser.add_argument("--dpi", type=int, default=200, help="rasterisation DPI for PaddleOCR (default: 200)")
     parser.add_argument("--lang", default="en", help="PaddleOCR recognition language (default: en)")
 
@@ -40,7 +55,8 @@ def _add_common_ocr_args(parser: argparse.ArgumentParser) -> None:
 def _add_layout_arg(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--layout", choices=list(LAYOUTS), default=LAYOUT_AUTO,
                         help="input geometry: 'official' (genuine FDA 3500A field template), "
-                             "'flat' (label/value facsimile), 'auto' (default, detects the official form)")
+                             "'1932' (genuine FDA 1932 veterinary template), 'flat' (label/value facsimile), "
+                             "'auto' (default, detects which official form was supplied)")
 
 
 def _add_sample_args(parser: argparse.ArgumentParser) -> None:
@@ -55,7 +71,10 @@ def build_parser() -> argparse.ArgumentParser:
     )
     sub = parser.add_subparsers(dest="command", required=True)
 
-    samples = sub.add_parser("samples", help="generate the sample 3500A PDFs (CDER premarket, CDRH postmarket)")
+    samples = sub.add_parser(
+        "samples",
+        help="generate the sample PDFs (3500A CDER premarket, 3500A CDRH postmarket, 1932 CVM veterinary)",
+    )
     samples.add_argument("--output-dir", "-d", default="samples", help="directory for the generated PDFs")
     _add_sample_args(samples)
 
@@ -66,12 +85,12 @@ def build_parser() -> argparse.ArgumentParser:
 
     convert = sub.add_parser("convert", help="OCR a 3500A PDF and convert it to XML")
     convert.add_argument("pdf")
-    convert.add_argument("--center", choices=[CENTER_CDER, CENTER_CDRH],
+    convert.add_argument("--center", choices=[CENTER_CDER, CENTER_CDRH, CENTER_CVM],
                          help="FDA center; inferred from the form when omitted")
     convert.add_argument("--stage", choices=[STAGE_PREMARKET, STAGE_POSTMARKET],
                          help="premarket or postmarket; inferred from the form when omitted")
-    convert.add_argument("--format", "-f", dest="output_format", choices=[FORMAT_E2B, FORMAT_MDR],
-                         help="output format (default: e2b-r2 for CDER, mdr for CDRH)")
+    convert.add_argument("--format", "-f", dest="output_format", choices=[FORMAT_E2B, FORMAT_MDR, FORMAT_GL42],
+                         help="output format (default: e2b-r2 for CDER, mdr for CDRH, gl42 for CVM)")
     convert.add_argument("--output", "-o", help="write the XML here instead of stdout")
     convert.add_argument("--json", dest="json_path", help="also write the parsed 3500A fields as JSON")
     convert.add_argument("--quiet", "-q", action="store_true", help="suppress the extraction summary on stderr")
@@ -118,8 +137,12 @@ def _run_convert(args: argparse.Namespace) -> int:
 
 
 def _make_samples(output_dir: str, facsimile: bool) -> dict:
-    """Genuine FDA form by default; the flat facsimile with ``--facsimile``."""
-    return generate_samples(output_dir) if facsimile else generate_official_samples(output_dir)
+    """Genuine FDA forms by default; the flat 3500A facsimile with ``--facsimile``."""
+    if facsimile:
+        return generate_samples(output_dir)
+    pdfs = generate_official_samples(output_dir)
+    pdfs.update(generate_1932_samples(output_dir))
+    return pdfs
 
 
 def _run_demo(args: argparse.Namespace) -> int:
@@ -131,6 +154,8 @@ def _run_demo(args: argparse.Namespace) -> int:
         ("cder_premarket", CENTER_CDER, STAGE_PREMARKET, FORMAT_E2B, "cder_premarket_e2b_r2.xml"),
         ("cdrh_postmarket", CENTER_CDRH, STAGE_POSTMARKET, FORMAT_MDR, "cdrh_postmarket_mdr.xml"),
     ]
+    if "cvm_veterinary" in pdfs:
+        plan.append(("cvm_veterinary", CENTER_CVM, STAGE_POSTMARKET, FORMAT_GL42, "cvm_veterinary_gl42.xml"))
     for name, center, stage, fmt, filename in plan:
         result = convert_pdf(
             pdfs[name],
