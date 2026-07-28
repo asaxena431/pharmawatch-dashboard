@@ -27,7 +27,9 @@ LAYOUT_OFFICIAL = "official"
 LAYOUT_FLAT = "flat"
 LAYOUT_AUTO = "auto"
 LAYOUT_1932 = "1932"
-LAYOUTS = (LAYOUT_AUTO, LAYOUT_OFFICIAL, LAYOUT_FLAT, LAYOUT_1932)
+# Any other 3500A revision, or a vendor facsimile: read by printed caption.
+LAYOUT_LABELLED = "labelled"
+LAYOUTS = (LAYOUT_AUTO, LAYOUT_OFFICIAL, LAYOUT_FLAT, LAYOUT_1932, LAYOUT_LABELLED)
 
 # Engines, PDF text layer first: it is exact and instant on fillable PDFs.
 ENGINE_TEXT_LAYER = "text-layer"
@@ -143,6 +145,7 @@ def convert_pdf(
     are needed for printed or scanned copies, which have no text layer.
     """
     from .form_extract import is_official_form
+    from .label_extract import CAPTION_ANCHORED_VARIANTS, detect_variant
     from .vet_extract import is_1932_form
 
     if layout not in LAYOUTS:
@@ -151,6 +154,12 @@ def convert_pdf(
         layout == LAYOUT_AUTO and is_1932_form(pdf_path)
     ):
         return _convert_1932(pdf_path, output_format, engine, dpi, lang)
+    if layout == LAYOUT_LABELLED:
+        return _convert_labelled(pdf_path, center, stage, output_format, dpi)
+    if layout == LAYOUT_AUTO and engine == ENGINE_TEXT_LAYER:
+        variant = detect_variant(pdf_path)
+        if variant in CAPTION_ANCHORED_VARIANTS and not _has_acroform_values(pdf_path):
+            return _convert_labelled(pdf_path, center, stage, output_format, dpi)
     if layout == LAYOUT_OFFICIAL or (layout == LAYOUT_AUTO and is_official_form(pdf_path)):
         return _convert_official(pdf_path, center, stage, output_format, engine, dpi, lang)
 
@@ -212,6 +221,37 @@ def _convert_official(
         output_format=fmt,
         layout=LAYOUT_OFFICIAL,
     )
+
+
+def _has_acroform_values(pdf_path: str) -> bool:
+    """True when the PDF still carries filled AcroForm values."""
+    from .form_extract import extract_form_fields
+
+    try:
+        return bool(extract_form_fields(pdf_path).values)
+    except Exception:
+        return False
+
+
+def _convert_labelled(
+    pdf_path: str,
+    center: Optional[str],
+    stage: Optional[str],
+    output_format: Optional[str],
+    dpi: int,
+) -> ConversionResult:
+    """Caption-anchored conversion of a 3500A whose revision has no template."""
+    from .anchors_3500a import extract_by_labels
+    from .form_extract import map_report
+
+    form = extract_by_labels(pdf_path, dpi=dpi)
+    report = map_report(form, center=center, stage=stage, ocr_engine=form.engine)
+    lines = [f"{key} = {value}" for key, value in sorted(form.values.items())]
+    lines += [f"[x] {key}" for key in sorted(form.checks)]
+    ocr = OcrResult(lines=lines, pages=form.pages, engine=form.engine)
+    fmt = output_format or default_format(report.center)
+    xml = e2b_r2_fda.to_xml_string(form) if fmt == FORMAT_E2B_FDA else render_xml(report, fmt)
+    return ConversionResult(report=report, ocr=ocr, xml=xml, output_format=fmt, layout=LAYOUT_LABELLED)
 
 
 def _convert_1932(

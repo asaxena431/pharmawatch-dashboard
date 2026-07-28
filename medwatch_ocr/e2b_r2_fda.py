@@ -19,7 +19,7 @@ from datetime import datetime, timezone
 from typing import Dict, List, Optional, Sequence
 
 from .e2b_r2 import ROUTE_CODES, e2b_date
-from .form_extract import ExtractedForm, weight_in_kg
+from .form_extract import MAX_SUSPECTS, ExtractedForm, suspect_page, weight_in_kg
 
 FDA_E2B_DTD = "./Extended-ICH E2B (R2)-icsr-xml-v3.5-3500A.dtd"
 MESSAGE_SENDER = "FDA-CDER-OSC"
@@ -297,6 +297,12 @@ SUMMARY_ORDER: Sequence[str] = (
 
 AGE_UNIT_CODES = {"ageYrs": "801", "ageMons": "802", "ageWks": "803", "ageDays": "804"}
 
+# Countries a 3500A names in an address, by ISO 3166 code.
+COUNTRY_CODES = {"united states": "US", "usa": "US", "canada": "CA", "united kingdom": "GB"}
+
+# Qualifications that make the reporter a health professional (E2B A.2.1.4).
+CLINICAL_QUALIFICATIONS = frozenset({"1", "2", "3", "7"})
+
 # 3500A "reporter occupation" -> E2B qualification.
 QUALIFICATION_BY_OCCUPATION = {
     "physician": "1",
@@ -345,6 +351,16 @@ def _qualification(occupation: Optional[str]) -> Optional[str]:
         if name in text:
             return code
     return "3"
+
+
+def _country_code(address: Optional[str]) -> Optional[str]:
+    """The ISO code of the country named at the end of a postal address."""
+    if not address:
+        return None
+    for name, code in COUNTRY_CODES.items():
+        if name in address.lower():
+            return code
+    return None
 
 
 def _route_code(route: Optional[str]) -> Optional[str]:
@@ -439,7 +455,7 @@ def _suspect_drug(form: ExtractedForm, index: int, page: int) -> Optional[Dict[s
 
 def _concomitant_drugs(form: ExtractedForm) -> List[Dict[str, str]]:
     drugs: List[Dict[str, str]] = []
-    for index in range(1, 11):
+    for index in range(1, 31):
         name = form.get(f"p5.cProdName{index}")
         if not name:
             continue
@@ -494,7 +510,7 @@ def build_fda_e2b(
     safety_values: Dict[str, str] = {
         "safetyreportversion": "1",
         "safetyreportid": case_id,
-        "primarysourcecountry": form.get("p6.reportCountry") or "US",
+        "primarysourcecountry": _country_code(form.get("p6.reportCountry")) or "US",
         "reporttype": "2" if study else "1",
         "formtype": "3500A",
         "contactmethod": "OCR-3500A",
@@ -535,7 +551,7 @@ def build_fda_e2b(
         "reportercity": form.get("p6.reportCity"),
         "reporterstate": form.get("p6.reportSt"),
         "reporterpostcode": form.get("p6.reportZip"),
-        "reportercountry": form.get("p6.reportCountry"),
+        "reportercountry": _country_code(form.get("p6.reportCountry")) or form.get("p6.reportCountry"),
         "reportertel": form.get("p6.reportPhone"),
         "reporteremailaddress": form.get("p6.reportEmail"),
         "qualification": _qualification(form.get("p6.repOccupation")),
@@ -548,6 +564,9 @@ def build_fda_e2b(
         source_values["healthprofessionalflag"] = "1"
     elif form.checked("p6.repHPN"):
         source_values["healthprofessionalflag"] = "2"
+    elif source_values["qualification"] in CLINICAL_QUALIFICATIONS:
+        # The box was not read, but the occupation given is a clinical one.
+        source_values["healthprofessionalflag"] = "1"
     if form.checked("p6.reportFDAY"):
         source_values["initialreporteralsosentreporttofdaflag"] = "1"
     elif form.checked("p6.reportFDAN"):
@@ -557,7 +576,9 @@ def build_fda_e2b(
     sender_values: Dict[str, str] = {
         "sendertype": "6",
         "senderorganization": form.get("p7.manuName"),
+        "sendergivename": form.get("p7.manuName"),
         "senderstreetaddress": form.get("p7.manuAddr"),
+        "sendercountrycode": _country_code(form.get("p7.manuAddr")),
         "sendertel": form.get("p7.manuPhone"),
         "senderemailaddress": form.get("p7.manuEmail"),
         "outsourcingfacilityname": form.get("p7.outsrcFac"),
@@ -592,23 +613,26 @@ def build_fda_e2b(
     _block(safety, "sender", SENDER_ORDER, sender_values)
     _block(safety, "receiver", RECEIVER_ORDER, dict(RECEIVER))
 
-    age_unit = next((code for key, code in AGE_UNIT_CODES.items() if form.checked(f"p0.{key}")), None)
+    # Every revision prints years first, so an age given without a unit is in years.
+    age_unit = next((code for key, code in AGE_UNIT_CODES.items() if form.checked(f"p0.{key}")), "801")
+    raced = any(form.checked(f"p0.{key}") for key in ("asian", "AmInAlNa", "black", "NaHIOtherPI", "white"))
     weight = weight_in_kg(form.get("p0.patWeight"), pounds=form.checked("p0.weightLB"))
-    if weight:  # the profile reports kilograms with one decimal
-        weight = f"{float(weight):.1f}"
+    if weight:  # the profile reports kilograms to two decimals, always with one
+        weight = f"{round(float(weight), 2):.2f}".rstrip("0")
+        weight = f"{weight}0" if weight.endswith(".") else weight
     patient_values: Dict[str, str] = {
         "patientinitial": form.get("p0.patID"),
         "patientonsetage": form.get("p0.patAge"),
         "patientonsetageunit": age_unit if form.get("p0.patAge") else None,
         "patientweight": weight,
         "patientsex": "1" if form.checked("p0.sexM") else ("2" if form.checked("p0.sexF") else None),
-        "raceasian": _flag(form.checked("p0.asian")),
-        "raceamericanindianoralaskannative": _flag(form.checked("p0.AmInAlNa")),
-        "raceblack": _flag(form.checked("p0.black")),
-        "racenativehawaiianorotherpacificislander": _flag(form.checked("p0.NaHIOtherPI")),
-        "racewhite": _flag(form.checked("p0.white")),
+        "raceasian": _flag(form.checked("p0.asian")) if raced else None,
+        "raceamericanindianoralaskannative": _flag(form.checked("p0.AmInAlNa")) if raced else None,
+        "raceblack": _flag(form.checked("p0.black")) if raced else None,
+        "racenativehawaiianorotherpacificislander": _flag(form.checked("p0.NaHIOtherPI")) if raced else None,
+        "racewhite": _flag(form.checked("p0.white")) if raced else None,
         "patientmedicalhistorytext": form.get("p2.otherHist"),
-        "resultstestsprocedures": _lab_results(form),
+        "resultstestsprocedures": _lab_results(form) or form.get("p2.testData"),
     }
     if form.checked("p0.hispanic"):
         patient_values["patientethnicity"] = "1"
@@ -632,7 +656,8 @@ def build_fda_e2b(
             reaction_values["reactionoutcome"] = "5"
         _block(patient, "reaction", REACTION_ORDER, reaction_values)
 
-    drugs = [values for values in (_suspect_drug(form, 1, 3), _suspect_drug(form, 2, 4)) if values]
+    suspects = (_suspect_drug(form, index, suspect_page(index)) for index in range(1, MAX_SUSPECTS + 1))
+    drugs = [values for values in suspects if values]
     drugs += _concomitant_drugs(form)
     for values in drugs:
         _block(patient, "drug", DRUG_ORDER, values)

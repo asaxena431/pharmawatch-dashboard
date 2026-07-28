@@ -72,9 +72,10 @@ python -m medwatch_ocr.cli demo --output-dir out --engine paddleocr
 ```
 
 `--layout` picks the input geometry — `official` (the FDA 3500A template),
-`1932` (the FDA 1932 veterinary template), `flat` (label/value facsimile) or
-`auto`, the default, which detects which official form was supplied from its
-AcroForm fields or its 9-page letter-size shape.
+`1932` (the FDA 1932 veterinary template), `labelled` (any 3500A revision, read
+by its printed captions), `flat` (label/value facsimile) or `auto`, the default,
+which detects which form was supplied from its AcroForm fields, its printed
+revision ("FORM FDA-3500A (11/22)", "3500A Facsimile") or its page shape.
 
 `--engine` defaults to **`text-layer`**: the PDF text layer / AcroForm is read
 directly, which is exact and takes under a second on a fillable form. Use
@@ -112,7 +113,7 @@ or a `pdf` file part, plus optional `center`, `stage`, `format`, `engine`,
 
 ## How the extraction works
 
-There are three extraction paths behind one `pipeline.convert_pdf()`; the layout
+There are four extraction paths behind one `pipeline.convert_pdf()`; the layout
 is detected automatically.
 
 ### Official form (template-guided, `form_extract.py`)
@@ -133,6 +134,29 @@ is detected automatically.
 A fillable (not yet printed/scanned) official form can also be read directly
 from its AcroForm values with `--engine text-layer`, which is what the test
 suite uses.
+
+### Any revision (caption-anchored, `label_extract.py` + `anchors_3500a.py`)
+
+A copy printed from an older revision (11/22) or rendered by a safety system as
+a "3500A Facsimile" has no widget template, so it is read by its captions, which
+the form prescribes even where the boxes move:
+
+1. `label_extract.read_pages()` reads the text layer with each word's font and
+   point size, and infers which fonts carry *typed* values by comparing against
+   the vocabulary of the blank form (`templates/fda_3500a_caption_words.json`).
+2. `anchors_3500a.ANCHORS` gives, per field, the caption to match and where the
+   value sits (right of it, below it, how many lines, which words to keep). The
+   column is bounded by the captions printed beside it and by the ruled cell the
+   caption sits in, so a neighbouring box never bleeds in.
+3. `anchors_3500a.CHECKS` matches a checkbox by its printed caption and reads the
+   ink in the box drawn just left of that text.
+4. Repeated products are collected however the copy repeats them: one block per
+   product, a numbered list (`#1.`, `#2.`) inside one box, or both with long rows
+   carried into a `(continued)` section.
+
+`scripts/compare_e2b_reference.py FORM.pdf EXPECTED.xml -o ours.xml` diffs the
+generated message against a reference one element by element (the same
+comparison the GUI's **Diff** tab shows).
 
 Round-trip check over both samples with real PaddleOCR — 109 text fields and 36
 checkboxes, all matching what was written into the form:

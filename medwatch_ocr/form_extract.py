@@ -476,6 +476,16 @@ def map_report(
     return report
 
 
+# A copy may list more suspect products than the official form's two boxes; the
+# extra ones use the same key convention on the pages that follow.
+MAX_SUSPECTS = 6
+
+
+def suspect_page(index: int) -> int:
+    """The key prefix (``p{page}.``) suspect product ``index`` is stored under."""
+    return index + 2
+
+
 def weight_in_kg(value: Optional[str], pounds: bool) -> Optional[str]:
     """Normalise block A.4 to kilograms; both XML formats state the unit themselves."""
     if not value:
