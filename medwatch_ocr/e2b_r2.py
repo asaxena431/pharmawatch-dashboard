@@ -25,6 +25,9 @@ ROUTE_CODES: Dict[str, str] = {
     "inhalation": "055",
     "rectal": "054",
     "intrathecal": "037",
+    "intratumor": "036",
+    "intraperitoneal": "033",
+    "intralesional": "025",
     "ophthalmic": "047",
     "unknown": "050",
 }

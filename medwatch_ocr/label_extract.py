@@ -190,17 +190,35 @@ class Anchor:
     limit: int = 0  # keep at most this many words (0 = the whole box)
     wide: bool = False  # a free-text box spanning the captions printed to its right
     repeat: int = 0  # read this many copies of the box, into "{key}@{n}" (0 = one)
+    markers: bool = False  # keep the printed row numbers ("#1") of a list box
+    any_font: bool = False  # the value is identified by "keep" alone, whatever its font
+    section: Optional[str] = None  # the lettered block the caption must stand in ("e", "g")
     by_line: bool = False  # keep the box's line breaks ("\n") instead of one line
 
 
-# Captions, item numbers and instructions printed inside the boxes: never values.
+# Placeholders and item numbers printed inside the boxes: never part of a value.
 NOISE = re.compile(
-    r"^(?:\(?e\.g\.?,?.*|\(?01-JAN-1900\)?:?|\(mm/dd/yyyy\)|lbs?|kgs?|"
-    r"or|and|to|yes|no|unk|unknown|year\(s\)|month\(s\)|week\(s\)|day\(s\)|years?|"
-    r"in|confidence|\(in|confidence\)|apply|apply\)|\(check|check|exp\.|id|&|"
-    r"\d{1,2}[a-c]?\.|#|:|\(continued\.*\)?)$",
+    r"^(?:\(?e\.g\.?,?.*|\(?01-JAN-1900\)?:?|\(mm/dd/yyyy\)|"
+    r"\d{1,2}[a-c]?\.|#|:)$",
     re.IGNORECASE,
 )
+
+# Units and instruction words a box prints beside its blank.  They are dropped
+# only from short fields: in a narrative they are ordinary words of the text.
+FILLER = re.compile(
+    r"^(?:lbs?|kgs?|or|and|to|yes|no|unk|unknown|in|years?|year\(s\)|month\(s\)|"
+    r"week\(s\)|day\(s\)|confidence|\(in|confidence\)|apply|apply\)|\(check|check|exp\.|id|&)$",
+    re.IGNORECASE,
+)
+
+# The row number of a list box, printed by the form rather than typed.
+MARKER = re.compile(r"^#\s*\d{1,2}[.):]?$")
+
+# A bullet leading a typed line is set in the form's own font, yet it is text.
+BULLET = re.compile(r"^[-•*]$")
+
+# A vendor sets quotes and dashes typographically; regulatory XML uses ASCII.
+TYPOGRAPHY = {0x2018: "'", 0x2019: "'", 0x201C: '"', 0x201D: '"', 0x2013: "-", 0x2014: "-"}
 
 
 def _normalise(text: str) -> str:
@@ -337,10 +355,11 @@ def _harvest(words: Sequence[Word], rules: "_Rules", limit: int = 0) -> str:
         word.text
         for word in words
         if not NOISE.match(word.text)
+        and not (limit and FILLER.match(word.text))
         and not (rules.drop and rules.drop.match(word.text))
         and (rules.keep is None or rules.keep.match(word.text))
     ]
-    text = DATE_PROMPT.sub(" ", " ".join(kept))
+    text = DATE_PROMPT.sub(" ", " ".join(kept)).translate(TYPOGRAPHY)
     words_left = re.sub(r"\s+", " ", text).strip().split(" ") if text.strip() else []
     if limit:
         words_left = words_left[:limit]
@@ -467,6 +486,19 @@ class _Rules:
     keep: Optional[re.Pattern]
 
 
+# The heading of a lettered block of the form, e.g. "E. INITIAL REPORTER".
+SECTION = re.compile(r"^([a-h])\.\s+[a-z]{3,}")
+
+
+def _section_of(page: Page, index: int) -> Optional[str]:
+    """The lettered block the line at ``index`` stands in, by the last heading above it."""
+    for line in reversed(page.lines[: index + 1]):
+        heading = SECTION.match(_normalise(line.text))
+        if heading:
+            return heading.group(1)
+    return None
+
+
 def _enclosing_cell(cells: Sequence[Box], line: Line, left: float, right: float) -> Optional[Box]:
     """The smallest ruled box holding both the caption and room for a value below it.
 
@@ -495,6 +527,8 @@ def _value_for(
         match = rules.caption.search(_normalise(line.text))
         if not match:
             continue
+        if anchor.section and _section_of(page, index) != anchor.section:
+            continue
         hits += 1
         if seen + hits != anchor.occurrence:
             continue
@@ -503,13 +537,32 @@ def _value_for(
         # The caption of the next field on the same line marks the end of this one's column.
         neighbour = None
         if not anchor.wide:
-            neighbour = next((word.x0 - 2.0 for word in line.words_after(match.end()) if word.font not in fonts), None)
+            neighbour = next(
+                (
+                    word.x0 - 2.0
+                    for word in line.words_after(match.end())
+                    if word.font not in fonts and not (anchor.any_font and rules.keep is not None and rules.keep.match(word.text))
+                ),
+                None,
+            )
         slack = None if anchor.where == "right" or anchor.wide else right + anchor.x_slack
         edges = [value for value in (cell.x1 if cell else None, neighbour, slack) if value is not None]
         edge = min(edges) if edges else float("inf")
         band = (max(cell.x0, left - anchor.x_from) if cell else left - anchor.x_from, edge)
 
-        first = [word for word in line.words_after(match.end()) if word.font in fonts and word.centre <= band[1]]
+        def is_value(word: Word) -> bool:
+            # A vendor may print a caption and the value beside it in one font, so
+            # some boxes are read on position (and "keep") alone.
+            if anchor.any_font:
+                if word.font not in fonts and _normalise(word.text).strip(":.") in caption_vocabulary():
+                    return False
+                return rules.keep is None or bool(rules.keep.match(word.text))
+            return word.font in fonts or bool(BULLET.match(word.text)) or (anchor.markers and bool(MARKER.match(word.text)))
+
+        def typed_words(words: Sequence[Word]) -> List[Word]:
+            return [word for word in words if is_value(word)]
+
+        first = typed_words([word for word in line.words_after(match.end()) if word.centre <= band[1]])
         if anchor.where == "right":
             return _harvest(first, rules, anchor.limit) or None, hits
         rows: List[List[Word]] = [] if anchor.where == "below" or not first else [first]
@@ -521,9 +574,11 @@ def _value_for(
             in_band = [word for word in following.words if band[0] - 2 <= word.centre <= band[1]]
             printed = [word for word in in_band if word.font not in fonts]
             # Item numbers are often set in the value font, so the whole line is tested.
-            if printed and rules.stop.search(_normalise(" ".join(word.text for word in in_band))):
+            # A vendor sets its own captions in that font too, so a box that names the
+            # caption ending it is stopped there whatever the font.
+            if (printed or anchor.stop) and rules.stop.search(_normalise(" ".join(word.text for word in in_band))):
                 break
-            typed = [word for word in in_band if word.font in fonts]
+            typed = typed_words(in_band)
             if not typed:
                 blanks += 1
                 if blanks > 2 and not cell:

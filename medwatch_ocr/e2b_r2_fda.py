@@ -297,6 +297,28 @@ SUMMARY_ORDER: Sequence[str] = (
 
 AGE_UNIT_CODES = {"ageYrs": "801", "ageMons": "802", "ageWks": "803", "ageDays": "804"}
 
+# Dose units a copy types in its dose box, by E2B (R2) unit code.
+DOSE_UNIT_CODES = {
+    "kg": "001",
+    "kilogram": "001",
+    "g": "002",
+    "gram": "002",
+    "mg": "003",
+    "milligram": "003",
+    "ug": "004",
+    "mcg": "004",
+    "microgram": "004",
+    "mg/kg": "005",
+    "milligram per kilogram": "005",
+    "ml": "012",
+    "millilitre": "012",
+    "milliliter": "012",
+    "l": "011",
+    "iu": "024",
+    "unit": "032",
+    "units": "032",
+}
+
 # Countries a 3500A names in an address, by ISO 3166 code.
 COUNTRY_CODES = {"united states": "US", "usa": "US", "canada": "CA", "united kingdom": "GB"}
 
@@ -353,6 +375,14 @@ def _qualification(occupation: Optional[str]) -> Optional[str]:
     return "3"
 
 
+def _tel(number: Optional[str]) -> Optional[str]:
+    """E2B telephone numbers are digits only; a form prints them punctuated."""
+    if not number:
+        return None
+    digits = re.sub(r"\D", "", number)
+    return digits or number
+
+
 def _country_code(address: Optional[str]) -> Optional[str]:
     """The ISO code of the country named at the end of a postal address."""
     if not address:
@@ -371,6 +401,12 @@ def _route_code(route: Optional[str]) -> Optional[str]:
         if text.startswith(name):
             return code
     return None
+
+
+def _dose_unit_code(unit: Optional[str]) -> Optional[str]:
+    if not unit:
+        return None
+    return DOSE_UNIT_CODES.get(re.sub(r"\s+", " ", unit.strip().strip(".").lower()))
 
 
 def _abate_code(form: ExtractedForm, prefix: str, page: int) -> Optional[str]:
@@ -407,10 +443,10 @@ def _narrative(form: ExtractedForm) -> Optional[str]:
 
 def _suspect_drug(form: ExtractedForm, index: int, page: int) -> Optional[Dict[str, str]]:
     name = form.get(f"p{page}.prodName{index}")
+    if not name:
+        return None  # a suspect-product box read without a name holds no product
     dose = form.get(f"p{page}.dose{index}")
-    values: Dict[str, str] = {"drugcharacterization": "1"}
-    if name:
-        values["medicinalproduct"] = name
+    values: Dict[str, str] = {"drugcharacterization": "1", "medicinalproduct": name}
     strength = form.get(f"p{page}.prodStr{index}")
     if strength:
         values["productstrength"] = strength
@@ -427,9 +463,14 @@ def _suspect_drug(form: ExtractedForm, index: int, page: int) -> Optional[Dict[s
         if value and value != "--":
             values[tag] = value
     if dose:
-        values["drugstructuredosagenumb"] = dose
         dose_unit = form.get(f"p{page}.doseUnit{index}")
-        values["drugdosagetext"] = f"{dose} {dose_unit}".strip() if dose_unit and dose_unit != "--" else dose
+        unit_code = _dose_unit_code(dose_unit)
+        if unit_code:
+            # A dose whose unit E2B codes is structured; any other is free text.
+            values["drugstructuredosagenumb"] = dose
+            values["drugstructuredosageunit"] = unit_code
+        else:
+            values["drugdosagetext"] = f"{dose} {dose_unit}".strip() if dose_unit else dose
     frequency = form.get(f"p{page}.freq{index}Other") or form.get(f"p{page}.freq{index}")
     if frequency and frequency != "--":
         values["frequency"] = frequency
@@ -440,16 +481,11 @@ def _suspect_drug(form: ExtractedForm, index: int, page: int) -> Optional[Dict[s
     _dated(values, "expirationdateformat", "expirationdate", form.get(f"p{page}.expDate{index}"))
     _dated(values, "drugstartdateformat", "drugstartdate", form.get(f"p{page}.start{index}Date"))
     _dated(values, "drugenddateformat", "drugenddate", form.get(f"p{page}.end{index}Date"))
-    abated = _abate_code(form, f"abate{index}", page)
-    if abated:
-        values["eventabatedafterusestoppedordosereduced"] = abated
-    reappeared = _abate_code(form, f"reappear{index}", page)
-    if reappeared:
-        values["eventreappearedafterreintroduction"] = reappeared
+    # An unanswered dechallenge/rechallenge question is reported as "unknown".
+    values["eventabatedafterusestoppedordosereduced"] = _abate_code(form, f"abate{index}", page) or "4"
+    values["eventreappearedafterreintroduction"] = _abate_code(form, f"reappear{index}", page) or "4"
     if form.checked(f"p{page}.Prod{index}Generic"):
         values["generic"] = "1"
-    if len(values) == 1:
-        return None
     return values
 
 
@@ -504,7 +540,12 @@ def build_fda_e2b(
     ind_number = form.get("p7.numIND")
     report_number = form.get("p7.manuRepNum") or form.get("p0.mfr")
     case_id = f"{report_number}-IND" if report_number and ind_number else report_number
-    study = form.checked("p7.rptsrcStu")
+    # A form naming an IND or a protocol is a study report even where the copy's
+    # "study" box could not be read.
+    study = form.checked("p7.rptsrcStu") or bool(ind_number) or bool(form.get("p7.protNum"))
+    health_professional = form.checked("p6.repHPY") or (
+        not form.checked("p6.repHPN") and _qualification(form.get("p6.repOccupation")) in CLINICAL_QUALIFICATIONS
+    )
     serious_boxes = ("p0.death", "p0.lifeThr", "p0.hospital", "p0.disability", "p0.congenital", "p0.otherOutcome")
 
     safety_values: Dict[str, str] = {
@@ -531,6 +572,7 @@ def build_fda_e2b(
         "thirtydayreporttype": _flag(form.checked("p7.rep30")),
         "periodicreporttype": _flag(form.checked("p7.repPer")),
         "initialreporttype": _flag(form.checked("p7.repInit")),
+        "tendayreporttype": "1" if form.checked("p7.rep10") else None,
         "followupreporttype": _flag(form.checked("p7.repFollow")),
         "followupnumber": form.get("p7.repFollowNum"),
         "manufacturerreportnumber": case_id,
@@ -538,7 +580,9 @@ def build_fda_e2b(
     if form.checked("p0.reqInterv"):
         safety_values["requiredintervention"] = "1"
     report_date = form.get("p0.dateReport")
-    _dated(safety_values, "receivedateformat", "receivedate", report_date)
+    # A.1.6 is the date the report reached the sender, i.e. the day it is converted.
+    safety_values["receivedateformat"] = "102"
+    safety_values["receivedate"] = moment.strftime("%Y%m%d")
     _dated(safety_values, "receiptdateformat", "receiptdate", report_date)
     _dated(safety_values, "mfrreceivedateformat", "mfrreceivedate", form.get("p7.reportManuRecDate"))
 
@@ -551,26 +595,21 @@ def build_fda_e2b(
         "reportercity": form.get("p6.reportCity"),
         "reporterstate": form.get("p6.reportSt"),
         "reporterpostcode": form.get("p6.reportZip"),
-        "reportercountry": _country_code(form.get("p6.reportCountry")) or form.get("p6.reportCountry"),
-        "reportertel": form.get("p6.reportPhone"),
+        "reportercountry": (
+            _country_code(form.get("p6.reportCountry"))
+            or _country_code(form.get("p6.reportAddr"))
+            or form.get("p6.reportCountry")
+        ),
+        "reportertel": _tel(form.get("p6.reportPhone")),
         "reporteremailaddress": form.get("p6.reportEmail"),
         "qualification": _qualification(form.get("p6.repOccupation")),
-        "studyname": ind_number,
-        "sponsorstudynumb": form.get("p7.protNum"),
+        # The profile carries "study name; study number"; a 3500A names only the IND.
+        "studyname": f"{ind_number}; {ind_number}" if ind_number else None,
     }
     if study:
         source_values["observestudytype"] = "1"
-    if form.checked("p6.repHPY"):
-        source_values["healthprofessionalflag"] = "1"
-    elif form.checked("p6.repHPN"):
-        source_values["healthprofessionalflag"] = "2"
-    elif source_values["qualification"] in CLINICAL_QUALIFICATIONS:
-        # The box was not read, but the occupation given is a clinical one.
-        source_values["healthprofessionalflag"] = "1"
-    if form.checked("p6.reportFDAY"):
-        source_values["initialreporteralsosentreporttofdaflag"] = "1"
-    elif form.checked("p6.reportFDAN"):
-        source_values["initialreporteralsosentreporttofdaflag"] = "2"
+    source_values["healthprofessionalflag"] = _flag(health_professional)
+    source_values["initialreporteralsosentreporttofdaflag"] = _flag(form.checked("p6.reportFDAY"))
     _block(safety, "primarysource", PRIMARYSOURCE_ORDER, source_values)
 
     sender_values: Dict[str, str] = {
@@ -579,14 +618,14 @@ def build_fda_e2b(
         "sendergivename": form.get("p7.manuName"),
         "senderstreetaddress": form.get("p7.manuAddr"),
         "sendercountrycode": _country_code(form.get("p7.manuAddr")),
-        "sendertel": form.get("p7.manuPhone"),
+        "sendertel": _tel(form.get("p7.manuPhone")),
         "senderemailaddress": form.get("p7.manuEmail"),
         "outsourcingfacilityname": form.get("p7.outsrcFac"),
         "reportsourceforeignflag": _flag(form.checked("p7.repsrcFor")),
         "reportsourcestudyflag": _flag(study),
         "reportsourceliteratureflag": _flag(form.checked("p7.repsrcLit")),
         "reportsourceconsumerflag": _flag(form.checked("p7.repsrcCons")),
-        "reportsourcehealthprofflag": _flag(form.checked("p7.repsrcHP")),
+        "reportsourcehealthprofflag": _flag(form.checked("p7.repsrcHP") or health_professional),
         "reportsourceuserfacilityflag": _flag(form.checked("p7.repsrcUF")),
         "reportsourcecompanyrepflag": _flag(form.checked("p7.repsrcCR")),
         "reportsourcedistributerflag": _flag(form.checked("p7.repsrcDI")),
@@ -639,12 +678,9 @@ def build_fda_e2b(
     _dated(patient_values, "patientbirthdateformat", "patientbirthdate", form.get("p0.patDOB"))
     patient = _block(safety, "patient", PATIENT_ORDER, patient_values)
 
-    death_date = _date(form.get("p0.deathDate"))
-    if death_date:
-        _block(patient, "patientdeath", ("patientdeathdateformat", "patientdeathdate"), {
-            "patientdeathdateformat": "102",
-            "patientdeathdate": death_date,
-        })
+    death_values: Dict[str, str] = {}
+    _dated(death_values, "patientdeathdateformat", "patientdeathdate", form.get("p0.deathDate"))
+    _block(patient, "patientdeath", ("patientdeathdateformat", "patientdeathdate"), death_values)
 
     event_date = _date(form.get("p0.dateAdvEvent"))
     for term in _reaction_terms(form):

@@ -16,7 +16,9 @@ from dataclasses import dataclass, field
 from typing import Dict, List
 
 # Elements that legitimately differ between two runs of the same report.
-VOLATILE_ELEMENTS = frozenset({"messagenumb", "messagedate", "transmissiondate", "transmissiondateformat"})
+VOLATILE_ELEMENTS = frozenset(
+    {"messagenumb", "messagedate", "transmissiondate", "transmissiondateformat", "receivedate", "receivedateformat"}
+)
 
 
 @dataclass

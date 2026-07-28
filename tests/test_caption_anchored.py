@@ -1,12 +1,15 @@
 """The caption-anchored reader used for 3500A copies that have no widget template."""
 
 from medwatch_ocr.anchors_3500a import (
+    _carried_text,
     _concomitant_products,
+    _manufacturer,
     _reporter,
     _rows,
     _suspect_products,
     _weight_unit,
 )
+from medwatch_ocr.e2b_r2_fda import _suspect_drug
 from medwatch_ocr.form_extract import ExtractedForm
 from medwatch_ocr.label_extract import (
     CAPTION_ANCHORED_VARIANTS,
@@ -84,6 +87,64 @@ def test_a_weight_box_holding_both_readings_reports_kilograms():
     unlabelled = form(**{"p0.weightText": "177.0 80.3"})
     _weight_unit(unlabelled)
     assert unlabelled.get("p0.patWeight") == "80.3"
+
+
+def test_a_concomitant_row_keeps_the_text_the_copy_prints_before_its_dates():
+    extracted = form(**{"rows.concomitant": "#1. LIDOCAINE (LIDOCAINE) Patch, 4 percent, 16-SEP-2025 to Ongoing"})
+    _concomitant_products(extracted)
+    assert extracted.get("p5.cProdName1") == "LIDOCAINE (LIDOCAINE) Patch, 4 percent,"
+
+
+def test_a_revision_captioning_the_parts_of_the_box_is_read_part_by_part():
+    extracted = form(
+        **{
+            "rows.prodNameSub@1": "(Continued...)",
+            "rows.doseSub@1": "250",
+            "rows.doseUnitSub@1": "--",
+            "rows.routeSub@1": "Intratumoral",
+        }
+    )
+    _suspect_products(extracted)
+    assert extracted.get("p3.prodName1") == "(Continued...)"
+    assert (extracted.get("p3.dose1"), extracted.get("p3.doseUnit1")) == ("250", "--")
+    assert extracted.get("p3.route1") == "Intratumoral"
+
+
+def test_a_dose_whose_unit_e2b_does_not_code_is_serialised_as_free_text():
+    coded = form(**{"p3.prodName1": "HEPAXOLIB", "p3.dose1": "588", "p3.doseUnit1": "milligram"})
+    values = _suspect_drug(coded, 1, 3)
+    assert values is not None
+    assert (values["drugstructuredosagenumb"], values["drugstructuredosageunit"]) == ("588", "003")
+    assert "drugdosagetext" not in values
+
+    free = form(**{"p3.prodName1": "HEPAXOLIB", "p3.dose1": "250", "p3.doseUnit1": "--"})
+    values = _suspect_drug(free, 1, 3)
+    assert values is not None
+    assert values["drugdosagetext"] == "250 --"
+    assert "drugstructuredosagenumb" not in values
+
+
+def test_a_suspect_box_read_without_a_product_name_is_not_a_drug():
+    assert _suspect_drug(form(**{"p3.dose1": "250"}), 1, 3) is None
+
+
+def test_free_text_is_joined_to_the_part_carried_into_the_continuation_pages():
+    extracted = form(
+        **{
+            "p2.testData": "16Mar2026: bronchoscopy\ncontinued in additional info section...",
+            "p2.testDataCont": "through the mucosa.",
+        }
+    )
+    _carried_text(extracted)
+    assert extracted.get("p2.testData") == "16Mar2026: bronchoscopy\n\nRELEVANT TESTS (Continued)\nthrough the mucosa."
+    assert extracted.get("p2.testDataCont") is None
+
+
+def test_a_contact_office_block_names_the_contact_on_its_first_line():
+    extracted = form(**{"p7.manuBlock": "Julia Goldstein, MD\nOffice of Regulatory Affairs\nBethesda, MD 20892"})
+    _manufacturer(extracted)
+    assert extracted.get("p7.manuName") == "Julia Goldstein, MD"
+    assert extracted.get("p7.manuAddr") == "Office of Regulatory Affairs Bethesda, MD 20892"
 
 
 def test_a_single_name_and_address_box_is_split_into_name_address_and_email():
