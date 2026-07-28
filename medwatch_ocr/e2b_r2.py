@@ -47,7 +47,7 @@ OUTCOME_TO_SERIOUSNESS = [
 ]
 
 
-def _digits(value: Optional[str]) -> Optional[str]:
+def e2b_date(value: Optional[str]) -> Optional[str]:
     """Convert a date string to the E2B ``CCYYMMDD`` format where possible."""
     if not value:
         return None
@@ -170,9 +170,9 @@ def build_e2b_r2(
     for tag, value in _seriousness(report.event.outcomes).items():
         _sub(safety, tag, value)
     _sub(safety, "receivedateformat", "102")
-    _sub(safety, "receivedate", _digits(mfr.date_received_by_manufacturer) or _digits(report.event.report_date))
+    _sub(safety, "receivedate", e2b_date(mfr.date_received_by_manufacturer) or e2b_date(report.event.report_date))
     _sub(safety, "receiptdateformat", "102")
-    _sub(safety, "receiptdate", _digits(mfr.date_received_by_manufacturer) or _digits(report.event.report_date))
+    _sub(safety, "receiptdate", e2b_date(mfr.date_received_by_manufacturer) or e2b_date(report.event.report_date))
     _sub(safety, "additionaldocument", "2")
     _sub(safety, "fulfillexpeditecriteria", "1")
     _sub(safety, "companynumb", mfr.report_number)
@@ -201,8 +201,8 @@ def build_e2b_r2(
 
     patient = ET.SubElement(safety, "patient")
     _sub(patient, "patientinitial", report.patient.initials or report.patient.identifier)
-    _sub(patient, "patientbirthdateformat", "102" if _digits(report.patient.date_of_birth) else None)
-    _sub(patient, "patientbirthdate", _digits(report.patient.date_of_birth))
+    _sub(patient, "patientbirthdateformat", "102" if e2b_date(report.patient.date_of_birth) else None)
+    _sub(patient, "patientbirthdate", e2b_date(report.patient.date_of_birth))
     _sub(patient, "patientonsetage", report.patient.age)
     _sub(patient, "patientonsetageunit", _age_unit_code(report.patient.age_unit) if report.patient.age else None)
     _sub(patient, "patientweight", report.patient.weight_kg)
@@ -214,14 +214,14 @@ def build_e2b_r2(
         _sub(reaction, "primarysourcereaction", term)
         _sub(reaction, "reactionmeddraversionpt", "27.0")
         _sub(reaction, "reactionmeddrapt", term)
-        _sub(reaction, "reactionstartdateformat", "102" if _digits(report.event.event_date) else None)
-        _sub(reaction, "reactionstartdate", _digits(report.event.event_date))
+        _sub(reaction, "reactionstartdateformat", "102" if e2b_date(report.event.event_date) else None)
+        _sub(reaction, "reactionstartdate", e2b_date(report.event.event_date))
         _sub(reaction, "reactionoutcome", outcome_code)
 
     if report.event.relevant_tests:
         test = ET.SubElement(patient, "test")
-        _sub(test, "testdateformat", "102" if _digits(report.event.event_date) else None)
-        _sub(test, "testdate", _digits(report.event.event_date))
+        _sub(test, "testdateformat", "102" if e2b_date(report.event.event_date) else None)
+        _sub(test, "testdate", e2b_date(report.event.event_date))
         _sub(test, "testname", "Relevant tests / laboratory data")
         _sub(test, "testresult", report.event.relevant_tests)
 
@@ -238,10 +238,10 @@ def build_e2b_r2(
         _sub(drug, "drugdosageform", None)
         _sub(drug, "drugadministrationroute", _route_code(product.route))
         _sub(drug, "drugindication", product.indication)
-        _sub(drug, "drugstartdateformat", "102" if _digits(product.therapy_start) else None)
-        _sub(drug, "drugstartdate", _digits(product.therapy_start))
-        _sub(drug, "drugenddateformat", "102" if _digits(product.therapy_stop) else None)
-        _sub(drug, "drugenddate", _digits(product.therapy_stop))
+        _sub(drug, "drugstartdateformat", "102" if e2b_date(product.therapy_start) else None)
+        _sub(drug, "drugstartdate", e2b_date(product.therapy_start))
+        _sub(drug, "drugenddateformat", "102" if e2b_date(product.therapy_stop) else None)
+        _sub(drug, "drugenddate", e2b_date(product.therapy_stop))
         if product.therapy_stop:
             _sub(drug, "actiondrug", "1")
         if product.event_abated_after_stop:

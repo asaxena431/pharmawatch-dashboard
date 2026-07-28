@@ -12,6 +12,8 @@ and browse to ``/medwatch``.
 import os
 import tempfile
 import traceback
+import xml.etree.ElementTree as ElementTree
+from typing import Optional
 
 from flask import Blueprint, Flask, Response, jsonify, redirect, render_template, request
 
@@ -21,6 +23,7 @@ from .ocr import OcrError
 from .official_form import OFFICIAL_SAMPLES, fill_official_form
 from .pipeline import ENGINE_TEXT_LAYER, FORMAT_E2B, FORMAT_GL42, FORMAT_MDR, LAYOUT_AUTO, LAYOUTS, convert_pdf
 from .samples import SAMPLES, render_sample
+from .xml_diff import diff_xml
 
 medwatch_bp = Blueprint("medwatch", __name__)
 
@@ -98,6 +101,15 @@ def medwatch_sample(name: str):
     )
 
 
+def _expected_xml(payload: dict) -> Optional[str]:
+    """The XML to compare against: an uploaded file or inline text."""
+    upload = request.files.get("expected_xml")
+    if upload and upload.filename:
+        return upload.read().decode("utf-8", errors="replace")
+    text = request.form.get("expected_xml") or payload.get("expected_xml")
+    return text or None
+
+
 @medwatch_bp.route("/api/medwatch/convert", methods=["POST"])
 def api_medwatch_convert():
     """OCR a 3500A PDF (uploaded or one of the samples) and return XML + fields."""
@@ -141,14 +153,19 @@ def api_medwatch_convert():
             dpi=dpi,
             layout=layout,
         )
-        return jsonify(
-            {
-                "summary": result.summary,
-                "xml": result.xml,
-                "fields": result.report.to_dict(),
-                "ocr_text": result.ocr.text,
-            }
-        )
+        response = {
+            "summary": result.summary,
+            "xml": result.xml,
+            "fields": result.report.to_dict(),
+            "ocr_text": result.ocr.text,
+        }
+        expected = _expected_xml(payload)
+        if expected:
+            try:
+                response["diff"] = diff_xml(result.xml, expected).as_dict()
+            except ElementTree.ParseError as exc:
+                response["diff_error"] = f"expected XML could not be parsed: {exc}"
+        return jsonify(response)
     except OcrError as exc:
         return jsonify({"error": str(exc)}), 422
     except Exception as exc:  # pragma: no cover - surfaced in the UI

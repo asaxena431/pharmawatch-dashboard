@@ -168,6 +168,84 @@ def ocr_page_words(
     return per_page, images
 
 
+def text_layer_page_words(
+    pdf_path: str,
+    dpi: int = DEFAULT_DPI,
+) -> Tuple[List[List[Tuple[float, float, float, float, str]]], List["object"]]:
+    """Return per-page word boxes read from the PDF text layer, plus page images.
+
+    Same shape as :func:`ocr_page_words` - ``(x0, y0, x1, y1, text)`` in the pixel
+    space of the rendered page - so template-guided extraction can use either
+    source.  This is the path for a *flattened* form: the field values are no
+    longer AcroForm values but they are still real text, so they can be placed
+    exactly without OCR.  The images are only needed for checkbox ink detection.
+    """
+    import pypdfium2 as pdfium
+
+    scale = dpi / 72.0
+    per_page: List[List[Tuple[float, float, float, float, str]]] = []
+    images: List[object] = []
+    document = pdfium.PdfDocument(pdf_path)
+    try:
+        try:
+            document.init_forms()
+        except Exception:  # pragma: no cover - form-less documents
+            pass
+        for index in range(len(document)):
+            page = document[index]
+            height = page.get_height()
+            images.append(page.render(scale=scale).to_pil())
+            per_page.append(_words_from_textpage(page.get_textpage(), height, scale))
+    finally:
+        document.close()
+    return per_page, images
+
+
+def _words_from_textpage(textpage, page_height: float, scale: float) -> List[Tuple[float, float, float, float, str]]:
+    """Group the characters of one text page into words with pixel rectangles."""
+    words: List[Tuple[float, float, float, float, str]] = []
+    letters: List[str] = []
+    box: Optional[List[float]] = None
+
+    def flush() -> None:
+        nonlocal box, letters
+        text = "".join(letters).strip()
+        if text and box is not None:
+            # PDF points (origin bottom-left) -> image pixels (origin top-left).
+            words.append(
+                (
+                    box[0] * scale,
+                    (page_height - box[3]) * scale,
+                    box[2] * scale,
+                    (page_height - box[1]) * scale,
+                    text,
+                )
+            )
+        letters, box = [], None
+
+    for index in range(textpage.count_chars()):
+        char = textpage.get_text_range(index, 1)
+        if not char or char.isspace():
+            flush()
+            continue
+        try:
+            left, bottom, right, top = textpage.get_charbox(index)
+        except Exception:  # pragma: no cover - unmappable glyph
+            continue
+        if box is None:
+            box = [left, bottom, right, top]
+        else:
+            # A backwards jump means a new text run, i.e. a new word.
+            if left < box[0] - 1:
+                flush()
+                box = [left, bottom, right, top]
+            else:
+                box = [min(box[0], left), min(box[1], bottom), max(box[2], right), max(box[3], top)]
+        letters.append(char)
+    flush()
+    return words
+
+
 def group_boxes_into_lines(boxes: Sequence[Tuple[float, float, float, str]]) -> List[str]:
     """Merge OCR boxes that share a text line, left-to-right."""
     if not boxes:

@@ -86,10 +86,23 @@
         <select id="formatInput" class="w-full bg-slate-800 border border-slate-600 rounded-xl px-3 py-2 text-sm">
           <option value="">auto (CDER → E2B R2, CDRH → MDR, CVM → GL42)</option>
           <option value="e2b-r2">E2B(R2) ICSR</option>
+          <option value="e2b-r2-fda">E2B(R2) ICSR - FDA extended 3500A profile</option>
           <option value="mdr">FDA MDR</option>
           <option value="gl42">VICH GL42 AER</option>
         </select>
       </div>
+    </div>
+
+    <div class="grid md:grid-cols-2 gap-4 items-end">
+      <div>
+        <label class="block text-xs text-slate-400 mb-1">Expected XML to compare against (optional)</label>
+        <input id="expectedInput" type="file" accept=".xml,text/xml,application/xml"
+          class="w-full text-xs bg-slate-800 border border-slate-600 rounded-xl px-3 py-2 file:mr-3 file:px-3 file:py-1 file:rounded-lg file:border-0 file:bg-slate-600 file:text-white"/>
+      </div>
+      <p class="text-xs text-slate-500">
+        Attach the XML the report should produce and the Diff tab lists every element that differs.
+        The comparison ignores the message number, message date and transmission date.
+      </p>
     </div>
 
     <div class="flex items-center gap-4">
@@ -119,6 +132,7 @@
           <button onclick="showTab('xml')" id="tab-xml" class="tab px-3 py-1.5 rounded-lg bg-blue-600 text-white">XML</button>
           <button onclick="showTab('fields')" id="tab-fields" class="tab px-3 py-1.5 rounded-lg bg-slate-800 text-slate-400">Parsed fields</button>
           <button onclick="showTab('ocr')" id="tab-ocr" class="tab px-3 py-1.5 rounded-lg bg-slate-800 text-slate-400">OCR text</button>
+          <button onclick="showTab('diff')" id="tab-diff" class="tab px-3 py-1.5 rounded-lg bg-slate-800 text-slate-400">Diff</button>
           <button onclick="downloadXml()" class="px-3 py-1.5 rounded-lg bg-slate-800 text-slate-300 hover:text-white">
             <i class="fa-solid fa-download mr-1"></i>Download
           </button>
@@ -127,6 +141,7 @@
       <pre id="pane-xml" class="out bg-slate-900/80 rounded-xl p-4 text-emerald-300 whitespace-pre-wrap"></pre>
       <pre id="pane-fields" class="out hidden bg-slate-900/80 rounded-xl p-4 text-sky-300 whitespace-pre-wrap"></pre>
       <pre id="pane-ocr" class="out hidden bg-slate-900/80 rounded-xl p-4 text-slate-300 whitespace-pre-wrap"></pre>
+      <div id="pane-diff" class="out hidden bg-slate-900/80 rounded-xl p-4 text-xs text-slate-300"></div>
     </div>
   </div>
 </div>
@@ -135,7 +150,7 @@
 let lastResult = null;
 
 function showTab(name) {
-  ['xml', 'fields', 'ocr'].forEach(function (key) {
+  ['xml', 'fields', 'ocr', 'diff'].forEach(function (key) {
     document.getElementById('pane-' + key).classList.toggle('hidden', key !== name);
     const tab = document.getElementById('tab-' + key);
     tab.className = 'tab px-3 py-1.5 rounded-lg ' + (key === name ? 'bg-blue-600 text-white' : 'bg-slate-800 text-slate-400');
@@ -158,6 +173,8 @@ async function runConvert() {
   } else {
     form.append('sample', document.querySelector('input[name="sample"]:checked').value);
   }
+  const expected = document.getElementById('expectedInput').files[0];
+  if (expected) form.append('expected_xml', expected);
   form.append('engine', document.getElementById('engineInput').value);
   form.append('layout', document.getElementById('layoutInput').value);
   const format = document.getElementById('formatInput').value;
@@ -187,15 +204,56 @@ async function runConvert() {
     document.getElementById('pane-xml').textContent = data.xml;
     document.getElementById('pane-fields').textContent = JSON.stringify(data.fields, null, 2);
     document.getElementById('pane-ocr').textContent = data.ocr_text;
+    renderDiff(data);
     document.getElementById('results').classList.remove('hidden');
-    showTab('xml');
-    status.textContent = 'Done — ' + s.output_format + ' XML generated with ' + s.ocr_engine + '.';
+    showTab(data.diff ? 'diff' : 'xml');
+    status.textContent = 'Done — ' + s.output_format + ' XML generated with ' + s.ocr_engine + '.'
+      + (data.diff ? ' ' + data.diff.matched + '/' + data.diff.compared + ' elements match the expected XML.' : '');
   } catch (error) {
     status.textContent = 'Error: ' + error.message;
   } finally {
     button.disabled = false;
     spinner.classList.add('hidden');
   }
+}
+
+function escapeHtml(value) {
+  return String(value === null || value === undefined ? '' : value)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+function diffRows(title, colour, entries, left, right) {
+  if (!entries.length) return '';
+  let html = '<div class="mt-4 font-semibold ' + colour + '">' + title + ' (' + entries.length + ')</div>';
+  html += entries.map(function (entry) {
+    let row = '<div class="mt-2 border-l-2 border-slate-700 pl-3"><div class="text-slate-400">'
+      + escapeHtml(entry.path) + '</div>';
+    if (left) row += '<div class="text-amber-300 break-words">expected: ' + escapeHtml(entry.expected) + '</div>';
+    if (right) row += '<div class="text-emerald-300 break-words">ours&nbsp;&nbsp;&nbsp;&nbsp;: ' + escapeHtml(entry.actual) + '</div>';
+    return row + '</div>';
+  }).join('');
+  return html;
+}
+
+function renderDiff(data) {
+  const pane = document.getElementById('pane-diff');
+  const tab = document.getElementById('tab-diff');
+  if (data.diff_error) {
+    pane.innerHTML = '<div class="text-rose-400">' + escapeHtml(data.diff_error) + '</div>';
+    tab.classList.remove('hidden');
+    return;
+  }
+  if (!data.diff) {
+    pane.innerHTML = '<div class="text-slate-500">Attach an expected XML file above to see a comparison.</div>';
+    return;
+  }
+  const d = data.diff;
+  pane.innerHTML = '<div class="text-slate-200">' + d.matched + ' of ' + d.compared
+    + ' expected elements match &middot; ' + d.different.length + ' differ &middot; '
+    + d.missing.length + ' missing from ours &middot; ' + d.extra.length + ' only in ours</div>'
+    + diffRows('Different values', 'text-amber-400', d.different, true, true)
+    + diffRows('In expected XML, not in ours', 'text-rose-400', d.missing, true, false)
+    + diffRows('In ours, not in expected XML', 'text-sky-400', d.extra, false, true);
 }
 
 function downloadXml() {

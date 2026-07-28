@@ -171,13 +171,43 @@ def extract_form(
 
     template = template or load_template()
     per_page_words, images = ocr_page_words(pdf_path, dpi=dpi, lang=lang)
+    return _extract_by_geometry(template, per_page_words, images, dpi=dpi, engine="paddleocr")
+
+
+def extract_form_text_layer(
+    pdf_path: str,
+    dpi: int = 200,
+    template: Optional[dict] = None,
+) -> ExtractedForm:
+    """Read a *flattened* official 3500A from its text layer using form geometry.
+
+    A printed-to-PDF copy of the form has no AcroForm values left, but the typed
+    values are still real text at their original coordinates, so they can be
+    assigned to the template rectangles exactly - no OCR needed.  Checkbox state
+    is still read from the rendered pixels.
+    """
+    from .ocr import text_layer_page_words
+
+    template = template or load_template()
+    per_page_words, images = text_layer_page_words(pdf_path, dpi=dpi)
+    return _extract_by_geometry(template, per_page_words, images, dpi=dpi, engine="text-layer")
+
+
+def _extract_by_geometry(
+    template: dict,
+    per_page_words: List[List[Tuple[float, float, float, float, str]]],
+    images: Sequence[object],
+    dpi: int,
+    engine: str,
+) -> ExtractedForm:
+    """Assign word boxes to the template's field rectangles and read checkboxes."""
     scale = dpi / 72.0
 
     fields_by_page: Dict[int, List[dict]] = {}
     for spec in template["fields"]:
         fields_by_page.setdefault(spec["page"], []).append(spec)
 
-    result = ExtractedForm(pages=len(images), engine="paddleocr")
+    result = ExtractedForm(pages=len(images), engine=engine)
 
     for page_index, image in enumerate(images):
         page_meta = template["pages"].get(str(page_index))
@@ -202,11 +232,10 @@ def extract_form(
             if best_spec is None or best_overlap < MIN_WORD_OVERLAP:
                 continue
             key = f"p{page_index}.{best_spec['name']}"
-            buckets.setdefault(key, []).append((_word_center(word)[1], word[0], word[4].strip()))
+            buckets.setdefault(key, []).append((word[1], word[3], word[0], word[4].strip()))
 
         for key, entries in buckets.items():
-            entries.sort(key=lambda e: (round(e[0] / 6.0), e[1]))
-            text = re.sub(r"\s+", " ", " ".join(e[2] for e in entries)).strip()
+            text = _reading_order(entries)
             result.values[key] = _strip_label(key, text)
 
         for spec in box_specs:
@@ -215,6 +244,32 @@ def extract_form(
                 result.checks.append(f"p{page_index}.{spec['name']}")
 
     return result
+
+
+def _reading_order(entries: List[Tuple[float, float, float, str]]) -> str:
+    """Join words of one field in reading order.
+
+    ``entries`` are ``(top, bottom, left, text)``.  Multi-line fields (narratives)
+    are recovered by clustering words into text lines first: a word joins the
+    current line while its vertical centre stays within a fraction of the line's
+    height, which keeps wrapped sentences in order.
+    """
+    heights = [e[1] - e[0] for e in entries if e[1] > e[0]]
+    tolerance = (sum(heights) / len(heights)) * 0.6 if heights else 6.0
+
+    lines: List[List[Tuple[float, float, float, str]]] = []
+    for entry in sorted(entries, key=lambda e: ((e[0] + e[1]) / 2.0, e[2])):
+        centre = (entry[0] + entry[1]) / 2.0
+        if lines and abs(centre - (lines[-1][0][0] + lines[-1][0][1]) / 2.0) <= tolerance:
+            lines[-1].append(entry)
+        else:
+            lines.append([entry])
+
+    parts: List[str] = []
+    for line in lines:
+        line.sort(key=lambda e: e[2])
+        parts.extend(e[3] for e in line)
+    return re.sub(r"\s+", " ", " ".join(parts)).strip()
 
 
 def extract_form_fields(pdf_path: str) -> ExtractedForm:
@@ -296,7 +351,7 @@ def map_report(
     elif form.checked("p0.ageDays"):
         age_unit = "Day"
     sex = "Male" if form.checked("p0.sexM") else ("Female" if form.checked("p0.sexF") else None)
-    weight = _weight_in_kg(form.get("p0.patWeight"), pounds=form.checked("p0.weightLB"))
+    weight = weight_in_kg(form.get("p0.patWeight"), pounds=form.checked("p0.weightLB"))
     report.patient = Patient(
         identifier=form.get("p0.patID"),
         age=form.get("p0.patAge"),
@@ -421,7 +476,7 @@ def map_report(
     return report
 
 
-def _weight_in_kg(value: Optional[str], pounds: bool) -> Optional[str]:
+def weight_in_kg(value: Optional[str], pounds: bool) -> Optional[str]:
     """Normalise block A.4 to kilograms; both XML formats state the unit themselves."""
     if not value:
         return None

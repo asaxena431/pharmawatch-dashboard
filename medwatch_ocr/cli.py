@@ -35,6 +35,7 @@ from .pipeline import (
     ENGINE_TEXT_LAYER,
     ENGINES,
     FORMAT_E2B,
+    FORMAT_E2B_FDA,
     FORMAT_GL42,
     FORMAT_MDR,
     LAYOUT_AUTO,
@@ -89,7 +90,8 @@ def build_parser() -> argparse.ArgumentParser:
                          help="FDA center; inferred from the form when omitted")
     convert.add_argument("--stage", choices=[STAGE_PREMARKET, STAGE_POSTMARKET],
                          help="premarket or postmarket; inferred from the form when omitted")
-    convert.add_argument("--format", "-f", dest="output_format", choices=[FORMAT_E2B, FORMAT_MDR, FORMAT_GL42],
+    convert.add_argument("--format", "-f", dest="output_format",
+                         choices=[FORMAT_E2B, FORMAT_E2B_FDA, FORMAT_MDR, FORMAT_GL42],
                          help="output format (default: e2b-r2 for CDER, mdr for CDRH, gl42 for CVM)")
     convert.add_argument("--output", "-o", help="write the XML here instead of stdout")
     convert.add_argument("--json", dest="json_path", help="also write the parsed 3500A fields as JSON")

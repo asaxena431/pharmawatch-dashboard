@@ -10,15 +10,17 @@ back both the CLI (``python -m medwatch_ocr.cli``) and the Flask demo GUI
 from dataclasses import dataclass
 from typing import List, Optional, Union
 
-from . import e2b_r2, gl42, mdr_xml
+from . import e2b_r2, e2b_r2_fda, gl42, mdr_xml
 from .models import CENTER_CDER, CENTER_CDRH, CENTER_CVM, MedWatchReport, VeterinaryReport
 from .ocr import OcrResult, ocr_pdf
 from .parser import build_report
 
 FORMAT_E2B = "e2b-r2"
+# FDA's extended E2B(R2) 3500A profile, as emitted by FDA's own OCR service.
+FORMAT_E2B_FDA = "e2b-r2-fda"
 FORMAT_MDR = "mdr"
 FORMAT_GL42 = "gl42"
-FORMATS = (FORMAT_E2B, FORMAT_MDR, FORMAT_GL42)
+FORMATS = (FORMAT_E2B, FORMAT_E2B_FDA, FORMAT_MDR, FORMAT_GL42)
 
 # Input layouts: the genuine boxed FDA form vs. the flat label/value facsimile.
 LAYOUT_OFFICIAL = "official"
@@ -108,6 +110,8 @@ def render_xml(report: Union[MedWatchReport, VeterinaryReport], output_format: O
         return gl42.to_xml_string(report)
     if fmt == FORMAT_GL42:
         raise ValueError("gl42 output requires a Form FDA 1932 veterinary report")
+    if fmt == FORMAT_E2B_FDA:
+        raise ValueError(f"{FORMAT_E2B_FDA} output requires a template-extracted FDA 3500A form")
     if fmt == FORMAT_MDR:
         return mdr_xml.to_xml_string(report)
     if fmt == FORMAT_E2B:
@@ -178,10 +182,14 @@ def _convert_official(
     lang: str,
 ) -> ConversionResult:
     """Template-guided conversion of the genuine FDA 3500A form."""
-    from .form_extract import extract_form, extract_form_fields, map_report
+    from .form_extract import extract_form, extract_form_fields, extract_form_text_layer, map_report
 
-    if engine == "text-layer":
+    if engine == ENGINE_TEXT_LAYER:
         form = extract_form_fields(pdf_path)
+        if not form.values:
+            # Flattened copy: no AcroForm values left, but the typed text is still
+            # there at the form's own coordinates.
+            form = extract_form_text_layer(pdf_path, dpi=dpi)
     else:
         try:
             form = extract_form(pdf_path, dpi=dpi, lang=lang)
@@ -196,10 +204,11 @@ def _convert_official(
     lines += [f"[x] {key}" for key in sorted(form.checks)]
     ocr = OcrResult(lines=lines, pages=form.pages, engine=form.engine)
     fmt = output_format or default_format(report.center)
+    xml = e2b_r2_fda.to_xml_string(form) if fmt == FORMAT_E2B_FDA else render_xml(report, fmt)
     return ConversionResult(
         report=report,
         ocr=ocr,
-        xml=render_xml(report, fmt),
+        xml=xml,
         output_format=fmt,
         layout=LAYOUT_OFFICIAL,
     )

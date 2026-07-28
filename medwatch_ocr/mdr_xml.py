@@ -13,7 +13,7 @@ import xml.etree.ElementTree as ET
 from datetime import datetime, timezone
 from typing import Dict, List, Optional
 
-from .e2b_r2 import _digits, _sub
+from .e2b_r2 import _sub, e2b_date
 from .models import MedWatchReport
 
 MDR_NAMESPACE = "urn:fda:cdrh:emdr:3500A"
@@ -50,7 +50,7 @@ OUTCOME_CODES: Dict[str, str] = {
 
 
 def _iso_date(value: Optional[str]) -> Optional[str]:
-    digits = _digits(value)
+    digits = e2b_date(value)
     if not digits:
         return None
     return f"{digits[0:4]}-{digits[4:6]}-{digits[6:8]}"
