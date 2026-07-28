@@ -29,6 +29,11 @@ CARRIED_TEXT = (
 
 DATE = r"^(?:\d{1,2}[-/][A-Za-z]{3}[-/]\d{4}|\d{1,2}/\d{1,2}/\d{4})$"
 NUMBER = r"^\d+(?:[.,]\d+)?$"
+# A row read out of an empty dose box holds only the therapy dates beside it.
+DATES_ONLY = re.compile(
+    r"^(?:(?:\d{1,2}[-/][A-Za-z]{3}[-/]\d{4}|\d{1,2}/\d{1,2}/\d{4}|to|-|ongoing|unk(?:nown)?)\s*)+$",
+    re.IGNORECASE,
+)
 WORD = r"^[A-Za-z][A-Za-z./'-]*$"
 
 ANCHORS: Tuple[Anchor, ...] = (
@@ -124,6 +129,7 @@ ANCHORS: Tuple[Anchor, ...] = (
         stop=CONTINUED_SECTION,
         wide=True,
         by_line=True,
+        runs_on=True,
     ),
     Anchor(
         "p2.testDataCont",
@@ -133,6 +139,7 @@ ANCHORS: Tuple[Anchor, ...] = (
         stop=CONTINUED_SECTION,
         wide=True,
         by_line=True,
+        runs_on=True,
     ),
     Anchor(
         "p2.otherHistCont",
@@ -142,6 +149,7 @@ ANCHORS: Tuple[Anchor, ...] = (
         stop=CONTINUED_SECTION,
         wide=True,
         by_line=True,
+        runs_on=True,
     ),
     # A revision that gives every suspect product a page of its own captions the
     # parts of the box separately; those captions are read as one row per copy.
@@ -454,6 +462,8 @@ def _dose_parts(form: ExtractedForm, prefix: str, index: int, row: Optional[str]
     """Split a dose row ("588 milligram, single, Intravenous") into its own fields."""
     if not row or row.strip().lower() in {"unk", "unknown", "n/a"}:
         return
+    if DATES_ONLY.match(row.strip()):
+        return  # the therapy dates of a row whose dose box is empty
     match = DOSE.match(row.strip())
     if not match:
         form.values[f"{prefix}dose{index}"] = row

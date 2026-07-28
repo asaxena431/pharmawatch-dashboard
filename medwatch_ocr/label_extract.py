@@ -194,14 +194,11 @@ class Anchor:
     any_font: bool = False  # the value is identified by "keep" alone, whatever its font
     section: Optional[str] = None  # the lettered block the caption must stand in ("e", "g")
     by_line: bool = False  # keep the box's line breaks ("\n") instead of one line
+    runs_on: bool = False  # a box filled to the page break runs on at the top of the next page
 
 
 # Placeholders and item numbers printed inside the boxes: never part of a value.
-NOISE = re.compile(
-    r"^(?:\(?e\.g\.?,?.*|\(?01-JAN-1900\)?:?|\(mm/dd/yyyy\)|"
-    r"\d{1,2}[a-c]?\.|#|:)$",
-    re.IGNORECASE,
-)
+NOISE = re.compile(r"^(?:\(?e\.g\.?,?.*|\(?01-JAN-1900\)?:?|\(mm/dd/yyyy\))$", re.IGNORECASE)
 
 # Units and instruction words a box prints beside its blank.  They are dropped
 # only from short fields: in a narrative they are ordinary words of the text.
@@ -210,6 +207,10 @@ FILLER = re.compile(
     r"week\(s\)|day\(s\)|confidence|\(in|confidence\)|apply|apply\)|\(check|check|exp\.|id|&)$",
     re.IGNORECASE,
 )
+
+# Item numbers and colons the form prints in its boxes.  In running text the same
+# characters number the writer's own list, so they are kept there.
+MARKUP = re.compile(r"^(?:\d{1,2}[a-c]?\.|#|:)$")
 
 # The row number of a list box, printed by the form rather than typed.
 MARKER = re.compile(r"^#\s*\d{1,2}[.):]?$")
@@ -350,12 +351,14 @@ def group_lines(words: Sequence[Word], tolerance: float = 0.6) -> List[Line]:
 DATE_PROMPT = re.compile(r"\(?\s*(?:01\s*-\s*JAN\s*-\s*1900|mm/dd/yyyy|dd-mmm-yyyy)\s*\)?:?", re.IGNORECASE)
 
 
-def _harvest(words: Sequence[Word], rules: "_Rules", limit: int = 0) -> str:
+def _harvest(words: Sequence[Word], rules: "_Rules", limit: int = 0, prose: bool = False) -> str:
+    """The text of ``words``, less what the form itself prints inside the box."""
     kept = [
         word.text
         for word in words
         if not NOISE.match(word.text)
         and not (limit and FILLER.match(word.text))
+        and not (not prose and MARKUP.match(word.text))
         and not (rules.drop and rules.drop.match(word.text))
         and (rules.keep is None or rules.keep.match(word.text))
     ]
@@ -467,9 +470,13 @@ def extract_by_captions(
             probe = replace(anchor, occurrence=copy) if anchor.repeat else anchor
             key = f"{anchor.key}@{copy}" if anchor.repeat else anchor.key
             seen = 0
-            for page in pages:
-                value, hits = _value_for(page, probe, rules, fonts, seen)
+            for number, page in enumerate(pages):
+                value, hits, open_at_break = _value_for(page, probe, rules, fonts, seen)
                 seen += hits
+                if anchor.runs_on and open_at_break and number + 1 < len(pages):
+                    carried = _page_head(pages[number + 1], probe, rules, fonts)
+                    if carried:
+                        value = f"{value}\n{carried}" if value else carried
                 if value:
                     form.values[key] = value
                     break
@@ -514,14 +521,82 @@ def _enclosing_cell(cells: Sequence[Box], line: Line, left: float, right: float)
     return min(inside, key=lambda box: box.width * box.height) if inside else None
 
 
+def _prose(anchor: Anchor) -> bool:
+    """Whether the box holds running text, where "and", "to" or "1." are ordinary words."""
+    return anchor.wide and anchor.lines >= 20
+
+
+# Text of a continuation page starts in the left column; the page header does not.
+LEFT_COLUMN = 60.0
+
+# A continuation page prints one record over as many lines as it needs; a record
+# begins with its date, its row number or its heading.
+NEW_RECORD = re.compile(r"^(?:\d{1,2}[A-Za-z]{3}\d{4}|\d{1,2}/\d{1,2}/\d{4}|\d{1,2}\s|[A-Z][A-Z /#]{5,}$)")
+
+# Titles, page numbers and stamps a copy repeats on every page: never part of a box.
+FURNITURE = re.compile(
+    r"(?:^page \d+ of|^form fda|^mfr report|^uf/importer|facsimile \(continued\)|case version:)",
+    re.IGNORECASE,
+)
+
+
+def _page_head(page: Page, anchor: Anchor, rules: _Rules, fonts: Set[FontKey]) -> Optional[str]:
+    """The text a box filled to the page break continues with on ``page``.
+
+    Skipped first are the running header items, which a vendor prints to the right
+    of the page; the text then runs until the caption of the next box.
+    """
+    prose = _prose(anchor)
+    rows: List[List[Word]] = []
+    started = False
+    for line in page.lines:
+        text = _normalise(line.text)
+        if FURNITURE.search(text):
+            continue
+        if not started:
+            if not line.words or line.words[0].x0 > LEFT_COLUMN:
+                continue
+            started = True
+        if rules.stop.search(text):
+            break
+        typed = [word for word in line.words if word.font in fonts or BULLET.match(word.text)]
+        if typed:
+            rows.append(typed)
+    if anchor.by_line:
+        return _reflow(rows, [_harvest(row, rules, anchor.limit, prose) for row in rows]) or None
+    return _harvest([word for row in rows for word in row], rules, anchor.limit, prose) or None
+
+
+def _reflow(rows: Sequence[Sequence[Word]], harvested: Sequence[str]) -> str:
+    """Join the wrapped lines of a continuation page back into one line per record.
+
+    A line the copy wrapped runs to the right margin, or ends mid-sentence; a line
+    that ends a record stops short of the margin with its full stop.
+    """
+    margin = max((word.x1 for row in rows for word in row), default=0.0)
+    records: List[str] = []
+    previous: Optional[Tuple[str, float]] = None
+    for row, text in zip(rows, harvested):
+        if not text or not row:
+            continue
+        wrapped = previous is not None and (previous[1] >= margin - 12.0 or not previous[0].endswith("."))
+        if records and wrapped and not NEW_RECORD.match(text):
+            records[-1] = f"{records[-1]} {text}"
+        else:
+            records.append(text)
+        previous = (text, row[-1].x1)
+    return "\n".join(records)
+
+
 def _value_for(
     page: Page,
     anchor: Anchor,
     rules: _Rules,
     fonts: Set[FontKey],
     seen: int,
-) -> Tuple[Optional[str], int]:
-    """The value of ``anchor`` on ``page``, and how often its caption appeared."""
+) -> Tuple[Optional[str], int, bool]:
+    """The value of ``anchor`` on ``page``, how often its caption appeared, and
+    whether the box was still open where the page ended."""
     hits = 0
     for index, line in enumerate(page.lines):
         match = rules.caption.search(_normalise(line.text))
@@ -562,14 +637,17 @@ def _value_for(
         def typed_words(words: Sequence[Word]) -> List[Word]:
             return [word for word in words if is_value(word)]
 
+        prose = _prose(anchor)
         first = typed_words([word for word in line.words_after(match.end()) if word.centre <= band[1]])
         if anchor.where == "right":
-            return _harvest(first, rules, anchor.limit) or None, hits
+            return _harvest(first, rules, anchor.limit, prose) or None, hits, False
         rows: List[List[Word]] = [] if anchor.where == "below" or not first else [first]
 
+        closed = False
         blanks = 0
         for following in page.lines[index + 1 :]:
             if cell and following.top >= cell.bottom:
+                closed = True
                 break
             in_band = [word for word in following.words if band[0] - 2 <= word.centre <= band[1]]
             printed = [word for word in in_band if word.font not in fonts]
@@ -577,22 +655,28 @@ def _value_for(
             # A vendor sets its own captions in that font too, so a box that names the
             # caption ending it is stopped there whatever the font.
             if (printed or anchor.stop) and rules.stop.search(_normalise(" ".join(word.text for word in in_band))):
+                closed = True
                 break
             typed = typed_words(in_band)
             if not typed:
                 blanks += 1
                 if blanks > 2 and not cell:
+                    closed = True
                     break
                 continue
             blanks = 0
             rows.append(typed)
             if len(rows) >= anchor.lines:
+                closed = True
                 break
+        # A box whose caption sits on the last ruled line of the page holds no text
+        # of its own: all of it is printed on the page that follows.
+        open_at_break = not closed or not rows
         if anchor.by_line:
-            harvested = [_harvest(row, rules, anchor.limit) for row in rows]
-            return "\n".join(row for row in harvested if row) or None, hits
-        return _harvest([word for row in rows for word in row], rules, anchor.limit) or None, hits
-    return None, hits
+            harvested = [_harvest(row, rules, anchor.limit, prose) for row in rows]
+            return "\n".join(row for row in harvested if row) or None, hits, open_at_break
+        return _harvest([word for row in rows for word in row], rules, anchor.limit, prose) or None, hits, open_at_break
+    return None, hits, False
 
 
 def _marked_checkboxes(

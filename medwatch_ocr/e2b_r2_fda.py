@@ -297,6 +297,26 @@ SUMMARY_ORDER: Sequence[str] = (
 
 AGE_UNIT_CODES = {"ageYrs": "801", "ageMons": "802", "ageWks": "803", "ageDays": "804"}
 
+# Field lengths the E2B (R2) profile fixes; a 3500A box can hold more than these.
+MAX_LENGTHS = {
+    "medicinalproduct": 70,
+    "reportergivename": 35,
+    "reporterfamilyname": 50,
+    "reporterstreet": 100,
+    "reportercity": 35,
+    "reporterstate": 40,
+    "reporterpostcode": 15,
+    "senderorganization": 60,
+    "sendergivename": 35,
+    "senderfamilyname": 50,
+    "senderstreetaddress": 100,
+    "sendercity": 35,
+    "senderstate": 40,
+    "drugbatchnumb": 35,
+    "drugdosagetext": 100,
+    "drugindication": 250,
+}
+
 # Dose units a copy types in its dose box, by E2B (R2) unit code.
 DOSE_UNIT_CODES = {
     "kg": "001",
@@ -344,7 +364,9 @@ def _flag(marked: bool, unmarked: str = "2") -> str:
 def _add(parent: ET.Element, tag: str, value: Optional[str]) -> None:
     element = ET.SubElement(parent, tag)
     if value is not None and str(value).strip() != "":
-        element.text = str(value).strip()
+        text = str(value).strip()
+        length = MAX_LENGTHS.get(tag)
+        element.text = text[:length] if length else text
 
 
 def _block(parent: ET.Element, tag: str, order: Sequence[str], values: Dict[str, str]) -> ET.Element:
@@ -379,8 +401,14 @@ def _tel(number: Optional[str]) -> Optional[str]:
     """E2B telephone numbers are digits only; a form prints them punctuated."""
     if not number:
         return None
-    digits = re.sub(r"\D", "", number)
-    return digits or number
+    return re.sub(r"\D", "", number) or None
+
+
+def _postcode(code: Optional[str]) -> Optional[str]:
+    """A postcode carries digits; a redacted box ("Withheld") carries none."""
+    if not code or not any(char.isdigit() for char in code):
+        return None
+    return code
 
 
 def _country_code(address: Optional[str]) -> Optional[str]:
@@ -594,7 +622,7 @@ def build_fda_e2b(
         "reporterstreet": form.get("p6.reportAddr"),
         "reportercity": form.get("p6.reportCity"),
         "reporterstate": form.get("p6.reportSt"),
-        "reporterpostcode": form.get("p6.reportZip"),
+        "reporterpostcode": _postcode(form.get("p6.reportZip")),
         "reportercountry": (
             _country_code(form.get("p6.reportCountry"))
             or _country_code(form.get("p6.reportAddr"))

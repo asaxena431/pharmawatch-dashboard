@@ -1,5 +1,7 @@
 """The caption-anchored reader used for 3500A copies that have no widget template."""
 
+import xml.etree.ElementTree as ET
+
 from medwatch_ocr.anchors_3500a import (
     _carried_text,
     _concomitant_products,
@@ -9,13 +11,15 @@ from medwatch_ocr.anchors_3500a import (
     _suspect_products,
     _weight_unit,
 )
-from medwatch_ocr.e2b_r2_fda import _suspect_drug
+from medwatch_ocr.e2b_r2_fda import _add, _postcode, _suspect_drug, _tel
 from medwatch_ocr.form_extract import ExtractedForm
 from medwatch_ocr.label_extract import (
     CAPTION_ANCHORED_VARIANTS,
     VARIANT_3500A_2022,
     VARIANT_3500A_2025,
     VARIANT_FACSIMILE,
+    Word,
+    _reflow,
 )
 
 
@@ -138,6 +142,42 @@ def test_free_text_is_joined_to_the_part_carried_into_the_continuation_pages():
     _carried_text(extracted)
     assert extracted.get("p2.testData") == "16Mar2026: bronchoscopy\n\nRELEVANT TESTS (Continued)\nthrough the mucosa."
     assert extracted.get("p2.testDataCont") is None
+
+
+def test_a_dose_box_read_empty_beside_its_therapy_dates_holds_no_dose():
+    extracted = form(**{"rows.prodName@1": "Actemra", "rows.dose@1": "03/16/2026 03/16/2026"})
+    _suspect_products(extracted)
+    assert extracted.get("p3.dose1") is None
+
+
+def test_a_continuation_page_is_read_one_record_per_line():
+    words = [
+        [Word(40, 10, 500, 20, "through the mucosa, with air tracking from the bronchus into a", ("typed", 8.0))],
+        [Word(40, 22, 300, 32, "contained track in the surrounding fibrosis.", ("typed", 8.0))],
+        [Word(40, 34, 120, 44, "10May2026:", ("typed", 8.0))],
+        [Word(40, 46, 400, 56, "-Follow-up CT scan of chest without contrast.", ("typed", 8.0))],
+    ]
+    harvested = [row[0].text for row in words]
+    assert _reflow(words, harvested).split("\n") == [
+        "through the mucosa, with air tracking from the bronchus into a contained track in the surrounding fibrosis.",
+        "10May2026: -Follow-up CT scan of chest without contrast.",
+    ]
+
+
+def test_a_value_longer_than_the_profile_allows_is_cut_to_length():
+    long_name = "COSOPT (DORZOLAMIDE HYDROCHLORIDE, TIMOLOL MALEATE) Eye drops, 22.3-6.8 milligram per millilitre,"
+    values = _suspect_drug(form(**{"p3.prodName1": long_name}), 1, 3)
+    assert values is not None
+    drug = ET.Element("drug")
+    _add(drug, "medicinalproduct", values["medicinalproduct"])
+    assert drug[0].text == long_name[:70]
+
+
+def test_a_redacted_postcode_or_telephone_is_not_a_value():
+    assert _postcode("Withheld") is None
+    assert _postcode("02114-2696") == "02114-2696"
+    assert _tel("Withheld") is None
+    assert _tel("(713) 745-4462") == "7137454462"
 
 
 def test_a_contact_office_block_names_the_contact_on_its_first_line():
