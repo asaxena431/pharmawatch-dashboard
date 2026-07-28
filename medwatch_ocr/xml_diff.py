@@ -13,12 +13,15 @@ from __future__ import annotations
 import re
 import xml.etree.ElementTree as ET
 from dataclasses import dataclass, field
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 # Elements that legitimately differ between two runs of the same report.
 VOLATILE_ELEMENTS = frozenset(
     {"messagenumb", "messagedate", "transmissiondate", "transmissiondateformat", "receivedate", "receivedateformat"}
 )
+
+# Elements only the FDA extended 3500A profile of E2B (R2) carries.
+FDA_PROFILE_ELEMENTS = frozenset({"formtype", "pre-1938", "manufacturerOTC", "combinationProduct", "tendayreporttype"})
 
 
 @dataclass
@@ -41,6 +44,26 @@ class XmlDiff:
             "extra": self.extra,
             "matched_paths": self.matched,
         }
+
+
+def message_format(expected: str) -> Optional[str]:
+    """The output format an expected message is written in, so like is compared with like.
+
+    The FDA extended E2B (R2) profile carries elements plain E2B does not; comparing
+    a plain ``ichicsr`` against one of those reports every extended element missing.
+    """
+    try:
+        root = ET.fromstring(expected.strip())
+    except ET.ParseError:
+        return None
+    if root.tag == "mdrReports":
+        return "mdr"
+    if root.tag in {"AER", "aer", "vichaer"}:
+        return "gl42"
+    if root.tag != "ichicsr":
+        return None
+    tags = {element.tag for element in root.iter()}
+    return "e2b-r2-fda" if tags & FDA_PROFILE_ELEMENTS else "e2b-r2"
 
 
 def flatten(element: ET.Element, prefix: str = "") -> Dict[str, str]:

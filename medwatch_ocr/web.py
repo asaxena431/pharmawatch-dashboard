@@ -23,7 +23,7 @@ from .ocr import OcrError
 from .official_form import OFFICIAL_SAMPLES, fill_official_form
 from .pipeline import ENGINE_TEXT_LAYER, FORMAT_E2B, FORMAT_GL42, FORMAT_MDR, LAYOUT_AUTO, LAYOUTS, convert_pdf
 from .samples import SAMPLES, render_sample
-from .xml_diff import diff_xml
+from .xml_diff import diff_xml, message_format
 
 medwatch_bp = Blueprint("medwatch", __name__)
 
@@ -125,6 +125,11 @@ def api_medwatch_convert():
         return jsonify({"error": f"unknown layout: {layout}"}), 400
     facsimile = _is_facsimile(request.form.get("facsimile") or payload.get("facsimile") or "")
 
+    expected = _expected_xml(payload)
+    if expected:
+        # Compare like with like: the expected message states which profile to write.
+        output_format = message_format(expected) or output_format
+
     temp_path = None
     try:
         upload = request.files.get("pdf")
@@ -159,7 +164,6 @@ def api_medwatch_convert():
             "fields": result.report.to_dict(),
             "ocr_text": result.ocr.text,
         }
-        expected = _expected_xml(payload)
         if expected:
             try:
                 response["diff"] = diff_xml(result.xml, expected).as_dict()

@@ -13,6 +13,7 @@ from medwatch_ocr.anchors_3500a import (
 )
 from medwatch_ocr.e2b_r2_fda import _add, _postcode, _suspect_drug, _tel
 from medwatch_ocr.form_extract import ExtractedForm
+from medwatch_ocr.xml_diff import message_format
 from medwatch_ocr.label_extract import (
     CAPTION_ANCHORED_VARIANTS,
     VARIANT_3500A_2022,
@@ -194,3 +195,11 @@ def test_a_single_name_and_address_box_is_split_into_name_address_and_email():
     assert extracted.get("p6.reportLast") == "Keller"
     assert extracted.get("p6.reportEmail") == "bckeller@mgh.harvard.edu"
     assert extracted.get("p6.reportAddr") == "55 Fruit Street Boston, MA"
+
+
+def test_the_profile_of_the_expected_message_is_recognised():
+    plain = "<ichicsr><safetyreport><safetyreportid>1</safetyreportid></safetyreport></ichicsr>"
+    assert message_format(plain) == "e2b-r2"
+    assert message_format(plain.replace("<safetyreportid>1</safetyreportid>", "<formtype>3500A</formtype>")) == "e2b-r2-fda"
+    assert message_format("<mdrReports/>") == "mdr"
+    assert message_format("not xml") is None
