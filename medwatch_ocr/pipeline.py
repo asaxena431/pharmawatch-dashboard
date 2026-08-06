@@ -8,7 +8,7 @@ back both the CLI (``python -m medwatch_ocr.cli``) and the Flask demo GUI
 """
 
 from dataclasses import dataclass
-from typing import List, Optional, Union
+from typing import List, Optional, Sequence, Union
 
 from . import e2b_r2, e2b_r2_fda, gl42, mdr_xml
 from .models import CENTER_CDER, CENTER_CDRH, CENTER_CVM, MedWatchReport, VeterinaryReport
@@ -20,16 +20,20 @@ FORMAT_E2B = "e2b-r2"
 FORMAT_E2B_FDA = "e2b-r2-fda"
 FORMAT_MDR = "mdr"
 FORMAT_GL42 = "gl42"
-FORMATS = (FORMAT_E2B, FORMAT_E2B_FDA, FORMAT_MDR, FORMAT_GL42)
+# The message CVM's upload service takes, as carried by a submitted 1932a.
+FORMAT_PVX_1932A = "pvx1932a"
+FORMATS = (FORMAT_E2B, FORMAT_E2B_FDA, FORMAT_MDR, FORMAT_GL42, FORMAT_PVX_1932A)
 
 # Input layouts: the genuine boxed FDA form vs. the flat label/value facsimile.
 LAYOUT_OFFICIAL = "official"
 LAYOUT_FLAT = "flat"
 LAYOUT_AUTO = "auto"
 LAYOUT_1932 = "1932"
+# Form FDA 1932a submitted as a dynamic XFA PDF: the data is in its dataset.
+LAYOUT_1932A = "1932a"
 # Any other 3500A revision, or a vendor facsimile: read by printed caption.
 LAYOUT_LABELLED = "labelled"
-LAYOUTS = (LAYOUT_AUTO, LAYOUT_OFFICIAL, LAYOUT_FLAT, LAYOUT_1932, LAYOUT_LABELLED)
+LAYOUTS = (LAYOUT_AUTO, LAYOUT_OFFICIAL, LAYOUT_FLAT, LAYOUT_1932, LAYOUT_1932A, LAYOUT_LABELLED)
 
 # Engines, PDF text layer first: it is exact and instant on fillable PDFs.
 ENGINE_TEXT_LAYER = "text-layer"
@@ -106,6 +110,8 @@ def default_format(center: str) -> str:
 def render_xml(report: Union[MedWatchReport, VeterinaryReport], output_format: Optional[str] = None) -> str:
     """Serialise ``report`` in ``output_format`` (defaults to the center's format)."""
     fmt = output_format or default_format(report.center)
+    if fmt == FORMAT_PVX_1932A:
+        raise ValueError(f"{FORMAT_PVX_1932A} output requires a Form FDA 1932a XFA submission")
     if isinstance(report, VeterinaryReport):
         if fmt != FORMAT_GL42:
             raise ValueError(f"veterinary reports are only serialised as {FORMAT_GL42}, not {fmt}")
@@ -131,6 +137,7 @@ def convert_pdf(
     dpi: int = 200,
     lang: str = "en",
     layout: str = LAYOUT_AUTO,
+    attachments: Sequence[str] = (),
 ) -> ConversionResult:
     """Read a form PDF and convert it to E2B(R2), MDR or GL42 XML.
 
@@ -147,9 +154,12 @@ def convert_pdf(
     from .form_extract import is_official_form
     from .label_extract import CAPTION_ANCHORED_VARIANTS, detect_variant
     from .vet_extract import is_1932_form
+    from .xfa_1932a import is_1932a_form
 
     if layout not in LAYOUTS:
         raise ValueError(f"unknown layout: {layout}")
+    if layout == LAYOUT_1932A or (layout == LAYOUT_AUTO and is_1932a_form(pdf_path)):
+        return _convert_1932a(pdf_path, output_format, attachments)
     if layout == LAYOUT_1932 or (layout == LAYOUT_AUTO and center == CENTER_CVM) or (
         layout == LAYOUT_AUTO and is_1932_form(pdf_path)
     ):
@@ -252,6 +262,23 @@ def _convert_labelled(
     fmt = output_format or default_format(report.center)
     xml = e2b_r2_fda.to_xml_string(form) if fmt == FORMAT_E2B_FDA else render_xml(report, fmt)
     return ConversionResult(report=report, ocr=ocr, xml=xml, output_format=fmt, layout=LAYOUT_LABELLED)
+
+
+def _convert_1932a(
+    pdf_path: str,
+    output_format: Optional[str],
+    attachments: Sequence[str],
+) -> ConversionResult:
+    """Conversion of a Form FDA 1932a submitted as a dynamic XFA PDF."""
+    from . import xfa_1932a
+
+    form = xfa_1932a.read_1932a(pdf_path, attachments)
+    report = xfa_1932a.map_veterinary_report(form)
+    lines = [f"{key} = {value}" for key, value in form.values.items() if value]
+    ocr = OcrResult(lines=lines, pages=0, engine=form.engine)
+    fmt = output_format or FORMAT_PVX_1932A
+    xml = xfa_1932a.to_xml_string(form) if fmt == FORMAT_PVX_1932A else render_xml(report, fmt)
+    return ConversionResult(report=report, ocr=ocr, xml=xml, output_format=fmt, layout=LAYOUT_1932A)
 
 
 def _convert_1932(

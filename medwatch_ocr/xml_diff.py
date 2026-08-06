@@ -17,7 +17,15 @@ from typing import Dict, List, Optional
 
 # Elements that legitimately differ between two runs of the same report.
 VOLATILE_ELEMENTS = frozenset(
-    {"messagenumb", "messagedate", "transmissiondate", "transmissiondateformat", "receivedate", "receivedateformat"}
+    {
+        "messagenumb",
+        "messagedate",
+        "transmissiondate",
+        "transmissiondateformat",
+        "receivedate",
+        "receivedateformat",
+        "firstprocessdate",  # when the upload service processed a 1932a submission
+    }
 )
 
 # Elements only the FDA extended 3500A profile of E2B (R2) carries.
@@ -56,6 +64,8 @@ def message_format(expected: str) -> Optional[str]:
         root = ET.fromstring(expected.strip())
     except ET.ParseError:
         return None
+    if root.tag == "pvx1932a":
+        return "pvx1932a"
     if root.tag == "mdrReports":
         return "mdr"
     if root.tag in {"AER", "aer", "vichaer"}:

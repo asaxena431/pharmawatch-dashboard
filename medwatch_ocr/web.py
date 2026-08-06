@@ -10,10 +10,11 @@ and browse to ``/medwatch``.
 """
 
 import os
+import shutil
 import tempfile
 import traceback
 import xml.etree.ElementTree as ElementTree
-from typing import Optional
+from typing import List, Optional
 
 from flask import Blueprint, Flask, Response, jsonify, redirect, render_template, request
 
@@ -101,6 +102,13 @@ def medwatch_sample(name: str):
     )
 
 
+def _save(upload, directory: str) -> str:
+    """Save an upload under its own name: a 1932a message names every file it carries."""
+    path = os.path.join(directory, os.path.basename(upload.filename))
+    upload.save(path)
+    return path
+
+
 def _expected_xml(payload: dict) -> Optional[str]:
     """The XML to compare against: an uploaded file or inline text."""
     upload = request.files.get("expected_xml")
@@ -130,14 +138,14 @@ def api_medwatch_convert():
         # Compare like with like: the expected message states which profile to write.
         output_format = message_format(expected) or output_format
 
-    temp_path = None
+    uploaded = None
+    attachments: List[str] = []
     try:
         upload = request.files.get("pdf")
         if upload and upload.filename:
-            handle, temp_path = tempfile.mkstemp(suffix=".pdf")
-            os.close(handle)
-            upload.save(temp_path)
-            pdf_path = temp_path
+            uploaded = tempfile.mkdtemp(prefix="medwatch_upload_")
+            pdf_path = _save(upload, uploaded)
+            attachments = [_save(each, uploaded) for each in request.files.getlist("attachments") if each.filename]
         else:
             sample = sample or "cder_premarket"
             try:
@@ -157,6 +165,7 @@ def api_medwatch_convert():
             engine=engine,
             dpi=dpi,
             layout=layout,
+            attachments=attachments,
         )
         response = {
             "summary": result.summary,
@@ -176,8 +185,8 @@ def api_medwatch_convert():
         traceback.print_exc()
         return jsonify({"error": f"{type(exc).__name__}: {exc}"}), 500
     finally:
-        if temp_path and os.path.exists(temp_path):
-            os.unlink(temp_path)
+        if uploaded:
+            shutil.rmtree(uploaded, ignore_errors=True)
 
 
 def create_app():

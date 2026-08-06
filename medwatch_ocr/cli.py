@@ -38,6 +38,7 @@ from .pipeline import (
     FORMAT_E2B_FDA,
     FORMAT_GL42,
     FORMAT_MDR,
+    FORMAT_PVX_1932A,
     LAYOUT_AUTO,
     LAYOUTS,
     convert_pdf,
@@ -91,8 +92,11 @@ def build_parser() -> argparse.ArgumentParser:
     convert.add_argument("--stage", choices=[STAGE_PREMARKET, STAGE_POSTMARKET],
                          help="premarket or postmarket; inferred from the form when omitted")
     convert.add_argument("--format", "-f", dest="output_format",
-                         choices=[FORMAT_E2B, FORMAT_E2B_FDA, FORMAT_MDR, FORMAT_GL42],
-                         help="output format (default: e2b-r2 for CDER, mdr for CDRH, gl42 for CVM)")
+                         choices=[FORMAT_E2B, FORMAT_E2B_FDA, FORMAT_MDR, FORMAT_GL42, FORMAT_PVX_1932A],
+                         help="output format (default: e2b-r2 for CDER, mdr for CDRH, gl42 for CVM, "
+                              "pvx1932a for a 1932a submission)")
+    convert.add_argument("--attach", action="append", default=[], metavar="FILE",
+                         help="a file the message carries; repeat per attachment (1932a submissions)")
     convert.add_argument("--output", "-o", help="write the XML here instead of stdout")
     convert.add_argument("--json", dest="json_path", help="also write the parsed 3500A fields as JSON")
     convert.add_argument("--quiet", "-q", action="store_true", help="suppress the extraction summary on stderr")
@@ -127,6 +131,7 @@ def _run_convert(args: argparse.Namespace) -> int:
         dpi=args.dpi,
         lang=args.lang,
         layout=args.layout,
+        attachments=args.attach,
     )
     _write(args.output, result.xml)
     if args.json_path:
