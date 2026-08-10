@@ -111,6 +111,16 @@ def test_uncoded_values_only_carry_text_where_the_datatype_allows_it():
             assert element.get("{http://www.w3.org/2001/XMLSchema-instance}type") in coded
 
 
+def test_nothing_is_written_as_an_empty_string():
+    """A string datatype has minLength 1, so absent data is a null flavour."""
+    bare = VeterinaryReport()
+    for root in (_xml(), ET.fromstring(vich_hl7.to_xml_string(bare))):
+        for element in root.iter():
+            assert not [name for name, value in element.attrib.items() if not value.strip()]
+            if len(element) == 0 and element.text is not None:
+                assert element.text.strip() or "nullFlavor" in element.attrib
+
+
 def test_animal_and_reaction_carry_their_codes():
     player = _xml().find(".//v3:player2", NS)
     assert player.find("v3:code", NS).get("code") == "DOG"

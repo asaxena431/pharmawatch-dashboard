@@ -107,6 +107,15 @@ def _value(parent: ET.Element, kind: str, **attributes) -> ET.Element:
     return _element(parent, "value", xsi_type=kind, **attributes)
 
 
+def _string(parent: ET.Element, tag: str, value: Optional[str], **attributes) -> ET.Element:
+    """A character element; a string datatype takes text or a null flavour, not ""."""
+    if not value:
+        return _element(parent, tag, nullFlavor="NI", **attributes)
+    element = _element(parent, tag, **attributes)
+    element.text = value
+    return element
+
+
 def _observation(parent: ET.Element, code: str, display: str, wrapper: str = "subjectOf2") -> ET.Element:
     """One VICH data element: ``<subjectOf2><observation><code .../>``."""
     if wrapper == "outboundRelationship2":
@@ -205,7 +214,10 @@ def _device_sender(parent: ET.Element, report: VeterinaryReport, organisation_id
     agent = _element(device, "asAgent", classCode="AGNT")
     organisation = _element(agent, "representedOrganization", determinerCode="INSTANCE", classCode="ORG")
     holder = report.marketing_authorisation_holder
-    _element(organisation, "id", root=organisation_id, extension=holder.name or "")
+    if holder.name:
+        _element(organisation, "id", root=organisation_id, extension=holder.name)
+    else:
+        _element(organisation, "id", root=organisation_id)
     party = _element(organisation, "notificationParty", classCode="CON")
     _element(party, "id")
     contact = report.mah_contact
@@ -391,7 +403,7 @@ def _product(parent: ET.Element, report: VeterinaryReport, product_id: str) -> N
     _element(kind, "code", code=product.product_code, codeSystem="2.16.840.1.113883.6.69") if product.product_code else _element(
         kind, "code", nullFlavor="NI"
     )
-    _element(kind, "name", xsi_type="TN").text = product.brand_name or ""
+    _string(kind, "name", product.brand_name, xsi_type="TN")
     _coded(kind, "formCode", DOSAGE_FORM_CODES.get(product.dosage_form or ""), CS_DOSAGE_FORM, product.dosage_form)
     manufactured = _element(kind, "asManufacturedProduct", classCode="MANU")
     organisation = _element(manufactured, "manufacturerOrganization", classCode="ORG", determinerCode="INSTANCE")
@@ -424,7 +436,7 @@ def _product(parent: ET.Element, report: VeterinaryReport, product_id: str) -> N
             _element(substance, "code", code=ingredient.code, codeSystem="2.16.840.1.113883.4.9")
         else:
             _element(substance, "code", nullFlavor="NI")
-        _element(substance, "name", xsi_type="TN").text = ingredient.name or ""
+        _string(substance, "name", ingredient.name, xsi_type="TN")
 
     # B.2.6 the physical item: manufacturing site, defective and returned counts.
     physical_kind = _element(kind, "instanceOfKind", classCode="INST")
@@ -684,7 +696,7 @@ def to_xml_string(
 
     line = _element(message, "attentionLine")
     _element(line, "keyWordText").text = "Report Identifier"
-    _element(line, "value", xsi_type="ST").text = identifier or ""
+    _string(line, "value", identifier, xsi_type="ST")
     line = _element(message, "attentionLine")
     _element(line, "keyWordText").text = "Domestic vs Foreign Report Category"
     domestic = (report.report_category or "domestic").lower().startswith("domestic")
@@ -702,8 +714,7 @@ def to_xml_string(
     investigation = _element(subject, "investigationEvent", classCode="INVSTG", moodCode="EVN")
     _element(investigation, "id", root="1.2.3.4", extension=identifier or batch)
     _element(investigation, "code")
-    narrative = _element(investigation, "text", mediaType="text/plain")
-    narrative.text = report.event.narrative or ""
+    _string(investigation, "text", report.event.narrative, mediaType="text/plain")
     _element(investigation, "statusCode")
     submitted = _date(report.submission_date) or moment.strftime("%Y%m%d")
     _element(investigation, "availabilityTime", value=submitted)
