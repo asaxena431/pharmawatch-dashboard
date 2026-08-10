@@ -97,6 +97,20 @@ def test_message_is_the_vich_aer_batch():
     assert root.find("v3:receiver//v3:representedOrganization/v3:id", NS).get("root") == "USFDA"
 
 
+def test_batch_wrapper_holds_its_parties_after_the_message():
+    """MCCI_MT000100UV01 sequences the batch's receiver and sender after the payload."""
+    children = [element.tag.rsplit("}", 1)[-1] for element in _xml()]
+    assert children == ["id", "creationTime", "responseModeCode", "versionCode", "interactionId", "PORR_IN049006UV", "receiver", "sender"]
+
+
+def test_uncoded_values_only_carry_text_where_the_datatype_allows_it():
+    """Only a concept descriptor has originalText; a PQ or BL must not."""
+    coded = {"CD", "CE", "SC", "CS"}
+    for element in _xml().iter():
+        if any(child.tag.endswith("originalText") for child in element):
+            assert element.get("{http://www.w3.org/2001/XMLSchema-instance}type") in coded
+
+
 def test_animal_and_reaction_carry_their_codes():
     player = _xml().find(".//v3:player2", NS)
     assert player.find("v3:code", NS).get("code") == "DOG"

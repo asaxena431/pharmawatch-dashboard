@@ -365,11 +365,12 @@ def _product(parent: ET.Element, report: VeterinaryReport, product_id: str) -> N
     if value and product.dose_unit:
         numerator = _element(dose, "numerator", xsi_type="PQ", value=value)
         _element(numerator, "translation", code=product.dose_unit, codeSystem=CS_UNIT, displayName=product.dose_unit)
+    elif value:
+        # A dose without a coded unit ("1 Vial 15mg/ml"): the amount, unit unknown.
+        numerator = _element(dose, "numerator", xsi_type="PQ", value=value)
+        _element(numerator, "translation", nullFlavor="NI")
     else:
-        # A dose written as free text ("1 Vial 15mg/ml") is not a measured quantity.
-        numerator = _element(dose, "numerator", xsi_type="PQ", nullFlavor="NI")
-        if product.dose_value:
-            _element(numerator, "originalText").text = product.dose_value
+        _element(dose, "numerator", xsi_type="PQ", nullFlavor="NI")
     denominator = _element(dose, "denominator", xsi_type="PQ", value=_number(product.dose_denominator_value) or "1")
     _element(denominator, "translation", code=product.dose_denominator_unit or "1", codeSystem=CS_UNIT)
 
@@ -669,7 +670,6 @@ def to_xml_string(
     _element(root, "responseModeCode")
     _element(root, "versionCode", code=VERSION_CODE)
     _element(root, "interactionId")
-    _receiver(root)
 
     message = _element(root, "PORR_IN049006UV", xsi_type="PORR_IN049006UV.MCCI_MT000100UV01.Message")
     _element(message, "id", root=sender_root, extension=batch)
@@ -723,7 +723,9 @@ def to_xml_string(
     _parties(investigation, report)
     _characteristics(investigation, report)
 
-    _device_sender(_element(root, "sender", typeCode="SND"), report, sender_root, trailer=True)
+    # The batch's own receiver and sender close it, after the message it carries.
+    _receiver(root)
+    _device_sender(_element(root, "sender"), report, sender_root, trailer=True)
 
     ET.indent(root, space="  ")
     return '<?xml version="1.0"?>\n' + ET.tostring(root, encoding="unicode") + "\n"
