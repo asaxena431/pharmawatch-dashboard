@@ -85,8 +85,16 @@ POUNDS_TO_KG = 0.45359237
 
 
 def _element(parent: Optional[ET.Element], tag: str, **attributes) -> ET.Element:
-    """An element whose attribute order is the message's, with ``xsi:`` expanded."""
-    clean = {("xsi:" + key[4:] if key.startswith("xsi_") else key): value for key, value in attributes.items()}
+    """An element whose attribute order is the message's, with ``xsi:`` expanded.
+
+    An attribute without a value is left out: every attribute the message uses
+    is a string datatype, which the schema gives ``minLength 1``.
+    """
+    clean = {
+        ("xsi:" + key[4:] if key.startswith("xsi_") else key): value
+        for key, value in attributes.items()
+        if value is not None and str(value).strip()
+    }
     if parent is None:
         return ET.Element(tag, clean)
     return ET.SubElement(parent, tag, clean)
@@ -203,7 +211,7 @@ def _receiver(parent: ET.Element) -> None:
     _element(organisation, "id", root="USFDA")
 
 
-def _device_sender(parent: ET.Element, report: VeterinaryReport, organisation_id: str, trailer: bool = False) -> None:
+def _device_sender(parent: ET.Element, report: VeterinaryReport, organisation_id: str, batch: str, trailer: bool = False) -> None:
     """The organisation the message comes from, as batch and message sender.
 
     The batch trailer carries the telecoms on the notification party itself,
@@ -213,11 +221,8 @@ def _device_sender(parent: ET.Element, report: VeterinaryReport, organisation_id
     _element(device, "id")
     agent = _element(device, "asAgent", classCode="AGNT")
     organisation = _element(agent, "representedOrganization", determinerCode="INSTANCE", classCode="ORG")
-    holder = report.marketing_authorisation_holder
-    if holder.name:
-        _element(organisation, "id", root=organisation_id, extension=holder.name)
-    else:
-        _element(organisation, "id", root=organisation_id)
+    # The sender organisation, identified by the batch it submits.
+    _element(organisation, "id", root=organisation_id, extension=batch)
     party = _element(organisation, "notificationParty", classCode="CON")
     _element(party, "id")
     contact = report.mah_contact
@@ -692,7 +697,7 @@ def to_xml_string(
         _element(message, tag)
 
     _receiver(message)
-    _device_sender(_element(message, "sender", typeCode="SND"), report, sender_root)
+    _device_sender(_element(message, "sender", typeCode="SND"), report, sender_root, batch)
 
     line = _element(message, "attentionLine")
     _element(line, "keyWordText").text = "Report Identifier"
@@ -736,7 +741,7 @@ def to_xml_string(
 
     # The batch's own receiver and sender close it, after the message it carries.
     _receiver(root)
-    _device_sender(_element(root, "sender"), report, sender_root, trailer=True)
+    _device_sender(_element(root, "sender"), report, sender_root, batch, trailer=True)
 
     ET.indent(root, space="  ")
     return '<?xml version="1.0"?>\n' + ET.tostring(root, encoding="unicode") + "\n"
