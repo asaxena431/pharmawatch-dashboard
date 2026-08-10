@@ -134,9 +134,10 @@ def api_medwatch_convert():
     facsimile = _is_facsimile(request.form.get("facsimile") or payload.get("facsimile") or "")
 
     expected = _expected_xml(payload)
-    if expected:
-        # Compare like with like: the expected message states which profile to write.
-        output_format = message_format(expected) or output_format
+    if expected and not output_format:
+        # Compare like with like: an expected message states which profile to write,
+        # unless a format was chosen explicitly.
+        output_format = message_format(expected)
 
     uploaded = None
     attachments: List[str] = []
