@@ -423,26 +423,6 @@ def _product(parent: ET.Element, report: VeterinaryReport, product_id: str) -> N
     else:
         _element(approval, "id", nullFlavor="NI")
 
-    for ingredient in product.active_ingredients:
-        block = _element(kind, "ingredient", classCode="INGR")
-        quantity = _element(block, "quantity")
-        strength = _number(ingredient.strength_value)
-        if strength:
-            numerator = _element(quantity, "numerator", xsi_type="PQ", value=strength)
-            _element(numerator, "translation", code=ingredient.strength_unit or "1", codeSystem=CS_UNIT)
-        else:
-            _element(quantity, "numerator", xsi_type="PQ", nullFlavor="NI")
-        denominator_unit = ingredient.strength_denominator_unit or product.dosage_form or ""
-        strength_denominator = _element(quantity, "denominator", xsi_type="PQ", value=_number(ingredient.strength_denominator_value) or "1")
-        if denominator_unit:
-            _element(strength_denominator, "translation", code=denominator_unit, codeSystem=CS_UNIT, displayName=denominator_unit)
-        substance = _element(block, "ingredientSubstance", determinerCode="KIND", classCode="MMAT")
-        if ingredient.code:
-            _element(substance, "code", code=ingredient.code, codeSystem="2.16.840.1.113883.4.9")
-        else:
-            _element(substance, "code", nullFlavor="NI")
-        _string(substance, "name", ingredient.name, xsi_type="TN")
-
     # B.2.6 the physical item: manufacturing site, defective and returned counts.
     physical_kind = _element(kind, "instanceOfKind", classCode="INST")
     _element(physical_kind, "productInstanceInstance")
@@ -477,6 +457,26 @@ def _product(parent: ET.Element, report: VeterinaryReport, product_id: str) -> N
         _element(generalised, "name", xsi_type="TN").text = product.atc_vet_code
     else:
         _element(generalised, "name", xsi_type="TN", nullFlavor="NI")
+
+    for ingredient in product.active_ingredients:
+        block = _element(kind, "ingredient", classCode="INGR")
+        quantity = _element(block, "quantity")
+        strength = _number(ingredient.strength_value)
+        if strength:
+            numerator = _element(quantity, "numerator", xsi_type="PQ", value=strength)
+            _element(numerator, "translation", code=ingredient.strength_unit or "1", codeSystem=CS_UNIT)
+        else:
+            _element(quantity, "numerator", xsi_type="PQ", nullFlavor="NI")
+        denominator_unit = ingredient.strength_denominator_unit or product.dosage_form or ""
+        strength_denominator = _element(quantity, "denominator", xsi_type="PQ", value=_number(ingredient.strength_denominator_value) or "1")
+        if denominator_unit:
+            _element(strength_denominator, "translation", code=denominator_unit, codeSystem=CS_UNIT, displayName=denominator_unit)
+        substance = _element(block, "ingredientSubstance", determinerCode="KIND", classCode="MMAT")
+        if ingredient.code:
+            _element(substance, "code", code=ingredient.code, codeSystem="2.16.840.1.113883.4.9")
+        else:
+            _element(substance, "code", nullFlavor="NI")
+        _string(substance, "name", ingredient.name, xsi_type="TN")
 
     # B.2.6.5 ORA district field office
     subject = _element(instance, "subjectOf", typeCode="SBJ")
