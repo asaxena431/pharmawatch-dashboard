@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import base64
 import os
+import re
 import xml.etree.ElementTree as ET
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
@@ -25,6 +26,7 @@ from typing import Dict, List, Optional, Sequence
 from pypdf import PdfReader
 
 from .models import (
+    ActiveIngredient,
     Animal,
     ClinicalSign,
     Organisation,
@@ -207,7 +209,30 @@ def _product(form: Xfa1932a) -> VeterinaryProduct:
         first_exposure=form.get("p01treatmentstartdate"),
         last_exposure=form.get("p01treatmentenddate"),
         administered_by=ADMINISTERED_BY.get(form.get("p01administrationvmp") or ""),
+        active_ingredients=_ingredients(form),
     )
+
+
+def _ingredients(form: Xfa1932a) -> List[ActiveIngredient]:
+    """The product's ingredients; the form lists up to three, each with a strength."""
+    ingredients = []
+    for index in (1, 2, 3):
+        name = form.get(f"p01ingredient{index}")
+        strength = form.get(f"p01ingredientstrength{index}")
+        if not name and not strength:
+            continue
+        # A strength reads "15mg/ml": amount and unit over a unit of the product.
+        match = re.match(r"\s*(\d+(?:\.\d+)?)\s*([^/\s]+)?\s*(?:/\s*(\d+(?:\.\d+)?)?\s*(\S+))?", strength or "")
+        ingredients.append(
+            ActiveIngredient(
+                name=name,
+                strength_value=match.group(1) if match else None,
+                strength_unit=match.group(2) if match else None,
+                strength_denominator_value=(match.group(3) or "1") if match and match.group(4) else None,
+                strength_denominator_unit=match.group(4) if match else None,
+            )
+        )
+    return ingredients
 
 
 def map_veterinary_report(form: Xfa1932a) -> VeterinaryReport:
@@ -229,10 +254,11 @@ def map_veterinary_report(form: Xfa1932a) -> VeterinaryReport:
             gender=SEXES.get(form.get("sex") or ""),
             number_treated=form.get("exposednumber"),
             number_affected=form.get("reactednumber"),
-            weight_min_kg=form.get("weight"),
-            weight_max_kg=form.get("weightto"),
+            weight_min_kg=_kilograms(form.get("weight"), form.get("weightunit")),
+            weight_max_kg=_kilograms(form.get("weightto"), form.get("weightunit")),
             weight_basis="Estimated" if form.get("weightapx") == "Y" else "Measured",
             age_min=form.get("age"),
+            age_min_unit=AGE_UNITS.get(form.get("ageunitcode") or "YEAR", "Year"),
             age_max=form.get("ageto"),
             age_basis="Estimated" if form.get("ageapx") == "Y" else "Measured",
             health_before_treatment=HEALTH.get(form.get("priorcond") or "", form.get("priorcond")),
@@ -254,6 +280,19 @@ def map_veterinary_report(form: Xfa1932a) -> VeterinaryReport:
         attachments=[document.name for document in form.documents[1:]],
         ocr_engine=form.engine,
     )
+
+
+def _kilograms(value: Optional[str], unit: Optional[str]) -> Optional[str]:
+    """A weight in kilograms; the form records pounds as readily as kilograms."""
+    if not value:
+        return None
+    try:
+        weight = float(value)
+    except ValueError:
+        return value
+    if (unit or "").upper().startswith("LB"):
+        weight *= 0.45359237
+    return f"{weight:.4g}"
 
 
 def _signs(form: Xfa1932a) -> List[str]:

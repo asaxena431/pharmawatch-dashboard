@@ -92,6 +92,7 @@
           <option value="mdr">FDA MDR</option>
           <option value="gl42">VICH GL42 AER</option>
           <option value="pvx1932a">CVM 1932a submission (pvx1932a)</option>
+          <option value="vich-hl7">CVM VICH GL42 submission (HL7 v3)</option>
         </select>
       </div>
     </div>
@@ -278,7 +279,7 @@ function downloadXml() {
   const blob = new Blob([lastResult.xml], { type: 'application/xml' });
   const link = document.createElement('a');
   link.href = URL.createObjectURL(blob);
-  const names = { mdr: 'mdr_report', gl42: 'gl42_aer', pvx1932a: 'pvx1932a_submission' };
+  const names = { mdr: 'mdr_report', gl42: 'gl42_aer', pvx1932a: 'pvx1932a_submission', 'vich-hl7': 'vich_gl42_submission' };
   link.download = (names[lastResult.summary.output_format] || 'e2b_r2_icsr') + '.xml';
   link.click();
   URL.revokeObjectURL(link.href);

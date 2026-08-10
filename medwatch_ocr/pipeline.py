@@ -10,7 +10,7 @@ back both the CLI (``python -m medwatch_ocr.cli``) and the Flask demo GUI
 from dataclasses import dataclass
 from typing import List, Optional, Sequence, Union
 
-from . import e2b_r2, e2b_r2_fda, gl42, mdr_xml
+from . import e2b_r2, e2b_r2_fda, gl42, mdr_xml, vich_hl7
 from .models import CENTER_CDER, CENTER_CDRH, CENTER_CVM, MedWatchReport, VeterinaryReport
 from .ocr import OcrResult, ocr_pdf
 from .parser import build_report
@@ -22,7 +22,9 @@ FORMAT_MDR = "mdr"
 FORMAT_GL42 = "gl42"
 # The message CVM's upload service takes, as carried by a submitted 1932a.
 FORMAT_PVX_1932A = "pvx1932a"
-FORMATS = (FORMAT_E2B, FORMAT_E2B_FDA, FORMAT_MDR, FORMAT_GL42, FORMAT_PVX_1932A)
+# CVM's electronic submission message: VICH GL42 carried in HL7 v3.
+FORMAT_VICH_HL7 = "vich-hl7"
+FORMATS = (FORMAT_E2B, FORMAT_E2B_FDA, FORMAT_MDR, FORMAT_GL42, FORMAT_PVX_1932A, FORMAT_VICH_HL7)
 
 # Input layouts: the genuine boxed FDA form vs. the flat label/value facsimile.
 LAYOUT_OFFICIAL = "official"
@@ -113,11 +115,13 @@ def render_xml(report: Union[MedWatchReport, VeterinaryReport], output_format: O
     if fmt == FORMAT_PVX_1932A:
         raise ValueError(f"{FORMAT_PVX_1932A} output requires a Form FDA 1932a XFA submission")
     if isinstance(report, VeterinaryReport):
+        if fmt == FORMAT_VICH_HL7:
+            return vich_hl7.to_xml_string(report)
         if fmt != FORMAT_GL42:
-            raise ValueError(f"veterinary reports are only serialised as {FORMAT_GL42}, not {fmt}")
+            raise ValueError(f"veterinary reports are only serialised as {FORMAT_GL42} or {FORMAT_VICH_HL7}, not {fmt}")
         return gl42.to_xml_string(report)
-    if fmt == FORMAT_GL42:
-        raise ValueError("gl42 output requires a Form FDA 1932 veterinary report")
+    if fmt in (FORMAT_GL42, FORMAT_VICH_HL7):
+        raise ValueError(f"{fmt} output requires a Form FDA 1932 veterinary report")
     if fmt == FORMAT_E2B_FDA:
         raise ValueError(f"{FORMAT_E2B_FDA} output requires a template-extracted FDA 3500A form")
     if fmt == FORMAT_MDR:
@@ -277,7 +281,14 @@ def _convert_1932a(
     lines = [f"{key} = {value}" for key, value in form.values.items() if value]
     ocr = OcrResult(lines=lines, pages=0, engine=form.engine)
     fmt = output_format or FORMAT_PVX_1932A
-    xml = xfa_1932a.to_xml_string(form) if fmt == FORMAT_PVX_1932A else render_xml(report, fmt)
+    if fmt == FORMAT_PVX_1932A:
+        xml = xfa_1932a.to_xml_string(form)
+    elif fmt == FORMAT_VICH_HL7:
+        # The submission message carries the report and every file it came with.
+        documents = [(document.name, document.data) for document in form.documents]
+        xml = vich_hl7.to_xml_string(report, documents=documents)
+    else:
+        xml = render_xml(report, fmt)
     return ConversionResult(report=report, ocr=ocr, xml=xml, output_format=fmt, layout=LAYOUT_1932A)
 
 
