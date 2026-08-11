@@ -167,7 +167,7 @@ def convert_pdf(
     if layout == LAYOUT_1932 or (layout == LAYOUT_AUTO and center == CENTER_CVM) or (
         layout == LAYOUT_AUTO and is_1932_form(pdf_path)
     ):
-        return _convert_1932(pdf_path, output_format, engine, dpi, lang)
+        return _convert_1932(pdf_path, output_format, engine, dpi, lang, attachments)
     if layout == LAYOUT_LABELLED:
         return _convert_labelled(pdf_path, center, stage, output_format, dpi)
     if layout == LAYOUT_AUTO and engine == ENGINE_TEXT_LAYER:
@@ -298,6 +298,7 @@ def _convert_1932(
     engine: str,
     dpi: int,
     lang: str,
+    attachments: Sequence[str] = (),
 ) -> ConversionResult:
     """Template-guided conversion of the genuine FDA 1932 veterinary form."""
     from .vet_extract import extract_1932_fields, extract_1932_form, map_veterinary_report
@@ -318,10 +319,16 @@ def _convert_1932(
     lines += [f"[x] {key}" for key in sorted(form.checks)]
     ocr = OcrResult(lines=lines, pages=form.pages, engine=form.engine)
     fmt = output_format or FORMAT_GL42
+    if fmt == FORMAT_VICH_HL7:
+        # The submission message carries the report and every file it came with.
+        documents = vich_hl7.documents_from([pdf_path, *attachments])
+        xml = vich_hl7.to_xml_string(report, documents=documents)
+    else:
+        xml = render_xml(report, fmt)
     return ConversionResult(
         report=report,
         ocr=ocr,
-        xml=render_xml(report, fmt),
+        xml=xml,
         output_format=fmt,
         layout=LAYOUT_1932,
     )
