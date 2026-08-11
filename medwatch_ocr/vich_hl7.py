@@ -46,6 +46,26 @@ CS_INFORMATION = "2.16.840.1.113883.13.196"
 CS_COUNT_BASIS = "2.16.840.1.113883.13.209"
 CS_REGION = "2.16.840.1.113883.13.212"
 CS_UNIT = "2.16.840.1.113883.6.8"
+CS_ATTACHMENT = "2.16.840.1.113883.13.211"  # B.7.1.1 attached document type
+
+# B.7.1.1: the type of an attachment the report does not classify further.
+ATTACHMENT_OTHER = ("C17649", "Other")
+
+# B.7: the media an attachment is submitted as, by the file's extension.
+MEDIA_TYPES = {
+    ".pdf": "application/pdf",
+    ".txt": "text/plain",
+    ".rtf": "text/plain",
+    ".xml": "text/xml",
+    ".htm": "text/html",
+    ".html": "text/html",
+    ".jpg": "image/jpeg",
+    ".jpeg": "image/jpeg",
+    ".png": "image/png",
+    ".gif": "image/gif",
+    ".tif": "image/tiff",
+    ".tiff": "image/tiff",
+}
 
 SPECIES_CODES = {"Dog": "DOG", "Cat": "CAT", "Horse": "HORSE", "Cattle": "CATTLE", "Other": "OTHER"}
 GENDER_CODES = {"Female": "C16576", "Male": "C20197", "Mixed": "C67447", "Unknown": "C17998"}
@@ -235,19 +255,28 @@ def _device_sender(parent: ET.Element, report: VeterinaryReport, organisation_id
         _telecoms(person, contact.phone, contact.email, contact.fax)
 
 
+def _media_type(name: str) -> str:
+    """The media an attachment is submitted as; the datatype's default is text."""
+    extension = name[name.rfind(".") :].lower() if "." in name else ""
+    return MEDIA_TYPES.get(extension, "text/plain")
+
+
 def _documents(parent: ET.Element, documents: Sequence[Tuple[str, bytes]]) -> None:
     """B.7 attached documents, embedded base64 as the gateway expects."""
     for index, (name, data) in enumerate(documents or [("", b"")], start=1):
         reference = _element(parent, "reference", typeCode="REFR")
         document = _element(reference, "document", classCode="DOC", moodCode="EVN")
         _element(document, "id", extension=str(index))
-        _element(document, "code", nullFlavor="NI")
         if not name:
+            _element(document, "code", nullFlavor="NI")
             _element(document, "title", nullFlavor="NI")
             _element(document, "text", mediaType="text/plain", representation="B64", nullFlavor="NI")
             continue
+        # The 1932a states no document type, so every attachment is "Other".
+        code, display = ATTACHMENT_OTHER
+        _element(document, "code", code=code, codeSystem=CS_ATTACHMENT, displayName=display)
         _element(document, "title").text = name
-        text = _element(document, "text", mediaType="application/pdf", representation="B64")
+        text = _element(document, "text", mediaType=_media_type(name), representation="B64")
         text.text = base64.b64encode(data).decode("ascii")
 
 

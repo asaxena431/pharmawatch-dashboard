@@ -159,11 +159,16 @@ def test_product_ingredient_and_answers():
 
 
 def test_attachments_are_embedded_base64():
-    xml = vich_hl7.to_xml_string(_report(), documents=[("report.pdf", b"%PDF-1.4 hello")])
-    document = ET.fromstring(xml).find(".//v3:reference/v3:document", NS)
-    assert document.find("v3:title", NS).text == "report.pdf"
-    assert document.find("v3:text", NS).get("representation") == "B64"
-    assert document.find("v3:text", NS).text == "JVBERi0xLjQgaGVsbG8="
+    xml = vich_hl7.to_xml_string(_report(), documents=[("report.pdf", b"%PDF-1.4 hello"), ("notes.txt", b"hello")])
+    documents = ET.fromstring(xml).findall(".//v3:reference/v3:document", NS)
+    assert [document.find("v3:id", NS).get("extension") for document in documents] == ["1", "2"]
+    assert [document.find("v3:title", NS).text for document in documents] == ["report.pdf", "notes.txt"]
+    code = documents[0].find("v3:code", NS)
+    assert (code.get("code"), code.get("codeSystem")) == ("C17649", "2.16.840.1.113883.13.211")
+    text = documents[0].find("v3:text", NS)
+    assert (text.get("mediaType"), text.get("representation")) == ("application/pdf", "B64")
+    assert text.text == "JVBERi0xLjQgaGVsbG8="
+    assert documents[1].find("v3:text", NS).get("mediaType") == "text/plain"
 
 
 def test_expected_message_is_recognised_as_the_hl7_profile():
