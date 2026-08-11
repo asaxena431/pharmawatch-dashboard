@@ -217,7 +217,8 @@ async function runConvert() {
       card('Event terms', (s.event_terms || []).join(', ')),
       card('Outcomes', (s.outcomes || []).join(', ')),
       card('Suspect product', (s.products || []).join(', ')),
-      card('Suspect device', s.device)
+      card('Suspect device', s.device),
+      card('Embedded documents', (data.documents || []).join(', '))
     ].join('');
     document.getElementById('pane-xml').textContent = data.xml;
     document.getElementById('pane-fields').textContent = JSON.stringify(data.fields, null, 2);

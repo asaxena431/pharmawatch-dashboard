@@ -170,6 +170,8 @@ def api_medwatch_convert():
         )
         response = {
             "summary": result.summary,
+            "output_format": result.output_format,
+            "documents": [os.path.basename(pdf_path), *[os.path.basename(each) for each in attachments]],
             "xml": result.xml,
             "fields": result.report.to_dict(),
             "ocr_text": result.ocr.text,
