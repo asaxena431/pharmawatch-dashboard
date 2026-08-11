@@ -230,3 +230,18 @@ The PaddleOCR run of both samples produces XML identical to the direct field
 read, i.e. OCR of the official form is lossless for every mapped field and
 checkbox. Note that a full 9-page OCR pass takes a few minutes per document on
 CPU.
+
+## Walkthrough and validation
+
+`docs/MEDWATCH_PROCESS_FLOW.md` walks through the codebase: how the reader is
+chosen per PDF, what each reader/serialiser owns, the diff engine, and where to
+change things.
+
+A VICH HL7 v3 message can be validated against FDA's published CVM schemas —
+they are not redistributable, so they are downloaded once into
+`~/.cache/medwatch_ocr/vich-schemas`:
+
+```bash
+python scripts/check_vich_hl7.py out.xml            # datatype rules, no download
+python scripts/validate_vich_schema.py out.xml      # the published schemas
+```
