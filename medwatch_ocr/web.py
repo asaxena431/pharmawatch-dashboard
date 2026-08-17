@@ -18,6 +18,7 @@ from typing import List, Optional
 
 from flask import Blueprint, Flask, Response, jsonify, redirect, render_template, request
 
+from .delivery import DESTINATION_NONE, DESTINATIONS, DeliveryError, deliver
 from .form_1932 import VETERINARY_SAMPLES, fill_1932_form
 from .models import CENTER_CDER, CENTER_CDRH, CENTER_CVM, STAGE_POSTMARKET, STAGE_PREMARKET
 from .ocr import OcrError
@@ -132,6 +133,9 @@ def api_medwatch_convert():
     if layout not in LAYOUTS:
         return jsonify({"error": f"unknown layout: {layout}"}), 400
     facsimile = _is_facsimile(request.form.get("facsimile") or payload.get("facsimile") or "")
+    destination = (request.form.get("destination") or payload.get("destination") or DESTINATION_NONE).lower()
+    if destination not in DESTINATIONS:
+        return jsonify({"error": f"unknown destination: {destination}"}), 400
 
     expected = _expected_xml(payload)
     if expected and not output_format:
@@ -176,6 +180,13 @@ def api_medwatch_convert():
             "fields": result.report.to_dict(),
             "ocr_text": result.ocr.text,
         }
+        try:
+            delivered = deliver(result.xml, destination, pdf_path)
+        except DeliveryError as exc:
+            delivered = None
+            response["delivery_error"] = str(exc)
+        if delivered:
+            response["delivered_to"] = delivered
         if expected:
             try:
                 response["diff"] = diff_xml(result.xml, expected).as_dict()

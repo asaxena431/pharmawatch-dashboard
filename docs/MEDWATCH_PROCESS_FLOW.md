@@ -208,8 +208,8 @@ Useful flags: `--center`, `--stage`, `--layout`, `--engine`, `--dpi`,
 - `GET /medwatch` — the page;
 - `GET /api/medwatch/sample/<name>` — the built-in sample PDFs;
 - `POST /api/medwatch/convert` — fields: `pdf`, `attachments` (multiple),
-  `expected_xml`, `format`, `center`, `stage`, `layout`, `engine`, `dpi`.
-  Returns `{summary, xml, output_format, layout, diff}`.
+  `expected_xml`, `format`, `center`, `stage`, `layout`, `engine`, `dpi`,
+  `destination`. Returns `{summary, xml, output_format, documents, delivered_to, diff}`.
 
 ```bat
 set PORT=8080
@@ -218,6 +218,17 @@ REM http://127.0.0.1:8080/medwatch
 ```
 The page has tabs for the extraction summary, the XML, and the diff against the
 uploaded expected message.
+
+**Delivering the message — `delivery.py`**
+
+`destination` (GUI "Deliver the message to", CLI `--deliver`) is `none` — the
+message stays in the browser — or `dev`, which writes it to the DEV gateway's
+inbound folder
+`\\FDSWV26252\lsmvdev\aersesubdev\inbound\cvm-drug\xml_cvm-drug`, overridable
+with the `MEDWATCH_DEV_INBOUND` environment variable or CLI `--deliver-dir`.
+Each run takes its own filename — the form's name, the time to the millisecond
+and a random suffix — so re-submitting a case never overwrites a message that is
+still waiting to be picked up.
 
 ## 10. Sample forms
 

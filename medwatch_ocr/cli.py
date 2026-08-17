@@ -27,6 +27,7 @@ import os
 import sys
 from typing import List, Optional
 
+from .delivery import DESTINATION_NONE, DESTINATIONS, deliver
 from .form_1932 import generate_1932_samples
 from .models import CENTER_CDER, CENTER_CDRH, CENTER_CVM, STAGE_POSTMARKET, STAGE_PREMARKET
 from .ocr import OcrError, ocr_pdf
@@ -98,6 +99,9 @@ def build_parser() -> argparse.ArgumentParser:
                               "pvx1932a for a 1932a submission)")
     convert.add_argument("--attach", action="append", default=[], metavar="FILE",
                          help="a file the message carries; repeat per attachment (1932a submissions)")
+    convert.add_argument("--deliver", choices=list(DESTINATIONS), default=DESTINATION_NONE,
+                         help="also copy the message to a gateway inbound folder (default: none)")
+    convert.add_argument("--deliver-dir", help="the inbound folder to deliver to, overriding the destination's")
     convert.add_argument("--output", "-o", help="write the XML here instead of stdout")
     convert.add_argument("--json", dest="json_path", help="also write the parsed 3500A fields as JSON")
     convert.add_argument("--quiet", "-q", action="store_true", help="suppress the extraction summary on stderr")
@@ -141,6 +145,9 @@ def _run_convert(args: argparse.Namespace) -> int:
         print(json.dumps(result.summary, indent=2), file=sys.stderr)
     if args.output:
         print(f"wrote {result.output_format} XML -> {args.output}", file=sys.stderr)
+    delivered = deliver(result.xml, args.deliver, args.pdf, directory=args.deliver_dir)
+    if delivered:
+        print(f"delivered to {args.deliver} -> {delivered}", file=sys.stderr)
     return 0
 
 

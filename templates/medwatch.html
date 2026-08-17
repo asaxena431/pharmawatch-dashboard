@@ -111,6 +111,21 @@
 
     <div class="grid md:grid-cols-2 gap-4 items-end">
       <div>
+        <label class="block text-xs text-slate-400 mb-1">Deliver the message to</label>
+        <select id="destinationInput" class="w-full bg-slate-800 border border-slate-600 rounded-xl px-3 py-2 text-sm">
+          <option value="none" selected>None (keep it here)</option>
+          <option value="dev">Dev gateway inbound</option>
+        </select>
+      </div>
+      <p class="text-xs text-slate-500">
+        Dev writes the XML to <code>\\FDSWV26252\lsmvdev\aersesubdev\inbound\cvm-drug\xml_cvm-drug</code>
+        under a name unique to the run, so re-submitting a case never overwrites a message waiting to be
+        picked up. Set <code>MEDWATCH_DEV_INBOUND</code> where the share is mapped elsewhere.
+      </p>
+    </div>
+
+    <div class="grid md:grid-cols-2 gap-4 items-end">
+      <div>
         <label class="block text-xs text-slate-400 mb-1">Expected XML to compare against (optional)</label>
         <input id="expectedInput" type="file" accept=".xml,text/xml,application/xml"
           class="w-full text-xs bg-slate-800 border border-slate-600 rounded-xl px-3 py-2 file:mr-3 file:px-3 file:py-1 file:rounded-lg file:border-0 file:bg-slate-600 file:text-white"/>
@@ -197,6 +212,7 @@ async function runConvert() {
   form.append('layout', document.getElementById('layoutInput').value);
   const format = document.getElementById('formatInput').value;
   if (format) form.append('format', format);
+  form.append('destination', document.getElementById('destinationInput').value);
 
   button.disabled = true;
   spinner.classList.remove('hidden');
@@ -218,7 +234,8 @@ async function runConvert() {
       card('Outcomes', (s.outcomes || []).join(', ')),
       card('Suspect product', (s.products || []).join(', ')),
       card('Suspect device', s.device),
-      card('Embedded documents', (data.documents || []).join(', '))
+      card('Embedded documents', (data.documents || []).join(', ')),
+      card('Delivered to', data.delivered_to || data.delivery_error || 'not delivered')
     ].join('');
     document.getElementById('pane-xml').textContent = data.xml;
     document.getElementById('pane-fields').textContent = JSON.stringify(data.fields, null, 2);
@@ -227,7 +244,9 @@ async function runConvert() {
     document.getElementById('results').classList.remove('hidden');
     showTab(data.diff ? 'diff' : 'xml');
     status.textContent = 'Done — ' + s.output_format + ' XML generated with ' + s.ocr_engine + '.'
-      + (data.diff ? ' ' + data.diff.matched + '/' + data.diff.compared + ' elements match the expected XML.' : '');
+      + (data.diff ? ' ' + data.diff.matched + '/' + data.diff.compared + ' elements match the expected XML.' : '')
+      + (data.delivered_to ? ' Delivered to ' + data.delivered_to + '.' : '')
+      + (data.delivery_error ? ' Not delivered: ' + data.delivery_error : '');
   } catch (error) {
     status.textContent = 'Error: ' + error.message;
   } finally {
