@@ -10,7 +10,7 @@ back both the CLI (``python -m medwatch_ocr.cli``) and the Flask demo GUI
 from dataclasses import dataclass
 from typing import List, Optional, Sequence, Union
 
-from . import e2b_r2, e2b_r2_fda, gl42, mdr_xml, vich_hl7
+from . import e2b_r2, e2b_r2_fda, emdr_hl7, gl42, mdr_xml, vich_hl7
 from .models import CENTER_CDER, CENTER_CDRH, CENTER_CVM, MedWatchReport, VeterinaryReport
 from .ocr import OcrResult, ocr_pdf
 from .parser import build_report
@@ -24,7 +24,18 @@ FORMAT_GL42 = "gl42"
 FORMAT_PVX_1932A = "pvx1932a"
 # CVM's electronic submission message: VICH GL42 carried in HL7 v3.
 FORMAT_VICH_HL7 = "vich-hl7"
-FORMATS = (FORMAT_E2B, FORMAT_E2B_FDA, FORMAT_MDR, FORMAT_GL42, FORMAT_PVX_1932A, FORMAT_VICH_HL7)
+# CDRH's electronic submission message: the MDR carried in HL7 v3, with the form
+# it was read from embedded.
+FORMAT_EMDR_HL7 = "emdr-hl7"
+FORMATS = (
+    FORMAT_E2B,
+    FORMAT_E2B_FDA,
+    FORMAT_MDR,
+    FORMAT_EMDR_HL7,
+    FORMAT_GL42,
+    FORMAT_PVX_1932A,
+    FORMAT_VICH_HL7,
+)
 
 # Input layouts: the genuine boxed FDA form vs. the flat label/value facsimile.
 LAYOUT_OFFICIAL = "official"
@@ -126,6 +137,8 @@ def render_xml(report: Union[MedWatchReport, VeterinaryReport], output_format: O
         raise ValueError(f"{FORMAT_E2B_FDA} output requires a template-extracted FDA 3500A form")
     if fmt == FORMAT_MDR:
         return mdr_xml.to_xml_string(report)
+    if fmt == FORMAT_EMDR_HL7:
+        return emdr_hl7.to_xml_string(report)
     if fmt == FORMAT_E2B:
         receiver = "FDACDRH" if report.center == CENTER_CDRH else "FDACDER"
         return e2b_r2.to_xml_string(report, receiver_id=receiver)
@@ -175,7 +188,7 @@ def convert_pdf(
         if variant in CAPTION_ANCHORED_VARIANTS and not _has_acroform_values(pdf_path):
             return _convert_labelled(pdf_path, center, stage, output_format, dpi)
     if layout == LAYOUT_OFFICIAL or (layout == LAYOUT_AUTO and is_official_form(pdf_path)):
-        return _convert_official(pdf_path, center, stage, output_format, engine, dpi, lang)
+        return _convert_official(pdf_path, center, stage, output_format, engine, dpi, lang, attachments)
 
     ocr = ocr_pdf(pdf_path, dpi=dpi, lang=lang, engine=engine)
     report = build_report(
@@ -203,11 +216,23 @@ def _convert_official(
     engine: str,
     dpi: int,
     lang: str,
+    attachments: Sequence[str] = (),
 ) -> ConversionResult:
     """Template-guided conversion of the genuine FDA 3500A form."""
-    from .form_extract import extract_form, extract_form_fields, extract_form_text_layer, map_report
+    from .form_extract import (
+        extract_form,
+        extract_form_fields,
+        extract_form_scan,
+        extract_form_text_layer,
+        is_scanned_form,
+        map_report,
+    )
 
-    if engine == ENGINE_TEXT_LAYER:
+    if is_scanned_form(pdf_path):
+        # An image of the form: neither its AcroForm values nor a text layer are
+        # left, so it can only be read by OCR onto the registered geometry.
+        form = extract_form_scan(pdf_path, dpi=dpi, lang=lang)
+    elif engine == ENGINE_TEXT_LAYER:
         form = extract_form_fields(pdf_path)
         if not form.values:
             # Flattened copy: no AcroForm values left, but the typed text is still
@@ -227,7 +252,13 @@ def _convert_official(
     lines += [f"[x] {key}" for key in sorted(form.checks)]
     ocr = OcrResult(lines=lines, pages=form.pages, engine=form.engine)
     fmt = output_format or default_format(report.center)
-    xml = e2b_r2_fda.to_xml_string(form) if fmt == FORMAT_E2B_FDA else render_xml(report, fmt)
+    if fmt == FORMAT_E2B_FDA:
+        xml = e2b_r2_fda.to_xml_string(form)
+    elif fmt == FORMAT_EMDR_HL7:
+        # The eMDR message carries the form it was read from, and any file with it.
+        xml = emdr_hl7.to_xml_string(report, documents=emdr_hl7.documents_from([pdf_path, *attachments]))
+    else:
+        xml = render_xml(report, fmt)
     return ConversionResult(
         report=report,
         ocr=ocr,

@@ -90,6 +90,7 @@
           <option value="e2b-r2">E2B(R2) ICSR</option>
           <option value="e2b-r2-fda">E2B(R2) ICSR - FDA extended 3500A profile</option>
           <option value="mdr">FDA MDR</option>
+          <option value="emdr-hl7">CDRH eMDR submission (HL7 v3)</option>
           <option value="gl42">VICH GL42 AER</option>
           <option value="pvx1932a">CVM 1932a submission (pvx1932a)</option>
           <option value="vich-hl7">CVM VICH GL42 submission (HL7 v3)</option>
@@ -114,13 +115,16 @@
         <label class="block text-xs text-slate-400 mb-1">Deliver the message to</label>
         <select id="destinationInput" class="w-full bg-slate-800 border border-slate-600 rounded-xl px-3 py-2 text-sm">
           <option value="none" selected>None (keep it here)</option>
-          <option value="dev">Dev gateway inbound</option>
+          <option value="dev">Dev gateway inbound (CVM drug)</option>
+          <option value="dev-postmkt">DEV-POSTMKT gateway inbound (CDRH)</option>
         </select>
       </div>
       <p class="text-xs text-slate-500">
-        Dev writes the XML to <code>\\FDSWV26252\lsmvdev\aersesubdev\inbound\cvm-drug\xml_cvm-drug</code>
-        under a name unique to the run, so re-submitting a case never overwrites a message waiting to be
-        picked up. Set <code>MEDWATCH_DEV_INBOUND</code> where the share is mapped elsewhere.
+        Dev writes the XML to <code>\\FDSWV26252\lsmvdev\aersesubdev\inbound\cvm-drug\xml_cvm-drug</code>,
+        DEV-POSTMKT to <code>\\FDSWV26252\lsmvdev\aersesubdev\inbound\cdrh\xml_cdrh</code>, each under a name
+        unique to the run, so re-submitting a case never overwrites a message waiting to be picked up. Set
+        <code>MEDWATCH_DEV_INBOUND</code> / <code>MEDWATCH_DEV_POSTMKT_INBOUND</code> where the shares are
+        mapped elsewhere.
       </p>
     </div>
 
@@ -299,7 +303,7 @@ function downloadXml() {
   const blob = new Blob([lastResult.xml], { type: 'application/xml' });
   const link = document.createElement('a');
   link.href = URL.createObjectURL(blob);
-  const names = { mdr: 'mdr_report', gl42: 'gl42_aer', pvx1932a: 'pvx1932a_submission', 'vich-hl7': 'vich_gl42_submission' };
+  const names = { mdr: 'mdr_report', 'emdr-hl7': 'cdrh_emdr_submission', gl42: 'gl42_aer', pvx1932a: 'pvx1932a_submission', 'vich-hl7': 'vich_gl42_submission' };
   link.download = (names[lastResult.summary.output_format] || 'e2b_r2_icsr') + '.xml';
   link.click();
   URL.revokeObjectURL(link.href);

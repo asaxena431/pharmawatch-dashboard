@@ -30,6 +30,8 @@ class Patient:
     date_of_birth: Optional[str] = None
     sex: Optional[str] = None
     weight_kg: Optional[str] = None
+    weight: Optional[str] = None  # A.4 as written on the form
+    weight_unit: Optional[str] = None  # "lbs" / "kg", as ticked on the form
     ethnicity: Optional[str] = None
 
 
@@ -43,6 +45,8 @@ class AdverseEvent:
     relevant_tests: Optional[str] = None
     other_history: Optional[str] = None
     event_problem: Optional[str] = None  # B.1 checkbox text (adverse event / product problem)
+    additional_comments: Optional[str] = None
+    location: Optional[str] = None  # F.5 where the event happened
 
 
 @dataclass
@@ -90,6 +94,12 @@ class SuspectDevice:
     device_available_for_evaluation: Optional[str] = None
     device_returned_date: Optional[str] = None
     concomitant_products: Optional[str] = None
+    problem_code: Optional[str] = None  # F.10 medical device problem code
+    age: Optional[str] = None  # F.8 approximate age of device
+    age_unit: Optional[str] = None  # "Year" / "Month"
+    labeled_single_use: Optional[str] = None
+    evaluated_by_manufacturer: Optional[str] = None
+    serviced_by_third_party: Optional[str] = None
 
 
 @dataclass
@@ -101,6 +111,10 @@ class Reporter:
     family_name: Optional[str] = None
     organization: Optional[str] = None
     address: Optional[str] = None
+    street: Optional[str] = None
+    city: Optional[str] = None
+    state: Optional[str] = None
+    postcode: Optional[str] = None
     phone: Optional[str] = None
     email: Optional[str] = None
     occupation: Optional[str] = None
@@ -130,6 +144,30 @@ class ManufacturerInfo:
     study_number: Optional[str] = None
     remedial_action: Optional[str] = None
     evaluation_conclusion: Optional[str] = None
+    exemption_number: Optional[str] = None
+    report_sent_to_manufacturer: Optional[str] = None
+    corrective_action_number: Optional[str] = None
+    related_report_numbers: Optional[str] = None
+
+
+@dataclass
+class UserFacility:
+    """Block F - the user facility or importer that reported the event to FDA."""
+
+    report_number: Optional[str] = None
+    name: Optional[str] = None
+    street: Optional[str] = None
+    city: Optional[str] = None
+    state: Optional[str] = None
+    postcode: Optional[str] = None
+    country: Optional[str] = None
+    contact_name: Optional[str] = None
+    contact_given_name: Optional[str] = None
+    contact_family_name: Optional[str] = None
+    phone: Optional[str] = None
+    date_aware: Optional[str] = None  # F.4 date user facility became aware
+    date_sent_to_fda: Optional[str] = None  # F.7 date report sent to FDA
+    report_type: Optional[str] = None  # initial / follow-up
 
 
 @dataclass
@@ -143,6 +181,7 @@ class MedWatchReport:
     device: SuspectDevice = field(default_factory=SuspectDevice)
     reporter: Reporter = field(default_factory=Reporter)
     manufacturer: ManufacturerInfo = field(default_factory=ManufacturerInfo)
+    user_facility: UserFacility = field(default_factory=UserFacility)
     source_pages: int = 0
     ocr_engine: Optional[str] = None
     unmapped_lines: List[str] = field(default_factory=list)

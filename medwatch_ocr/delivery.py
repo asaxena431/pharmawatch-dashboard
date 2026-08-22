@@ -1,8 +1,10 @@
 """Delivery of a generated message to a submission gateway's inbound folder.
 
-``none`` keeps the message in the browser only; ``dev`` writes it to the DEV
-gateway's inbound directory, under a name no earlier run can have used, so a
-resubmitted case never overwrites a message waiting to be picked up.
+``none`` keeps the message in the browser only; ``dev`` and ``dev-postmkt``
+write it to the DEV gateway's inbound directory for CVM drug submissions and
+for CDRH post-market submissions respectively, under a name no earlier run can
+have used, so a resubmitted case never overwrites a message waiting to be
+picked up.
 """
 
 from __future__ import annotations
@@ -15,16 +17,22 @@ from typing import Dict, Optional
 
 DESTINATION_NONE = "none"
 DESTINATION_DEV = "dev"
+DESTINATION_DEV_POSTMARKET = "dev-postmkt"
 
-# The DEV gateway's inbound folder, overridable where the share is mapped elsewhere.
+# The DEV gateway's inbound folders, overridable where the shares are mapped elsewhere.
 DEV_INBOUND = os.environ.get(
     "MEDWATCH_DEV_INBOUND",
     r"\\FDSWV26252\lsmvdev\aersesubdev\inbound\cvm-drug\xml_cvm-drug",
+)
+DEV_POSTMARKET_INBOUND = os.environ.get(
+    "MEDWATCH_DEV_POSTMKT_INBOUND",
+    r"\\FDSWV26252\lsmvdev\aersesubdev\inbound\cdrh\xml_cdrh",
 )
 
 DESTINATIONS: Dict[str, Optional[str]] = {
     DESTINATION_NONE: None,
     DESTINATION_DEV: DEV_INBOUND,
+    DESTINATION_DEV_POSTMARKET: DEV_POSTMARKET_INBOUND,
 }
 
 

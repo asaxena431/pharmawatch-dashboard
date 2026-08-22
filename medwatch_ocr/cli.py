@@ -37,6 +37,7 @@ from .pipeline import (
     ENGINES,
     FORMAT_E2B,
     FORMAT_E2B_FDA,
+    FORMAT_EMDR_HL7,
     FORMAT_GL42,
     FORMAT_MDR,
     FORMAT_PVX_1932A,
@@ -94,7 +95,8 @@ def build_parser() -> argparse.ArgumentParser:
     convert.add_argument("--stage", choices=[STAGE_PREMARKET, STAGE_POSTMARKET],
                          help="premarket or postmarket; inferred from the form when omitted")
     convert.add_argument("--format", "-f", dest="output_format",
-                         choices=[FORMAT_E2B, FORMAT_E2B_FDA, FORMAT_MDR, FORMAT_GL42, FORMAT_PVX_1932A, FORMAT_VICH_HL7],
+                         choices=[FORMAT_E2B, FORMAT_E2B_FDA, FORMAT_MDR, FORMAT_EMDR_HL7, FORMAT_GL42,
+                                  FORMAT_PVX_1932A, FORMAT_VICH_HL7],
                          help="output format (default: e2b-r2 for CDER, mdr for CDRH, gl42 for CVM, "
                               "pvx1932a for a 1932a submission)")
     convert.add_argument("--attach", action="append", default=[], metavar="FILE",

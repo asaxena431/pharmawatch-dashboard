@@ -29,6 +29,10 @@ VOLATILE_ELEMENTS = frozenset(
     }
 )
 
+# Whole paths that differ per transmission: an eMDR message states its own
+# number as the root's identifier.
+VOLATILE_PATHS = frozenset({"id@extension"})
+
 # Elements only the FDA extended 3500A profile of E2B (R2) carries.
 FDA_PROFILE_ELEMENTS = frozenset({"formtype", "pre-1938", "manufacturerOTC", "combinationProduct", "tendayreporttype"})
 
@@ -72,6 +76,8 @@ def message_format(expected: str) -> Optional[str]:
         return "pvx1932a"
     if root.tag == "mdrReports":
         return "mdr"
+    if root.tag == "PORR_IN040001UV01":
+        return "emdr-hl7"
     if root.tag in {"AER", "aer", "vichaer"}:
         return "gl42"
     if root.tag != "ichicsr":
@@ -109,6 +115,8 @@ def flatten(element: ET.Element, prefix: str = "") -> Dict[str, str]:
 
 def _volatile(path: str) -> bool:
     """True for a per-transmission element, whichever attribute of it is compared."""
+    if path in VOLATILE_PATHS:
+        return True
     name = path.split("/")[-1].split("@")[0]
     return re.sub(r"\[\d+\]$", "", name) in VOLATILE_ELEMENTS
 

@@ -23,7 +23,7 @@ module owns each step, and where to change things.
 | Input document | Center | Output message |
 | --- | --- | --- |
 | Form FDA-3500A (drug) | CDER | `e2b-r2` — ICH E2B(R2) ICSR, or `e2b-r2-fda` — FDA's extended 3500A profile |
-| Form FDA-3500A (device) | CDRH | `mdr` — FDA MDR report |
+| Form FDA-3500A (device) | CDRH | `mdr` — FDA MDR report, or `emdr-hl7` — the eMDR submission carried in HL7 v3 (`PORR_IN040001UV01`), source PDF embedded |
 | Form FDA 1932 (static) | CVM | `gl42` — compact VICH GL42 AER |
 | Form FDA 1932a (dynamic XFA) | CVM | `pvx1932a` — the message CVM's upload service takes, or `vich-hl7` — VICH GL42 carried in HL7 v3 (`MCCI_IN200100UV01`) |
 
@@ -118,13 +118,14 @@ Mapping form field → model happens in the reader (`*_extract.py`,
 appears in the wrong place in the output is a serialiser problem; a field that is
 empty is a reader problem.
 
-## 6. Step 4 — the six serialisers
+## 6. Step 4 — the seven serialisers
 
 | Module | Format | Root element |
 | --- | --- | --- |
 | `e2b_r2.py` | `e2b-r2` | `<ichicsr>` |
 | `e2b_r2_fda.py` | `e2b-r2-fda` | `<ichicsr>` with FDA's DTD, `FDA-CDER-OSC`/`ZZFDA`, `formtype`, fixed element order (~686 elements) |
 | `mdr_xml.py` | `mdr` | `<mdrReports>` |
+| `emdr_hl7.py` | `emdr-hl7` | `<PORR_IN040001UV01>` (`Con170227.xsd`), values against NCI Thesaurus codes, form PDF base64 in `message/attachment` |
 | `gl42.py` | `gl42` | `<vichAdverseEventReport>` |
 | `xfa_1932a.py` | `pvx1932a` | `<pvx1932a>` (flat, one element per form field, `DOCUMENTS/FILE_DATA` base64) |
 | `vich_hl7.py` | `vich-hl7` | `<MCCI_IN200100UV01>` carrying `<PORR_IN049006UV>` |
@@ -132,6 +133,21 @@ empty is a reader problem.
 `pipeline.render_xml()` routes model → serialiser and rejects impossible pairs
 (e.g. `mdr` for a veterinary report). `default_format()` gives the per-center
 default: CDER → `e2b-r2`, CDRH → `mdr`, CVM → `gl42`.
+
+### The CDRH eMDR serialiser (`emdr_hl7.py`)
+
+A scanned 09/2025 3500A (image only, no text layer, no AcroForm) is read by
+`form_extract.extract_form_scan()`: PaddleOCR reads the page, the page is
+registered against the blank official form, and each recognised character is
+placed in the field whose box it falls in — so a caption and the value printed
+over it (`"2. Age37"`) still yield `37`.
+
+The serialiser reproduces the conventions of CDRH's own OCR pipeline, including
+the ones a fresh implementation would do differently: a date of birth is written
+with the day forced to the 1st, an absent date as `19000101`, and a structural
+element with no value is written empty rather than omitted. `--format emdr-hl7`
+embeds the source PDF (and any `--attach` file) byte for byte under
+`message/attachment/text representation="B64"`.
 
 ### The HL7 v3 serialiser (`vich_hl7.py`)
 

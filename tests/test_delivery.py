@@ -7,7 +7,25 @@ import pytest
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from medwatch_ocr.delivery import DESTINATION_DEV, DESTINATION_NONE, DeliveryError, deliver, unique_name  # noqa: E402
+from medwatch_ocr.delivery import (  # noqa: E402
+    DESTINATION_DEV,
+    DESTINATION_DEV_POSTMARKET,
+    DESTINATION_NONE,
+    DESTINATIONS,
+    DeliveryError,
+    deliver,
+    unique_name,
+)
+
+
+def test_the_post_market_destination_is_the_cdrh_inbound_folder():
+    assert DESTINATIONS[DESTINATION_DEV_POSTMARKET].replace("\\", "/").endswith("inbound/cdrh/xml_cdrh")
+
+
+def test_dev_postmkt_writes_the_message(tmp_path):
+    path = deliver("<a/>", DESTINATION_DEV_POSTMARKET, "26-002332CL Y.pdf", directory=str(tmp_path))
+    assert os.path.basename(path).startswith("26-002332CL_Y-")
+    assert open(path, encoding="utf-8").read() == "<a/>"
 
 
 def test_none_delivers_nothing(tmp_path):
