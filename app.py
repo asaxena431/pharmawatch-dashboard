@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, render_template_string, request, jsonify
 import requests
 import json
 import re
@@ -20,8 +20,33 @@ try:
     from medwatch_ocr.web import medwatch_bp
     app.register_blueprint(medwatch_bp)
     MEDWATCH_AVAILABLE = True
-except ImportError:
+    MEDWATCH_ERROR = ""
+except Exception as exc:  # a bare 404 on /medwatch tells nobody why
     MEDWATCH_AVAILABLE = False
+    MEDWATCH_ERROR = f"{type(exc).__name__}: {exc}"
+    HINT = "pip install -r requirements.txt   (in this folder)"
+    print("=" * 72)
+    print("MedWatch form OCR is NOT loaded, so /medwatch will not be served.")
+    print(f"  reason: {MEDWATCH_ERROR}")
+    print(f"  fix:    {HINT}")
+    print("=" * 72, flush=True)
+
+    @app.route("/medwatch")
+    def medwatch_unavailable():
+        """Say why the page is missing, instead of a 404 that explains nothing."""
+        return (
+            render_template_string(
+                "<h2>MedWatch form OCR is not loaded</h2>"
+                "<p>The page exists in this codebase, but its blueprint could not "
+                "be imported, so the route was never registered.</p>"
+                "<p><b>Reason:</b> <code>{{ reason }}</code></p>"
+                "<p><b>Fix:</b> <code>{{ hint }}</code>, then restart "
+                "<code>python app.py</code>.</p>",
+                reason=MEDWATCH_ERROR,
+                hint=HINT,
+            ),
+            503,
+        )
 
 # ── Shared lists ─────────────────────────────────────────────────────────────
 KNOWN_DRUGS = [
@@ -1051,4 +1076,6 @@ def api_check_openai():
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5050))
+    if MEDWATCH_AVAILABLE:
+        print(f"MedWatch form OCR ready on http://127.0.0.1:{port}/medwatch", flush=True)
     app.run(debug=False, host="0.0.0.0", port=port)
