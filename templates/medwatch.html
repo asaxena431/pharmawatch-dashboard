@@ -100,13 +100,16 @@
 
     <div class="grid md:grid-cols-2 gap-4 items-end">
       <div>
-        <label class="block text-xs text-slate-400 mb-1">Attachments the report carries (optional, 1932a)</label>
+        <label class="block text-xs text-slate-400 mb-1">Attachments the report carries (optional)</label>
         <input id="attachmentsInput" type="file" multiple accept="application/pdf"
           class="w-full text-xs bg-slate-800 border border-slate-600 rounded-xl px-3 py-2 file:mr-3 file:px-3 file:py-1 file:rounded-lg file:border-0 file:bg-slate-600 file:text-white"/>
       </div>
       <p class="text-xs text-slate-500">
-        A 1932a submission embeds its own PDF and every attachment in the message, so upload the
-        attachment files under their original names to reproduce it exactly.
+        Only the formats that embed documents use these: a CVM 1932a submission
+        (<code>pvx1932a</code>, <code>vich-hl7</code>) and a CDRH eMDR submission
+        (<code>emdr-hl7</code>) carry the uploaded form PDF plus every attachment inside the message,
+        so upload the attachment files under their original names to reproduce a submission exactly.
+        The other formats ignore them.
       </p>
     </div>
 
@@ -149,6 +152,10 @@
       <div id="spinner" class="spinner hidden"></div>
       <span id="status" class="text-xs text-slate-400"></span>
     </div>
+    <p class="text-xs text-slate-500">
+      A PDF with a text layer converts in a second or two; an image-only scan goes through PaddleOCR
+      and takes around half a minute per page, so a 9-page form runs for a few minutes.
+    </p>
   </div>
 
   <div id="results" class="hidden space-y-6">

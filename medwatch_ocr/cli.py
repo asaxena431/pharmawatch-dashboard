@@ -100,7 +100,8 @@ def build_parser() -> argparse.ArgumentParser:
                          help="output format (default: e2b-r2 for CDER, mdr for CDRH, gl42 for CVM, "
                               "pvx1932a for a 1932a submission)")
     convert.add_argument("--attach", action="append", default=[], metavar="FILE",
-                         help="a file the message carries; repeat per attachment (1932a submissions)")
+                         help="a file the message carries; repeat per attachment "
+                              "(pvx1932a, vich-hl7 and emdr-hl7 embed them)")
     convert.add_argument("--deliver", choices=list(DESTINATIONS), default=DESTINATION_NONE,
                          help="also copy the message to a gateway inbound folder (default: none)")
     convert.add_argument("--deliver-dir", help="the inbound folder to deliver to, overriding the destination's")
