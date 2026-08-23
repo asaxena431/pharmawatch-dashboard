@@ -23,6 +23,7 @@ Examples::
 
 import argparse
 import json
+import logging
 import os
 import sys
 from typing import List, Optional
@@ -111,6 +112,15 @@ def build_parser() -> argparse.ArgumentParser:
     _add_common_ocr_args(convert)
     _add_layout_arg(convert)
 
+    service = sub.add_parser(
+        "service",
+        help="watch an inbound folder for case ZIPs, write the XML to the outbound folder",
+    )
+    service.add_argument("--config", "-c", default="medwatch-service.ini",
+                         help="the service's configuration file (default: medwatch-service.ini)")
+    service.add_argument("--once", action="store_true",
+                         help="process what is waiting in the inbound folder and exit")
+
     batch = sub.add_parser("demo", help="generate both samples and convert them end-to-end")
     batch.add_argument("--output-dir", "-d", default="out", help="directory for samples and XML output")
     _add_common_ocr_args(batch)
@@ -152,6 +162,32 @@ def _run_convert(args: argparse.Namespace) -> int:
     if delivered:
         print(f"delivered to {args.deliver} -> {delivered}", file=sys.stderr)
     return 0
+
+
+def _run_service(args: argparse.Namespace) -> int:
+    from .service import ConfigError, load_config, run_forever, run_once
+
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s %(levelname)s %(name)s: %(message)s",
+        stream=sys.stderr,
+    )
+    try:
+        config = load_config(args.config)
+    except ConfigError as exc:
+        print(f"configuration error: {exc}", file=sys.stderr)
+        return 2
+    if not args.once:
+        try:
+            return run_forever(config)
+        except KeyboardInterrupt:
+            print("stopped", file=sys.stderr)
+            return 0
+    done = run_once(config)
+    for entry in done:
+        name = os.path.basename(entry.archive)
+        print(f"{name}: {entry.xml_path}" if entry.ok else f"{name}: FAILED {entry.error} -> {entry.moved_to}")
+    return 1 if any(not entry.ok for entry in done) else 0
 
 
 def _make_samples(output_dir: str, facsimile: bool) -> dict:
@@ -205,6 +241,8 @@ def main(argv: Optional[List[str]] = None) -> int:
             return 0
         if args.command == "convert":
             return _run_convert(args)
+        if args.command == "service":
+            return _run_service(args)
         if args.command == "demo":
             return _run_demo(args)
     except OcrError as exc:

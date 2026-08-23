@@ -69,7 +69,17 @@ python -m medwatch_ocr.cli ocr samples/FDA-3500A_cdrh_postmarket.pdf --engine pa
 
 # everything at once (samples + all three conversions)
 python -m medwatch_ocr.cli demo --output-dir out --engine paddleocr
+
+# unattended: watch a folder for case ZIPs (see medwatch-service.ini.sample)
+python -m medwatch_ocr.cli service --config medwatch-service.ini
+python -m medwatch_ocr.cli service --config medwatch-service.ini --once
 ```
+
+The service treats one ZIP as one case: the FDA form PDF inside it becomes the
+message and every other file in it is embedded as an attachment. The XML is
+written to the outbound folder and the ZIP moves to the processed folder, or to
+the error folder with the reason mailed out. Folders, format, poll interval and
+mail server all come from the configuration file.
 
 `--layout` picks the input geometry — `official` (the FDA 3500A template),
 `1932` (the FDA 1932 veterinary template), `labelled` (any 3500A revision, read

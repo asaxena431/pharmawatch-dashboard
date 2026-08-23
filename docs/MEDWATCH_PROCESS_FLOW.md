@@ -262,6 +262,33 @@ Each run takes its own filename — the form's name, the time to the millisecond
 and a random suffix — so re-submitting a case never overwrites a message that is
 still waiting to be picked up.
 
+**The folder service — `service.py`**
+
+A third front end for unattended running: ZIPs in, XML out. One ZIP is one case
+— the FDA form PDF inside it becomes the message, every other file in it is
+embedded as an attachment.
+
+```bash
+cp medwatch-service.ini.sample medwatch-service.ini   # edit the folders
+python -m medwatch_ocr.cli service --config medwatch-service.ini          # as a service
+python -m medwatch_ocr.cli service --config medwatch-service.ini --once   # one sweep
+```
+
+Per sweep of `[folders] inbound`, oldest ZIP first: a ZIP whose size is still
+changing is left for the next sweep (`settle_seconds`), the XML is written to
+`outbound` under the same unique name `delivery.py` builds, and the ZIP moves to
+`processed` — or to `error`, with the traceback mailed to `[email] recipients`,
+when anything fails. Nothing is deleted and nothing is overwritten: a repeated
+ZIP name becomes `case-2.zip`. The `[conversion]` section fixes the format
+(`emdr-hl7`, `vich-hl7`, …) or leaves it to the form. As a systemd unit:
+
+```ini
+[Service]
+WorkingDirectory=/opt/medwatch-forms-ocr
+ExecStart=/opt/medwatch-forms-ocr/.venv/bin/python -m medwatch_ocr.cli service --config /etc/medwatch-service.ini
+Restart=always
+```
+
 ## 10. Sample forms
 
 `official_form.py` downloads the genuine fillable **Form FDA-3500A (09/2025)**
@@ -294,7 +321,8 @@ ruff check --select E,F,W --line-length 140 medwatch_ocr tests scripts
 | `test_caption_anchored.py` | caption-anchored reader, continuation pages |
 | `test_form_1932.py`, `test_xfa_1932a.py` | 1932 template reader, XFA dataset reader, `pvx1932a` |
 | `test_vich_hl7.py` | HL7 envelope, codes, datatype rules, diff attributes |
-| `test_vich_schema.py` | validation against FDA's schemas when cached |
+| `test_vich_schema.py`, `test_emdr_schema.py` | validation against FDA's schemas when cached |
+| `test_service.py` | the folder service: config, case split, processed/error, mail |
 
 ## 12. How to extend it
 
