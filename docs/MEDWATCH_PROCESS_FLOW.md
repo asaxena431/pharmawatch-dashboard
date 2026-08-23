@@ -280,7 +280,20 @@ changing is left for the next sweep (`settle_seconds`), the XML is written to
 `processed` — or to `error`, with the traceback mailed to `[email] recipients`,
 when anything fails. Nothing is deleted and nothing is overwritten: a repeated
 ZIP name becomes `case-2.zip`. The `[conversion]` section fixes the format
-(`emdr-hl7`, `vich-hl7`, …) or leaves it to the form. As a systemd unit:
+(`emdr-hl7`, `vich-hl7`, …); `format = auto` instead reads each form first and
+writes the format named for the center it turns out to belong to, so one folder
+can take device and veterinary cases together:
+
+```ini
+[conversion]
+format = auto
+format_cdrh = emdr-hl7
+format_cvm = vich-hl7
+```
+
+Without that, a veterinary ZIP in a `format = emdr-hl7` folder fails with
+"veterinary reports are only serialised as gl42 or vich-hl7" and lands in
+`error`. As a systemd unit:
 
 ```ini
 [Service]

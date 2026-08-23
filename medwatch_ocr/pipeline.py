@@ -8,7 +8,7 @@ back both the CLI (``python -m medwatch_ocr.cli``) and the Flask demo GUI
 """
 
 from dataclasses import dataclass
-from typing import List, Optional, Sequence, Union
+from typing import List, Mapping, Optional, Sequence, Union
 
 from . import e2b_r2, e2b_r2_fda, emdr_hl7, gl42, mdr_xml, vich_hl7
 from .models import CENTER_CDER, CENTER_CDRH, CENTER_CVM, MedWatchReport, VeterinaryReport
@@ -120,6 +120,25 @@ def default_format(center: str) -> str:
     return FORMAT_MDR if center == CENTER_CDRH else FORMAT_E2B
 
 
+def resolve_format(
+    center: str,
+    output_format: Optional[str] = None,
+    by_center: Optional[Mapping[str, str]] = None,
+    fallback: Optional[str] = None,
+) -> str:
+    """The format to write: asked for, chosen for the center, or the center's default.
+
+    ``by_center`` lets a caller that reads mixed forms - the folder service, say -
+    say which message each center's reports become, without knowing in advance
+    which form the next PDF holds.
+    """
+    if output_format:
+        return output_format
+    if by_center and by_center.get(center):
+        return by_center[center]
+    return fallback or default_format(center)
+
+
 def render_xml(report: Union[MedWatchReport, VeterinaryReport], output_format: Optional[str] = None) -> str:
     """Serialise ``report`` in ``output_format`` (defaults to the center's format)."""
     fmt = output_format or default_format(report.center)
@@ -155,8 +174,12 @@ def convert_pdf(
     lang: str = "en",
     layout: str = LAYOUT_AUTO,
     attachments: Sequence[str] = (),
+    formats_by_center: Optional[Mapping[str, str]] = None,
 ) -> ConversionResult:
     """Read a form PDF and convert it to E2B(R2), MDR or GL42 XML.
+
+    ``formats_by_center`` names the format to use per center when
+    ``output_format`` is not given, for a caller reading mixed forms.
 
     ``layout`` selects the input geometry: ``official`` uses the committed
     FDA-3500A field template (boxed form, checkboxes), ``1932`` the FDA-1932
@@ -176,19 +199,19 @@ def convert_pdf(
     if layout not in LAYOUTS:
         raise ValueError(f"unknown layout: {layout}")
     if layout == LAYOUT_1932A or (layout == LAYOUT_AUTO and is_1932a_form(pdf_path)):
-        return _convert_1932a(pdf_path, output_format, attachments)
+        return _convert_1932a(pdf_path, output_format, attachments, formats_by_center)
     if layout == LAYOUT_1932 or (layout == LAYOUT_AUTO and center == CENTER_CVM) or (
         layout == LAYOUT_AUTO and is_1932_form(pdf_path)
     ):
-        return _convert_1932(pdf_path, output_format, engine, dpi, lang, attachments)
+        return _convert_1932(pdf_path, output_format, engine, dpi, lang, attachments, formats_by_center)
     if layout == LAYOUT_LABELLED:
-        return _convert_labelled(pdf_path, center, stage, output_format, dpi)
+        return _convert_labelled(pdf_path, center, stage, output_format, dpi, formats_by_center)
     if layout == LAYOUT_AUTO and engine == ENGINE_TEXT_LAYER:
         variant = detect_variant(pdf_path)
         if variant in CAPTION_ANCHORED_VARIANTS and not _has_acroform_values(pdf_path):
-            return _convert_labelled(pdf_path, center, stage, output_format, dpi)
+            return _convert_labelled(pdf_path, center, stage, output_format, dpi, formats_by_center)
     if layout == LAYOUT_OFFICIAL or (layout == LAYOUT_AUTO and is_official_form(pdf_path)):
-        return _convert_official(pdf_path, center, stage, output_format, engine, dpi, lang, attachments)
+        return _convert_official(pdf_path, center, stage, output_format, engine, dpi, lang, attachments, formats_by_center)
 
     ocr = ocr_pdf(pdf_path, dpi=dpi, lang=lang, engine=engine)
     report = build_report(
@@ -198,7 +221,7 @@ def convert_pdf(
         ocr_engine=ocr.engine,
         pages=ocr.pages,
     )
-    fmt = output_format or default_format(report.center)
+    fmt = resolve_format(report.center, output_format, formats_by_center)
     return ConversionResult(
         report=report,
         ocr=ocr,
@@ -217,6 +240,7 @@ def _convert_official(
     dpi: int,
     lang: str,
     attachments: Sequence[str] = (),
+    formats_by_center: Optional[Mapping[str, str]] = None,
 ) -> ConversionResult:
     """Template-guided conversion of the genuine FDA 3500A form."""
     from .form_extract import (
@@ -251,7 +275,7 @@ def _convert_official(
     lines = [f"{key} = {value}" for key, value in sorted(form.values.items())]
     lines += [f"[x] {key}" for key in sorted(form.checks)]
     ocr = OcrResult(lines=lines, pages=form.pages, engine=form.engine)
-    fmt = output_format or default_format(report.center)
+    fmt = resolve_format(report.center, output_format, formats_by_center)
     if fmt == FORMAT_E2B_FDA:
         xml = e2b_r2_fda.to_xml_string(form)
     elif fmt == FORMAT_EMDR_HL7:
@@ -284,6 +308,7 @@ def _convert_labelled(
     stage: Optional[str],
     output_format: Optional[str],
     dpi: int,
+    formats_by_center: Optional[Mapping[str, str]] = None,
 ) -> ConversionResult:
     """Caption-anchored conversion of a 3500A whose revision has no template."""
     from .anchors_3500a import extract_by_labels
@@ -294,7 +319,7 @@ def _convert_labelled(
     lines = [f"{key} = {value}" for key, value in sorted(form.values.items())]
     lines += [f"[x] {key}" for key in sorted(form.checks)]
     ocr = OcrResult(lines=lines, pages=form.pages, engine=form.engine)
-    fmt = output_format or default_format(report.center)
+    fmt = resolve_format(report.center, output_format, formats_by_center)
     xml = e2b_r2_fda.to_xml_string(form) if fmt == FORMAT_E2B_FDA else render_xml(report, fmt)
     return ConversionResult(report=report, ocr=ocr, xml=xml, output_format=fmt, layout=LAYOUT_LABELLED)
 
@@ -303,6 +328,7 @@ def _convert_1932a(
     pdf_path: str,
     output_format: Optional[str],
     attachments: Sequence[str],
+    formats_by_center: Optional[Mapping[str, str]] = None,
 ) -> ConversionResult:
     """Conversion of a Form FDA 1932a submitted as a dynamic XFA PDF."""
     from . import xfa_1932a
@@ -311,7 +337,7 @@ def _convert_1932a(
     report = xfa_1932a.map_veterinary_report(form)
     lines = [f"{key} = {value}" for key, value in form.values.items() if value]
     ocr = OcrResult(lines=lines, pages=0, engine=form.engine)
-    fmt = output_format or FORMAT_PVX_1932A
+    fmt = resolve_format(report.center, output_format, formats_by_center, fallback=FORMAT_PVX_1932A)
     if fmt == FORMAT_PVX_1932A:
         xml = xfa_1932a.to_xml_string(form)
     elif fmt == FORMAT_VICH_HL7:
@@ -330,6 +356,7 @@ def _convert_1932(
     dpi: int,
     lang: str,
     attachments: Sequence[str] = (),
+    formats_by_center: Optional[Mapping[str, str]] = None,
 ) -> ConversionResult:
     """Template-guided conversion of the genuine FDA 1932 veterinary form."""
     from .vet_extract import extract_1932_fields, extract_1932_form, map_veterinary_report
@@ -349,7 +376,7 @@ def _convert_1932(
     lines = [f"{key} = {value}" for key, value in sorted(form.values.items())]
     lines += [f"[x] {key}" for key in sorted(form.checks)]
     ocr = OcrResult(lines=lines, pages=form.pages, engine=form.engine)
-    fmt = output_format or FORMAT_GL42
+    fmt = resolve_format(report.center, output_format, formats_by_center, fallback=FORMAT_GL42)
     if fmt == FORMAT_VICH_HL7:
         # The submission message carries the report and every file it came with.
         documents = vich_hl7.documents_from([pdf_path, *attachments])

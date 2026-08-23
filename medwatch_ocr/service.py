@@ -25,9 +25,10 @@ import zipfile
 from dataclasses import dataclass, field
 from datetime import datetime
 from email.message import EmailMessage
-from typing import List, Optional, Sequence, Tuple
+from typing import Dict, List, Optional, Sequence, Tuple
 
 from .delivery import unique_name
+from .models import CENTER_CDER, CENTER_CDRH, CENTER_CVM
 from .pipeline import ENGINE_TEXT_LAYER, LAYOUT_AUTO, convert_pdf
 
 LOGGER = logging.getLogger("medwatch_ocr.service")
@@ -72,6 +73,9 @@ class ServiceConfig:
     processed: str
     error: str
     output_format: Optional[str] = None
+    # The format per center, for an inbound folder holding more than one kind of
+    # case: a CDRH ZIP and a CVM ZIP cannot become the same message.
+    formats_by_center: Dict[str, str] = field(default_factory=dict)
     center: Optional[str] = None
     stage: Optional[str] = None
     layout: str = LAYOUT_AUTO
@@ -101,6 +105,15 @@ def load_config(path: str) -> ServiceConfig:
         raise ConfigError(f"[{SECTION_FOLDERS}] in {path} needs: {', '.join(missing)}")
 
     conversion = parser[SECTION_CONVERSION] if parser.has_section(SECTION_CONVERSION) else {}
+    wanted = str(conversion.get("format", "")).strip()
+    if wanted.lower() in ("", "auto"):
+        wanted = ""
+    by_center = {
+        center: str(conversion.get(key, "")).strip()
+        for center, key in ((CENTER_CDER, "format_cder"), (CENTER_CDRH, "format_cdrh"), (CENTER_CVM, "format_cvm"))
+        if str(conversion.get(key, "")).strip()
+    }
+
     service = parser[SECTION_SERVICE] if parser.has_section(SECTION_SERVICE) else {}
     mail = parser[SECTION_EMAIL] if parser.has_section(SECTION_EMAIL) else {}
     recipients = [address.strip() for address in str(mail.get("recipients", "")).replace(";", ",").split(",") if address.strip()]
@@ -110,7 +123,8 @@ def load_config(path: str) -> ServiceConfig:
         outbound=os.path.expanduser(folders["outbound"]),
         processed=os.path.expanduser(folders["processed"]),
         error=os.path.expanduser(folders["error"]),
-        output_format=conversion.get("format") or None,
+        output_format=wanted or None,
+        formats_by_center=by_center,
         center=conversion.get("center") or None,
         stage=conversion.get("stage") or None,
         layout=conversion.get("layout") or LAYOUT_AUTO,
@@ -275,6 +289,7 @@ def process_zip(archive: str, config: ServiceConfig) -> Processed:
                 center=config.center,
                 stage=config.stage,
                 output_format=config.output_format,
+                formats_by_center=config.formats_by_center,
                 engine=config.engine,
                 dpi=config.dpi,
                 lang=config.lang,

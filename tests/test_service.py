@@ -6,7 +6,8 @@ import zipfile
 import pytest
 
 from medwatch_ocr import service
-from medwatch_ocr.pipeline import FORMAT_EMDR_HL7
+from medwatch_ocr.models import CENTER_CDRH, CENTER_CVM
+from medwatch_ocr.pipeline import FORMAT_EMDR_HL7, FORMAT_VICH_HL7
 
 
 def _config(tmp_path, **overrides) -> service.ServiceConfig:
@@ -103,6 +104,28 @@ def test_a_case_zip_becomes_one_xml_and_the_zip_moves_to_processed(tmp_path, for
     assert not os.path.exists(archive)
     assert os.listdir(config.processed) == ["case-1.zip"]
     assert os.listdir(config.error) == []
+
+
+def test_a_mixed_inbound_folder_writes_the_format_named_for_each_center(tmp_path, form_pdf):
+    path = tmp_path / "service.ini"
+    path.write_text(
+        "[folders]\ninbound = in\noutbound = out\nprocessed = done\nerror = bad\n"
+        "[conversion]\nformat = auto\nformat_cdrh = emdr-hl7\nformat_cvm = vich-hl7\n",
+        encoding="utf-8",
+    )
+    parsed = service.load_config(str(path))
+    assert parsed.output_format is None
+    assert parsed.formats_by_center == {CENTER_CDRH: FORMAT_EMDR_HL7, CENTER_CVM: FORMAT_VICH_HL7}
+
+    config = _config(tmp_path, formats_by_center=dict(parsed.formats_by_center))
+    _zip(os.path.join(config.inbound, "device-case.zip"), [("case.pdf", form_pdf)])
+
+    done = service.run_once(config)
+
+    # the device report becomes CDRH's message, not the veterinary one asked for CVM
+    assert len(done) == 1 and done[0].ok, done
+    assert done[0].output_format == FORMAT_EMDR_HL7
+    assert "PORR_IN040001UV01" in open(done[0].xml_path, encoding="utf-8").read()
 
 
 def test_a_zip_that_cannot_be_read_moves_to_error_and_is_mailed(tmp_path, monkeypatch):

@@ -6,6 +6,7 @@
 ; e-mail when the case cannot be converted.
 
 [folders]
+; Linux; on Windows use local paths instead, e.g. C:\medwatch\inbound
 inbound = /srv/medwatch/inbound
 outbound = /srv/medwatch/outbound
 processed = /srv/medwatch/processed
@@ -13,8 +14,15 @@ error = /srv/medwatch/error
 
 [conversion]
 ; e2b-r2 | e2b-r2-fda | mdr | emdr-hl7 | gl42 | pvx1932a | vich-hl7
-; Leave empty to let the form decide (e2b-r2 for CDER, mdr for CDRH, gl42 for CVM).
-format = emdr-hl7
+; One format for every case in the inbound folder.  "auto" (or empty) instead
+; reads each form and writes the format named below for the center it belongs to
+; - use it when the folder holds more than one kind of case, since a veterinary
+; report cannot become emdr-hl7 nor a device report vich-hl7.
+format = auto
+; Used when format is auto; each may be left empty for that center's default.
+format_cder = e2b-r2-fda
+format_cdrh = emdr-hl7
+format_cvm = vich-hl7
 ; Optional overrides, normally left empty: CDER | CDRH | CVM, premarket | postmarket.
 center =
 stage =
@@ -36,7 +44,7 @@ settle_seconds = 5
 [email]
 ; The note sent when a case is moved to the error folder.  Leave host empty to
 ; log the failure without mailing anyone.
-host = smtp.example.org
+host =
 port = 25
 use_tls = false
 sender = medwatch-ocr@example.org
