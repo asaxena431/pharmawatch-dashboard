@@ -54,6 +54,12 @@ MIN_WORD_OVERLAP = 0.5
 SCAN_PAD_PT = 2.0
 SCAN_CHECKBOX_INSET = 0.3
 SCAN_CHECKBOX_INK_THRESHOLD = 0.12
+# A box a filler tinted rather than ticked: its interior sits a few grey levels
+# below the paper touching the box, over most of the interior.
+SHADED_BOX_MARGIN_PX = 4
+SHADED_BOX_PAPER_GREY = 200
+SHADED_BOX_TINT_GREY = 4
+SHADED_BOX_COVERAGE = 0.5
 # Registration: ink lying on a printed rule at least this many pixels long is
 # what the two copies of the form are matched on.  A rule counts as found where
 # the ink left on it reaches RULE_PEAK_FRACTION of the densest rule's, and as
@@ -372,7 +378,42 @@ def _checkbox_marked(
     array = np.asarray(crop)
     if array.size == 0:
         return False
-    return float((array < 128).mean()) >= threshold
+    if float((array < 128).mean()) >= threshold:
+        return True
+    return _checkbox_shaded(image, pixel_rect, array)
+
+
+def _checkbox_shaded(
+    image,
+    pixel_rect: Tuple[float, float, float, float],
+    interior,
+) -> bool:
+    """True when the box is filled with a flat tint instead of a drawn mark.
+
+    Some filled forms print a tick as a light grey fill, which survives scanning
+    as an interior a few grey levels below the paper around the box.  Page
+    shading darkens box and paper alike, so the fill is only read as a mark when
+    it covers most of the interior and the paper immediately outside stays light.
+    """
+    import numpy as np
+
+    x0, y0, x1, y1 = (int(round(v)) for v in pixel_rect)
+    grey = np.asarray(image.convert("L"), dtype=float)
+    pad = SHADED_BOX_MARGIN_PX
+    border = np.concatenate(
+        [
+            grey[max(0, y0 - pad) : y0, x0:x1].ravel(),
+            grey[y1 : y1 + pad, x0:x1].ravel(),
+            grey[y0:y1, max(0, x0 - pad) : x0].ravel(),
+            grey[y0:y1, x1 : x1 + pad].ravel(),
+        ]
+    )
+    paper = border[border > SHADED_BOX_PAPER_GREY]
+    if paper.size == 0:
+        return False
+    level = float(np.median(paper))
+    tinted = np.asarray(interior, dtype=float) < level - SHADED_BOX_TINT_GREY
+    return float(tinted.mean()) >= SHADED_BOX_COVERAGE
 
 
 def extract_form(

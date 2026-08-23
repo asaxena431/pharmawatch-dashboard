@@ -5,7 +5,7 @@ border, a caption bleeding into the text, rows continuing onto the next page -
 rather than the clean strings a fillable form gives back.
 """
 
-from medwatch_ocr.form_extract import ExtractedForm, map_report
+from medwatch_ocr.form_extract import ExtractedForm, _checkbox_marked, map_report
 from medwatch_ocr.models import CENTER_CDRH
 
 
@@ -63,3 +63,27 @@ def test_concomitant_rows_continue_onto_the_following_page():
         "Combiset Bloodlines",
     ]
     assert report.device.concomitants[0].therapy_start == "22-Jan-2024"
+
+
+def _box(paper: int, interior: int, shade: int = 0):
+    """A 40x40 page holding one 20x20 box, on paper of a given grey."""
+    from PIL import Image, ImageDraw
+
+    image = Image.new("L", (40, 40), max(0, paper - shade))
+    draw = ImageDraw.Draw(image)
+    draw.rectangle((10, 10, 29, 29), outline=0)
+    draw.rectangle((11, 11, 28, 28), fill=max(0, interior - shade))
+    return image
+
+
+def test_a_box_tinted_instead_of_ticked_is_read_as_marked():
+    assert _checkbox_marked(_box(paper=254, interior=245), (10, 10, 30, 30))
+
+
+def test_paper_shading_alone_does_not_mark_a_box():
+    """A grey band across the scan darkens box and paper together."""
+    assert not _checkbox_marked(_box(paper=254, interior=254, shade=10), (10, 10, 30, 30))
+
+
+def test_an_untouched_box_stays_unmarked():
+    assert not _checkbox_marked(_box(paper=255, interior=255), (10, 10, 30, 30))
