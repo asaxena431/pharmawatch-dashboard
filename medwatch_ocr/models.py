@@ -33,6 +33,24 @@ class Patient:
     weight: Optional[str] = None  # A.4 as written on the form
     weight_unit: Optional[str] = None  # "lbs" / "kg", as ticked on the form
     ethnicity: Optional[str] = None
+    races: List[str] = field(default_factory=list)  # A.5, all that apply
+    deceased_date: Optional[str] = None  # B.2 date of death
+
+
+@dataclass
+class LabTest:
+    """Block B.3 - one relevant test with the date it was taken."""
+
+    result: Optional[str] = None
+    date: Optional[str] = None
+
+
+@dataclass
+class ConcomitantProduct:
+    """Block D.9 - one concomitant medical product and its therapy start."""
+
+    name: Optional[str] = None
+    therapy_start: Optional[str] = None
 
 
 @dataclass
@@ -47,6 +65,10 @@ class AdverseEvent:
     event_problem: Optional[str] = None  # B.1 checkbox text (adverse event / product problem)
     additional_comments: Optional[str] = None
     location: Optional[str] = None  # F.5 where the event happened
+    report_types: List[str] = field(default_factory=list)  # B.1, all that apply
+    test_results: List[LabTest] = field(default_factory=list)  # B.3 row by row
+    patient_problem_code: Optional[str] = None  # F.6 health effect - clinical code
+    patient_impact_code: Optional[str] = None  # F.6 health effect - impact code
 
 
 @dataclass
@@ -94,6 +116,7 @@ class SuspectDevice:
     device_available_for_evaluation: Optional[str] = None
     device_returned_date: Optional[str] = None
     concomitant_products: Optional[str] = None
+    concomitants: List[ConcomitantProduct] = field(default_factory=list)  # D.9 row by row
     problem_code: Optional[str] = None  # F.10 medical device problem code
     age: Optional[str] = None  # F.8 approximate age of device
     age_unit: Optional[str] = None  # "Year" / "Month"
@@ -146,6 +169,7 @@ class ManufacturerInfo:
     evaluation_conclusion: Optional[str] = None
     exemption_number: Optional[str] = None
     report_sent_to_manufacturer: Optional[str] = None
+    notified_name_address: Optional[str] = None  # F.13 manufacturer the facility told
     corrective_action_number: Optional[str] = None
     related_report_numbers: Optional[str] = None
 

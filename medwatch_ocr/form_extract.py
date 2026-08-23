@@ -27,6 +27,8 @@ from .models import (
     STAGE_POSTMARKET,
     STAGE_PREMARKET,
     AdverseEvent,
+    ConcomitantProduct,
+    LabTest,
     ManufacturerInfo,
     MedWatchReport,
     Patient,
@@ -50,11 +52,25 @@ MIN_WORD_OVERLAP = 0.5
 # time, and reads checkboxes from a smaller window with more ink required (the
 # printed border of a box survives registration slop, its interior does not).
 SCAN_PAD_PT = 2.0
-# Share of a character's width by which a value's first or last letter may sit
-# outside its box before it counts as part of the printed caption.
-INSIDE_TOLERANCE = 0.5
 SCAN_CHECKBOX_INSET = 0.3
 SCAN_CHECKBOX_INK_THRESHOLD = 0.12
+# Registration: ink lying on a printed rule at least this many pixels long is
+# what the two copies of the form are matched on.  A rule counts as found where
+# the ink left on it reaches RULE_PEAK_FRACTION of the densest rule's, and as
+# the same rule on both copies when the two sit RULE_TOLERANCE_PX apart.  The
+# page may be shifted up to SHIFT_LIMIT pixels and scaled within SCALE_RANGE.
+RULE_RUN_PX = 60
+SHIFT_LIMIT = 90
+SCALE_RANGE = 0.07
+SCALE_STEP = 0.001
+RULE_TOLERANCE_PX = 3.0
+RULE_PEAK_FRACTION = 0.25
+MIN_RULES = 2
+MIN_RULE_MATCH = 0.5
+# How far outside its own rectangle a printed caption may sit and still be a
+# caption OCR can read into that field (pixels at the rendering resolution).
+CAPTION_PAD_X = 90.0
+CAPTION_PAD_Y = 30.0
 _DATE_RE = re.compile(r"\d{1,2}[-/][A-Za-z]{3}[-/]\d{4}")
 
 # A few widget rectangles overlap their printed caption, which OCR then reads
@@ -193,14 +209,17 @@ class PageAlignment:
 def align_pages(images: Sequence[object], dpi: int, blank_path: Optional[str] = None) -> Dict[int, PageAlignment]:
     """Register each scanned page against the blank form, page by page.
 
-    The shift is the peak of the phase correlation between the ink of the two
-    pages, which is what the printed rules and captions of the form agree on;
-    the scale is the ratio of the page sizes.  A page that cannot be registered
-    (no blank form available) keeps the identity alignment, i.e. the published
-    geometry scaled to the page.
+    The form's own printed rules are the only ink both copies are certain to
+    share, so the page is placed from them alone: ink that lies on a run of at
+    least :data:`RULE_RUN_PX` pixels is kept, the rest (captions, typed values,
+    handwriting, scanner noise) is discarded, and the rules that remain are
+    reduced to the position of each one along the axis.  A copy is often not
+    only offset but a few percent smaller than the published page - a fax or a
+    photocopy shrinks it - so a shift alone cannot place a checkbox at the far
+    side of the page; the scale and the offset are measured together, as the
+    pair that puts the most of the scan's rules on the blank form's.  A page
+    whose rules cannot be matched falls back to the ratio of the page sizes.
     """
-    import numpy as np
-
     from .official_form import blank_form_path
 
     try:
@@ -216,36 +235,89 @@ def align_pages(images: Sequence[object], dpi: int, blank_path: Optional[str] = 
             if index >= len(blank):
                 break
             reference = blank[index].render(scale=dpi / 72.0).to_pil()
+            blank_ink = _binary(reference)
+            scan_ink = _binary(image)
             width, height = image.size
-            scale_x, scale_y = width / reference.size[0], height / reference.size[1]
-            resized = image.resize(reference.size)
-            shift = _phase_shift(np.asarray(_binary(reference)), np.asarray(_binary(resized)))
-            alignments[index] = PageAlignment(scale_x=scale_x, scale_y=scale_y, dx=shift[0], dy=shift[1])
+            scale_x, dx = _rule_fit(blank_ink, scan_ink, axis=1, fallback=width / reference.size[0])
+            scale_y, dy = _rule_fit(blank_ink, scan_ink, axis=0, fallback=height / reference.size[1])
+            alignments[index] = PageAlignment(scale_x=scale_x, scale_y=scale_y, dx=dx, dy=dy)
     finally:
         blank.close()
     return alignments
+
+
+def _rule_fit(blank_ink, scan_ink, axis: int, fallback: float) -> Tuple[float, float]:
+    """The scale and offset along ``axis`` that put the scan's rules on the blank form's.
+
+    ``axis`` 0 measures the page down (from its horizontal rules), 1 across it
+    (from its vertical rules).  Every candidate pair is scored by how many of
+    the blank form's rules land within :data:`RULE_TOLERANCE_PX` of one of the
+    scan's, since a rule either coincides or it does not; an overlap of the ink
+    itself would instead be maximised by squeezing a dense page onto itself.
+    Ties go to the pair that moves the page least, and a page with too few
+    rules, or too few of them matched, keeps ``fallback`` unshifted.
+    """
+    import numpy as np
+
+    reference = _rule_positions(blank_ink, axis)
+    other = _rule_positions(scan_ink, axis)
+    if len(reference) < MIN_RULES or len(other) < MIN_RULES:
+        return fallback, 0.0
+
+    shifts = np.arange(-SHIFT_LIMIT, SHIFT_LIMIT + 1, dtype=np.float64)
+    best = (fallback, 0.0, 0.0)
+    for scale in np.arange(1.0 - SCALE_RANGE, 1.0 + SCALE_RANGE + SCALE_STEP / 2, SCALE_STEP):
+        mapped = (reference[None, :] - shifts[:, None]) * scale
+        distance = np.abs(mapped[:, :, None] - other[None, None, :]).min(axis=2)
+        hits = (distance <= RULE_TOLERANCE_PX).sum(axis=1).astype(np.float64)
+        hits -= np.abs(shifts) * 1e-3 + abs(scale - 1.0)
+        index = int(hits.argmax())
+        if hits[index] > best[2]:
+            best = (float(scale), float(shifts[index]), float(hits[index]))
+    if best[2] < MIN_RULE_MATCH * len(reference):
+        return fallback, 0.0
+    return best[0], best[1]
+
+
+def _rule_positions(ink, axis: int):
+    """Where each printed rule crosses ``axis``, as a position in pixels."""
+    import numpy as np
+
+    profile = _long_runs(ink, 1 - axis).mean(axis=1 - axis)
+    if not profile.size or not profile.max():
+        return np.zeros(0)
+    lit = profile >= profile.max() * RULE_PEAK_FRACTION
+    positions, start = [], None
+    for index, value in enumerate(lit):
+        if value and start is None:
+            start = index
+        elif not value and start is not None:
+            positions.append((start + index - 1) / 2.0)
+            start = None
+    if start is not None:
+        positions.append((start + len(lit) - 1) / 2.0)
+    return np.array(positions, dtype=np.float64)
+
+
+def _long_runs(ink, axis: int, run: int = RULE_RUN_PX):
+    """Only the ink that lies on a printed rule at least ``run`` pixels long along ``axis``."""
+    import numpy as np
+
+    eroded = ink
+    step = 1
+    while step < run:
+        eroded = np.minimum(eroded, np.roll(eroded, step, axis=axis))
+        step *= 2
+    grown = eroded
+    for shift in range(1, run):
+        grown = np.maximum(grown, np.roll(eroded, -shift, axis=axis))
+    return grown
 
 
 def _binary(image):
     import numpy as np
 
     return (np.asarray(image.convert("L"), dtype=np.float32) < 160).astype(np.float32)
-
-
-def _phase_shift(reference, other) -> Tuple[float, float]:
-    """The (dx, dy) that moves ``other`` onto ``reference``."""
-    import numpy as np
-
-    cross = np.fft.rfft2(reference) * np.conj(np.fft.rfft2(other))
-    magnitude = np.abs(cross)
-    magnitude[magnitude == 0] = 1.0
-    correlation = np.fft.irfft2(cross / magnitude, s=reference.shape)
-    dy, dx = np.unravel_index(int(np.argmax(correlation)), correlation.shape)
-    if dy > reference.shape[0] // 2:
-        dy -= reference.shape[0]
-    if dx > reference.shape[1] // 2:
-        dx -= reference.shape[1]
-    return float(dx), float(dy)
 
 
 def _rect_to_pixels(rect: Sequence[float], page_height: float, scale: float) -> Tuple[float, float, float, float]:
@@ -362,9 +434,49 @@ def extract_form_scan(
         engine="paddleocr",
         alignments=align_pages(images, dpi=dpi),
         by_character=True,
+        captions=blank_form_captions(dpi=dpi, template=template),
         checkbox_inset=SCAN_CHECKBOX_INSET,
         checkbox_threshold=SCAN_CHECKBOX_INK_THRESHOLD,
     )
+
+
+def blank_form_captions(
+    dpi: int = 200,
+    template: Optional[dict] = None,
+    blank_path: Optional[str] = None,
+) -> Dict[str, List[str]]:
+    """The printed words each field's rectangle can pick up, read off the blank form.
+
+    The blank form has a text layer, so what is printed around every widget is
+    known exactly.  Those words are the only ones OCR can add to a value that
+    the person filling the form did not write, which is what makes them safe to
+    drop from the edges of a scanned value (see :func:`_strip_captions`).
+    """
+    from .ocr import text_layer_page_words
+    from .official_form import blank_form_path
+
+    template = template or load_template()
+    try:
+        per_page_words, _ = text_layer_page_words(blank_path or blank_form_path(), dpi=dpi)
+    except Exception:  # pragma: no cover - no blank form to read the captions from
+        return {}
+    scale = dpi / 72.0
+    captions: Dict[str, List[str]] = {}
+    for spec in template["fields"]:
+        page = spec["page"]
+        if spec["type"] not in ("Tx", "Ch") or page >= len(per_page_words):
+            continue
+        x0, y0, x1, y1 = _rect_to_pixels(spec["rect"], float(template["pages"][str(page)]["height"]), scale)
+        tokens: List[str] = []
+        for word in per_page_words[page]:
+            if word[2] < x0 - CAPTION_PAD_X or word[0] > x1 + CAPTION_PAD_X:
+                continue
+            if word[3] < y0 - CAPTION_PAD_Y or word[1] > y1 + CAPTION_PAD_Y:
+                continue
+            tokens.extend(part for part in word[4].split() if part)
+        if tokens:
+            captions[f"p{page}.{spec['name']}"] = tokens
+    return captions
 
 
 def _extract_by_geometry(
@@ -375,6 +487,7 @@ def _extract_by_geometry(
     engine: str,
     alignments: Optional[Dict[int, PageAlignment]] = None,
     by_character: bool = False,
+    captions: Optional[Dict[str, List[str]]] = None,
     checkbox_inset: float = 0.2,
     checkbox_threshold: float = CHECKBOX_INK_THRESHOLD,
 ) -> ExtractedForm:
@@ -412,8 +525,11 @@ def _extract_by_geometry(
                 buckets.setdefault(key, []).append(entry)
 
         for key, entries in buckets.items():
-            text = _reading_order(entries)
-            result.values[key] = _strip_label(key, text)
+            text = _strip_label(key, _reading_order(entries))
+            if captions:
+                text = _strip_captions(text, captions.get(key, ()))
+            if text:
+                result.values[key] = text
 
         for spec in box_specs:
             pixel_rect = alignment.to_scan(_rect_to_pixels(spec["rect"], page_height, scale))
@@ -447,38 +563,52 @@ def _assign_word(
     text = word[4]
     width = (word[2] - word[0]) / max(len(text), 1)
     centre = (word[1] + word[3]) / 2.0
-    runs: Dict[str, List[Tuple[float, str, bool]]] = {}
+    runs: Dict[str, List[Tuple[float, str]]] = {}
     for index, character in enumerate(text):
         x = word[0] + width * (index + 0.5)
         owner = _smallest_containing(x, centre, pixel_rects, pad)
         if owner is None:
             continue
-        inside = _smallest_containing(x, centre, pixel_rects, width * INSIDE_TOLERANCE) is owner
-        runs.setdefault(f"p{page_index}.{owner['name']}", []).append((x, character, inside))
+        runs.setdefault(f"p{page_index}.{owner['name']}", []).append((x, character))
     assigned: List[Tuple[str, Tuple[float, float, float, str]]] = []
     for key, characters in runs.items():
-        characters = _trim_to_field(characters)
-        if not characters:
-            continue
-        piece = "".join(character for _, character, _ in characters).strip()
+        piece = "".join(character for _, character in characters).strip()
         if not any(character.isalnum() for character in piece):
             continue
         assigned.append((key, (word[1], word[3], characters[0][0], piece)))
     return assigned
 
 
-def _trim_to_field(characters: List[Tuple[float, str, bool]]) -> List[Tuple[float, str, bool]]:
-    """Drop the caption's last letters from the edges of a run.
+def _strip_captions(text: str, captions: Sequence[str]) -> str:
+    """Drop the field's printed caption from the start and end of an OCR'd value.
 
-    The padding that lets a whole word sit slightly outside its box also lets
-    the tail of the printed caption in ("2. Age37" -> "e37"), so once a run has
-    a character squarely inside the box, the ones outside it are dropped.
+    OCR reads a caption and the value beside it as one box ("2. Age 62"), and
+    registration slop lets the caption's own letters into the box as well
+    ("...ge 62"), so words at either end that are - or end in - a word printed
+    around that field on the blank form are the caption, not the value.
     """
-    if not any(inside for _, _, inside in characters):
-        return characters
-    first = next(i for i, (_, _, inside) in enumerate(characters) if inside)
-    last = len(characters) - next(i for i, (_, _, inside) in enumerate(reversed(characters)) if inside)
-    return characters[first:last]
+    tokens = text.split()
+    start, end = 0, len(tokens)
+    while start < end and _caption_word(tokens[start], captions):
+        start += 1
+    while end > start and _caption_word(tokens[end - 1], captions):
+        end -= 1
+    return " ".join(tokens[start:end]).strip()
+
+
+def _caption_word(token: str, captions: Sequence[str]) -> bool:
+    _PUNCTUATION = ",.;:#()/-"
+    stripped = token.strip(_PUNCTUATION).lower()
+    if not stripped:
+        return True
+    for caption in captions:
+        printed = caption.strip(_PUNCTUATION).lower()
+        if not printed:
+            continue
+        # A caption OCR clipped keeps either end of the printed word.
+        if stripped == printed or (len(stripped) >= 2 and (printed.startswith(stripped) or printed.endswith(stripped))):
+            return True
+    return False
 
 
 def _smallest_containing(
@@ -614,6 +744,8 @@ def map_report(
         weight_kg=weight,
         weight=form.get("p0.patWeight"),
         weight_unit="lbs" if form.checked("p0.weightLB") else ("kg" if form.get("p0.patWeight") else None),
+        races=_races(form),
+        deceased_date=_clean_date(form.get("p0.deathDate")),
     )
 
     # B. Adverse event
@@ -635,10 +767,9 @@ def map_report(
     if form.checked("p0.prodProblem"):
         event_types.append("Product Problem")
     narrative = _first(form, "p1.advEvDescribe", "p0.advEvDesc")
+    test_results = _test_results(form)
     tests = "; ".join(
-        v for v in (
-            _join_test(form, 1), _join_test(form, 2), _join_test(form, 3), _join_test(form, 4)
-        ) if v
+        f"{test.result} ({test.date})" if test.date else (test.result or "") for test in test_results
     )
     report.event = AdverseEvent(
         event_date=_clean_date(form.get("p0.dateAdvEvent")),
@@ -651,6 +782,10 @@ def map_report(
         event_problem=" and ".join(event_types) or None,
         additional_comments=form.get("p2.addComm"),
         location=_event_location(form),
+        report_types=event_types,
+        test_results=test_results,
+        patient_problem_code=form.get("p7.healthClinCode"),
+        patient_impact_code=form.get("p7.healthImpCode"),
     )
 
     # C. Suspect product (drug/biologic)
@@ -697,6 +832,7 @@ def map_report(
         device_available_for_evaluation=_device_evaluation(form),
         device_returned_date=_clean_date(form.get("p6.returnDate")),
         concomitant_products=_concomitant(form),
+        concomitants=_concomitant_products(form),
         problem_code=form.get("p7.devProbCode"),
         age=_first(form, "p7.ageYears", "p7.ageMonths"),
         age_unit=(
@@ -744,6 +880,7 @@ def map_report(
         evaluation_conclusion=_join_parts(form.get("p8.invFindings"), form.get("p8.invConc"), form.get("p8.addNarr")),
         exemption_number=form.get("p0.varNum"),
         report_sent_to_manufacturer=_yes_no(form, "p7.reptManuY", "p7.reptManuN"),
+        notified_name_address=form.get("p7.manuNameAddr2"),
         corrective_action_number=form.get("p8.correction"),
         related_report_numbers=form.get("p8.relRepNum"),
     )
@@ -751,6 +888,23 @@ def map_report(
     report.user_facility = _user_facility(form)
 
     return report
+
+
+def _races(form: ExtractedForm) -> List[str]:
+    """Block A.5, in the order the form prints the boxes."""
+    races = []
+    for key, label in (
+        ("p0.AmInAlNa", "American Indian or Alaska Native"),
+        ("p0.asian", "Asian"),
+        ("p0.black", "Black or African American"),
+        ("p0.hispanic", "Hispanic or Latino"),
+        ("p0.middleEastern", "Middle Eastern or North African"),
+        ("p0.NaHIOtherPI", "Native Hawaiian or Pacific Islander"),
+        ("p0.white", "White"),
+    ):
+        if form.checked(key):
+            races.append(label)
+    return races
 
 
 def _event_location(form: ExtractedForm) -> Optional[str]:
@@ -775,7 +929,7 @@ def _user_facility(form: ExtractedForm) -> UserFacility:
     contact = form.get("p7.facPOC")
     given, family = _split_person_name(contact)
     return UserFacility(
-        report_number=_first(form, "p7.reportNum", "p0.ufNum"),
+        report_number=_facility_report_number(form),
         name=name,
         street=street,
         city=city,
@@ -789,6 +943,29 @@ def _user_facility(form: ExtractedForm) -> UserFacility:
         date_sent_to_fda=_clean_date(form.get("p7.reportSentDate")),
         report_type="Initial" if form.checked("p7.reptInitial") else ("Follow-up" if form.checked("p7.reptFollowUp") else None),
     )
+
+
+def _facility_report_number(form: ExtractedForm) -> Optional[str]:
+    """The facility's report number, from block F.1 or the header that repeats it.
+
+    The header box (``UF/Importer Report #``) and F.1 hold the same number, so
+    the fuller reading wins where one is a truncation of the other - a box whose
+    text runs to its border is read short.  Whatever OCR keeps of the caption is
+    dropped with it: the caption up to its ``#``, or the stray letter or two a
+    caption leaves at the start of a box.
+    """
+    header = _report_number(form.get("p0.ufNum"))
+    block = _report_number(form.get("p7.reportNum"))
+    if header and block and (header in block or block in header):
+        return max(header, block, key=len)
+    return block or header or None
+
+
+_CAPTION_RESIDUE_RE = re.compile(r"^(?:.*#\s*|[A-Za-z]{1,2}\.?\s+)")
+
+
+def _report_number(value: Optional[str]) -> str:
+    return _CAPTION_RESIDUE_RE.sub("", (value or "").strip()).strip()
 
 
 _FACILITY_TAIL_RE = re.compile(r",\s*(?P<state>[A-Za-z]{2})\.?\s+(?P<zip>\d{5}(?:-\d{4})?)\s*$")
@@ -861,14 +1038,6 @@ def _join_parts(*values: Optional[str]) -> Optional[str]:
     return ". ".join(present) + "." if present else None
 
 
-def _join_test(form: ExtractedForm, index: int) -> Optional[str]:
-    data = form.get(f"p2.testData{index}")
-    if not data:
-        return None
-    date = _clean_date(form.get(f"p2.testDDate{index}"))
-    return f"{data} ({date})" if date else data
-
-
 def _split_terms(value: Optional[str]) -> List[str]:
     if not value:
         return []
@@ -921,10 +1090,34 @@ def _device_evaluation(form: ExtractedForm) -> Optional[str]:
 
 
 def _concomitant(form: ExtractedForm) -> Optional[str]:
-    names = [form.get(f"p5.cProdName{i}") for i in range(1, 11)]
-    names += [form.get(f"p6.cProdName{i}") for i in range(1, 11)]
-    present = [n for n in names if n]
+    present = [product.name for product in _concomitant_products(form) if product.name]
     return "; ".join(present) or None
+
+
+def _concomitant_products(form: ExtractedForm) -> List[ConcomitantProduct]:
+    """Block D.9, whose rows the form continues onto the following page."""
+    products = []
+    for page in (5, 6):
+        for index in range(1, 11):
+            name = form.get(f"p{page}.cProdName{index}")
+            if name:
+                products.append(
+                    ConcomitantProduct(
+                        name=name,
+                        therapy_start=_clean_date(form.get(f"p{page}.cProdStart{index}")),
+                    )
+                )
+    return products
+
+
+def _test_results(form: ExtractedForm) -> List[LabTest]:
+    """Block B.3, one row per test the form lists."""
+    tests = []
+    for index in range(1, 5):
+        result = form.get(f"p2.testData{index}")
+        if result:
+            tests.append(LabTest(result=result, date=_clean_date(form.get(f"p2.testDDate{index}"))))
+    return tests
 
 
 def _full_name(first: Optional[str], last: Optional[str]) -> Optional[str]:

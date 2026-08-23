@@ -81,10 +81,54 @@ CODE_REPROCESSED = ("C53563", "Single-Use_Device_Reprocessed_and_Reused_on_Patie
 CODE_THIRD_PARTY = ("C85488", "Device_Serviced_By_Third_Party")
 CODE_EXEMPTION = ("F77776", "Exemption_No")
 
+CODE_CONCOMITANT = ("C53630", "Concomitant_Products")
+CODE_PATIENT_PROBLEM = ("C53983", "Patient_Problem_Code")
+CODE_PATIENT_IMPACT = ("C122929", "Patient_Impact_Code")
+
 # B.2: the outcome the report ticks, as CDRH codes it.  An outcome with no code
 # here is stated with an empty code, the way the messages state an unknown one,
 # rather than with a guessed concept id.
-OUTCOME_CODES = {"Death": "C28554"}
+OUTCOME_CODES = {
+    "Death": "C28554",
+    "Life-threatening": "C41337",
+    "Hospitalization": "C25179",
+    "Other serious": "C17649",
+}
+
+# B.1, A.5, F.5 and E.3: the concept a ticked box or a named occupation is.  A
+# report states its type in the order the codes are listed here.
+REPORT_TYPE_CODES = {"Product Problem": "C53054", "Adverse Event": "C41331"}
+
+RACE_CODES = {
+    "American Indian or Alaska Native": "C41259",
+    "Asian": "C41260",
+    "Black or African American": "C16352",
+    "Hispanic or Latino": "C17459",
+    "Middle Eastern or North African": "C43866",
+    "Native Hawaiian or Pacific Islander": "C41219",
+    "White": "C41261",
+}
+
+LOCATION_CODES = {
+    "hospital": "C16696",
+    "home": "C18002",
+    "nursing home": "C53533",
+    "ambulatory surgical facility": "C51945",
+    "diagnostic facility": "C53548",
+    "outpatient treatment facility": "C53549",
+    "other": "C17649",
+}
+
+OCCUPATION_CODES = {
+    "physician": "C25741",
+    "nurse": "C20821",
+    "pharmacist": "C51840",
+    "dentist": "C52654",
+    "patient": "C16960",
+    "consumer": "C53568",
+    "attorney": "C51959",
+    "lawyer": "C51959",
+}
 
 AGE_UNITS = {"Year": "YR", "Month": "MO", "Week": "WK", "Day": "DY", "Hour": "HR"}
 
@@ -124,6 +168,7 @@ COUNTRY_CODES = {
 
 _POSTAL_CITY_RE = re.compile(r"^(?P<zip>(?:[A-Z]{1,2}-\s?)?\d{3}\s?\d{2}|\d{5}(?:-\d{4})?)\s+(?P<city>.+)$")
 _CITY_POSTAL_RE = re.compile(r"^(?P<city>[^,]+?)[, ]+(?P<state>[A-Za-z]{2})?\.?\s*(?P<zip>\d{5}(?:-\d{4})?)$")
+_STATE_POSTAL_RE = re.compile(r"^(?:(?P<state>[A-Za-z]{2})\.?\s+)?(?P<zip>\d{5}(?:-\d{4})?)$")
 
 
 @dataclass
@@ -150,7 +195,24 @@ def parse_address(value: Optional[str]) -> PostalAddress:
     rest = segments[1:]
     if rest and rest[-1].upper() in COUNTRY_CODES:
         address.country = COUNTRY_CODES[rest.pop().upper()]
+    elif rest:
+        # The country may be the last word of the last segment ("MA 02451 USA").
+        words = rest[-1].split()
+        if len(words) > 1 and words[-1].upper() in COUNTRY_CODES:
+            address.country = COUNTRY_CODES[words[-1].upper()]
+            rest[-1] = " ".join(words[:-1])
     for index, segment in enumerate(rest):
+        # A box with no street of its own ends "<state> <zip>", its town being
+        # the last word of the name ("Fresenius Medical Care Waltham, MA 02451").
+        bare = _STATE_POSTAL_RE.match(segment)
+        if bare:
+            address.state = (bare.group("state") or "").upper() or None
+            address.postcode = bare.group("zip")
+            rest = rest[:index]
+            words = (address.name or "").split()
+            if not rest and len(words) > 1:
+                address.city, address.name = words[-1], " ".join(words[:-1])
+            break
         postal = _POSTAL_CITY_RE.match(segment)
         if postal:
             address.postcode, address.city = postal.group("zip"), postal.group("city")
@@ -287,12 +349,24 @@ def _boolean(parent: ET.Element, value: Optional[str]) -> None:
 
 
 def _patient(parent: ET.Element, report: MedWatchReport) -> None:
+    patient = report.patient
     person = _element(parent, "subjectAffectedPerson")
-    _text(person, "name", report.patient.identifier or report.patient.initials)
+    _text(person, "name", patient.identifier or patient.initials)
     _coded(person, "administrativeGenderCode", CODE_SEX)
-    _element(person, "birthTime", value=_birth_date(report.patient.date_of_birth) or ABSENT_DATE)
-    _element(person, "deceasedTime", value=ABSENT_DATE)
-    _coded(person, "raceCode", CODE_RACE)
+    born = _birth_date(patient.date_of_birth)
+    if born:
+        _element(person, "birthTime", value=born)
+    else:
+        _element(person, "birthTime", nullFlavor="NI")
+    _element(person, "deceasedTime", value=_date(patient.deceased_date, ABSENT_DATE))
+    for race in patient.races or [""]:
+        _element(
+            person,
+            "raceCode",
+            code=RACE_CODES.get(race, CODE_RACE[0]),
+            codeSystem=CS_NCI,
+            codeSystemName=CODE_RACE[1],
+        )
 
 
 def _patient_observations(parent: ET.Element, report: MedWatchReport) -> None:
@@ -313,10 +387,21 @@ def _patient_observations(parent: ET.Element, report: MedWatchReport) -> None:
     )
 
     tests = _observation(parent, CODE_TEST_RESULT, system="NCI")
-    _text(tests, "value", report.event.relevant_tests, mediaType="text/plain", xsi_type="ED")
+    # B.3 is one text: the rows the form lists, without the dates beside them.
+    listed = " ".join(test.result for test in report.event.test_results if test.result)
+    _text(tests, "value", listed or report.event.relevant_tests, mediaType="text/plain", xsi_type="ED")
 
     history = _observation(parent, CODE_HISTORY)
     _text(history, "value", report.event.other_history, mediaType="text/plain", xsi_type="ED")
+
+    # F.6: the health effect, as a clinical code and an impact code.
+    for code, value in (
+        (CODE_PATIENT_PROBLEM, report.event.patient_problem_code),
+        (CODE_PATIENT_IMPACT, report.event.patient_impact_code),
+    ):
+        if value:
+            observation = _observation(parent, code)
+            _element(observation, "value", xsi_type="CE", code=value, codeSystem=CS_NCI)
 
 
 def _primary_source(parent: ET.Element, report: MedWatchReport) -> None:
@@ -329,7 +414,7 @@ def _primary_source(parent: ET.Element, report: MedWatchReport) -> None:
     _text(_element(_element(receiver, "assignedEntity"), "assignedOrganization"), "name", "FDA")
 
     entity = _element(_element(source, "author"), "assignedEntity")
-    _coded(entity, "code", CODE_OCCUPATION)
+    _coded(entity, "code", (_occupation(report.reporter.occupation), CODE_OCCUPATION[1]))
     person = _element(entity, "assignedPerson")
     _person_name(person, report.reporter.given_name, report.reporter.family_name)
     _telecoms(person, report.reporter.phone, report.reporter.email)
@@ -408,11 +493,22 @@ def _manufacturer_notification(parent: ET.Element, report: MedWatchReport, addre
     _text(addr, "postalCode", address.postcode)
 
 
+def _occupation(value: Optional[str]) -> str:
+    """E.3's occupation as its concept id, ``Other Health Care Professional`` by default."""
+    text = re.sub(r"\s+", " ", (value or "").strip().lower())
+    for name, code in OCCUPATION_CODES.items():
+        if re.search(rf"\b{name}\b", text):
+            return code
+    return CODE_OCCUPATION[0] or ""
+
+
 def _seriousness(parent: ET.Element, report: MedWatchReport) -> None:
-    seriousness = _element(_element(parent, "pertinentInformation2"), "caseSeriousness")
-    _coded(seriousness, "code", CODE_OUTCOME)
-    outcome = next((OUTCOME_CODES.get(name, "") for name in report.event.outcomes), "")
-    _element(seriousness, "value", xsi_type="CE", code=outcome, codeSystem=CS_NCI)
+    """B.2: one block per outcome ticked, in the order their concept ids run."""
+    outcomes = sorted({OUTCOME_CODES.get(name, "") for name in report.event.outcomes}) or [""]
+    for outcome in outcomes:
+        seriousness = _element(_element(parent, "pertinentInformation2"), "caseSeriousness")
+        _coded(seriousness, "code", CODE_OUTCOME)
+        _element(seriousness, "value", xsi_type="CE", code=outcome, codeSystem=CS_NCI)
 
 
 def _manufacturer(parent: ET.Element, report: MedWatchReport, address: PostalAddress) -> None:
@@ -513,13 +609,11 @@ def _device(parent: ET.Element, report: MedWatchReport, address: PostalAddress) 
 
     age = _device_observation(outer, CODE_DEVICE_AGE)
     years = _number(report.device.age)
-    _element(
-        age,
-        "value",
-        xsi_type="PQ",
-        value=f"{float(years):.1f}" if years else None,
-        unit=AGE_UNITS.get(report.device.age_unit or "Year", "YR"),
-    )
+    if years:
+        unit = AGE_UNITS.get(report.device.age_unit or "Year", "YR")
+        _element(age, "value", xsi_type="PQ", value=f"{float(years):.1f}", unit=unit)
+    else:
+        _element(age, "value", xsi_type="PQ", unit="", nullFlavor="NI")
 
     _boolean(_device_observation(outer, CODE_SINGLE_USE_LABEL), report.device.labeled_single_use)
     _text(
@@ -546,6 +640,17 @@ def _device(parent: ET.Element, report: MedWatchReport, address: PostalAddress) 
         observation = _element(_element(procedure, "pertinentInformation1"), "observation", moodCode="EVN")
         _coded(observation, "code", code)
         _boolean(observation, value)
+
+    # D.9: one observation per concomitant product, with its therapy start.
+    for product in report.device.concomitants:
+        observation = _element(_element(procedure, "pertinentInformation1"), "observation", moodCode="EVN")
+        _coded(observation, "code", CODE_CONCOMITANT)
+        start = _date(product.therapy_start)
+        if start:
+            _element(observation, "effectiveTime", value=start)
+        else:
+            _element(observation, "effectiveTime", nullFlavor="NI")
+        _text(observation, "value", product.name, xsi_type="ED", mediaType="text/plain")
 
     for wrapper, tag, date in (
         ("component1", "implantation", report.device.implant_date),
@@ -635,7 +740,10 @@ def to_xml_string(
 
     investigation = _element(_element(control, "subject"), "investigationEvent")
     _element(investigation, "id", assigningAuthorityName="FDA", root=CS_FDA, nullFlavor="NI")
-    _coded(investigation, "code", CODE_REPORT)
+    # B.1: one code per box ticked; a report that ticks neither still states one.
+    types = [name for name in REPORT_TYPE_CODES if name in report.event.report_types]
+    for name in types or [next(iter(REPORT_TYPE_CODES))]:
+        _coded(investigation, "code", (REPORT_TYPE_CODES[name], CODE_REPORT[1]))
     # The event's own text stays empty: the eMDR messages carry the narrative on
     # the reaction and state block H's additional comments nowhere.
     _element(investigation, "text", mediaType="text/plain")
@@ -654,13 +762,19 @@ def to_xml_string(
     _patient_observations(subject, report)
 
     location = _element(_element(_element(reaction, "location"), "locatedEntity"), "location")
-    code = _coded(location, "code", CODE_LOCATION)
-    _text(code, "originalText", report.event.location)
+    # F.5 names one of the form's own places, or is written against "other".
+    place = re.sub(r"\s+", " ", (report.event.location or "").strip())
+    listed = LOCATION_CODES.get(place.lower())
+    code = _element(
+        location, "code", code=listed or CODE_LOCATION[0], codeSystem=CS_NCI, codeSystemName=CODE_LOCATION[1]
+    )
+    if not listed:
+        _text(code, "originalText", report.event.location)
     _primary_source(reaction, report)
 
     address = parse_address(report.device.manufacturer_address or report.device.manufacturer_name)
     _facility_notification(investigation, report)
-    _manufacturer_notification(investigation, report, address)
+    _manufacturer_notification(investigation, report, parse_address(report.manufacturer.notified_name_address))
     _seriousness(investigation, report)
     _device(_element(investigation, "pertainsTo"), report, address)
     _element(

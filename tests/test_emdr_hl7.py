@@ -5,6 +5,7 @@ import xml.etree.ElementTree as ET
 
 from medwatch_ocr import emdr_hl7
 from medwatch_ocr.models import (
+    ConcomitantProduct,
     AdverseEvent,
     ManufacturerInfo,
     MedWatchReport,
@@ -104,9 +105,9 @@ def test_a_date_of_birth_takes_the_first_of_its_month_as_cdrh_writes_it():
 
 def test_an_absent_date_is_written_as_the_placeholder_cdrh_uses():
     report = _report()
-    report.patient.date_of_birth = None
+    report.patient.deceased_date = None
     root = _root(emdr_hl7.to_xml_string(report))
-    assert root.find(".//v3:subjectAffectedPerson/v3:birthTime", NS).get("value") == "19000101"
+    assert root.find(".//v3:subjectAffectedPerson/v3:deceasedTime", NS).get("value") == "19000101"
 
 
 def test_the_source_pdf_is_embedded_byte_for_byte():
@@ -128,3 +129,97 @@ def test_the_format_is_selectable_and_recognised():
     assert FORMAT_EMDR_HL7 in FORMATS
     xml = render_xml(_report(), FORMAT_EMDR_HL7)
     assert message_format(xml) == FORMAT_EMDR_HL7
+
+
+def test_every_box_ticked_in_a_block_is_stated_once():
+    """B.1, A.5 and B.2 each repeat, one element per box the form ticks."""
+    report = _report()
+    report.event.report_types = ["Adverse Event", "Product Problem"]
+    report.event.outcomes = ["Death", "Hospitalization", "Other serious"]
+    report.patient.races = ["Asian", "White"]
+    root = _root(emdr_hl7.to_xml_string(report))
+    assert [
+        code.get("code") for code in root.findall(".//v3:investigationEvent/v3:code", NS)
+    ] == ["C53054", "C41331"]
+    assert [
+        code.get("code") for code in root.findall(".//v3:subjectAffectedPerson/v3:raceCode", NS)
+    ] == ["C41260", "C41261"]
+    assert [
+        block.find("v3:value", NS).get("code")
+        for block in root.findall(".//v3:pertinentInformation2/v3:caseSeriousness", NS)
+    ] == ["C17649", "C25179", "C28554"]
+
+
+def test_a_report_without_a_date_of_birth_states_the_date_as_unknown():
+    report = _report()
+    report.patient.date_of_birth = None
+    report.patient.deceased_date = "2026-07-16"
+    root = _root(emdr_hl7.to_xml_string(report))
+    assert root.find(".//v3:subjectAffectedPerson/v3:birthTime", NS).get("nullFlavor") == "NI"
+    assert root.find(".//v3:subjectAffectedPerson/v3:deceasedTime", NS).get("value") == "20260716"
+
+
+def test_the_health_effect_is_stated_as_a_problem_and_an_impact_code():
+    report = _report()
+    report.event.patient_problem_code = "1762"
+    report.event.patient_impact_code = "1762"
+    values = flatten(_root(emdr_hl7.to_xml_string(report)))
+    for code in ("C53983", "C122929"):
+        prefix = next(path.rsplit("@", 1)[0] for path, value in values.items() if value == code)
+        parent = prefix.rsplit("/", 1)[0]
+        assert values[f"{parent}/value@code"] == "1762"
+
+
+def test_each_concomitant_product_is_stated_with_its_therapy_start():
+    report = _report()
+    report.device.concomitants = [
+        ConcomitantProduct(name="Naturalyte Bicarbonate", therapy_start="2024-01-22"),
+        ConcomitantProduct(name="Combiset Bloodlines"),
+    ]
+    root = _root(emdr_hl7.to_xml_string(report))
+    products = [
+        observation
+        for observation in root.findall(".//v3:procedureEvent/v3:pertinentInformation1/v3:observation", NS)
+        if observation.find("v3:code", NS).get("code") == "C53630"
+    ]
+    assert [product.find("v3:value", NS).text for product in products] == [
+        "Naturalyte Bicarbonate",
+        "Combiset Bloodlines",
+    ]
+    assert products[0].find("v3:effectiveTime", NS).get("value") == "20240122"
+    assert products[1].find("v3:effectiveTime", NS).get("nullFlavor") == "NI"
+
+
+def test_a_place_the_form_names_is_coded_and_anything_else_keeps_its_text():
+    report = _report()
+    report.event.location = "Outpatient treatment facility"
+    root = _root(emdr_hl7.to_xml_string(report))
+    place = root.find(".//v3:locatedEntity/v3:location/v3:code", NS)
+    assert place.get("code") == "C53549"
+    assert place.find("v3:originalText", NS) is None
+    # "Jail" is written against "other", so the message keeps the words too.
+    other = _root(emdr_hl7.to_xml_string(_report())).find(".//v3:locatedEntity/v3:location/v3:code", NS)
+    assert other.get("code") == "C17649"
+    assert other.find("v3:originalText", NS).text == "Jail"
+
+
+def test_the_reporter_occupation_is_stated_as_its_concept():
+    report = _report()
+    report.reporter.occupation = "Nurse"
+    root = _root(emdr_hl7.to_xml_string(report))
+    assert root.find(".//v3:primarySourceReport/v3:author/v3:assignedEntity/v3:code", NS).get("code") == "C20821"
+    # An occupation the vocabulary does not list is "other health care professional".
+    report.reporter.occupation = "Other Health"
+    root = _root(emdr_hl7.to_xml_string(report))
+    assert root.find(".//v3:primarySourceReport/v3:author/v3:assignedEntity/v3:code", NS).get("code") == "C53289"
+
+
+def test_a_manufacturer_box_without_a_street_still_splits_into_town_and_state():
+    address = emdr_hl7.parse_address("Fresenius Medical Care Waltham, MA 02451 USA")
+    assert (address.name, address.city, address.state, address.postcode, address.country) == (
+        "Fresenius Medical Care",
+        "Waltham",
+        "MA",
+        "02451",
+        "USA",
+    )
