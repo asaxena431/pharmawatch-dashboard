@@ -205,6 +205,22 @@ and every schema it references into `~/.cache/medwatch_ocr/vich-schemas`, then
 validates with `xmllint` (`apt install libxml2-utils`) or `lxml`.
 `tests/test_vich_schema.py` runs the same check when the cache exists.
 
+### CDRH eMDR messages
+
+`emdr-hl7` output is a different schema: `Con170227.xsd`, which FDA publishes
+only inside the [eMDR Implementation
+Package](https://www.fda.gov/medical-devices/mandatory-reporting-requirements-manufacturers-importers-and-device-user-facilities/health-level-seven-hl7-individual-case-safety-reporting-icsr-files).
+
+```bat
+python scripts\validate_emdr_schema.py out.xml
+```
+
+The script downloads that package once, unpacks its `XML schemas` folder into
+`~/.cache/medwatch_ocr/emdr-schemas` and validates the same way;
+`tests/test_emdr_schema.py` runs the check when the cache exists. Validating an
+eMDR message against the VICH set (or the reverse) fails on the root element
+alone, so pick the script that matches the format.
+
 ## 9. The two front ends
 
 **CLI — `cli.py`**
@@ -266,7 +282,8 @@ ruff check --select E,F,W --line-length 140 medwatch_ocr tests scripts
 | `scripts/compare_e2b_reference.py` | one PDF + expected XML → diff table (`--attach` supported) |
 | `scripts/compare_cvm_cases.py` | every CVM case in a folder → one summary table |
 | `scripts/check_vich_hl7.py` | schema rules without the schemas (`-r` for order/vocabulary) |
-| `scripts/validate_vich_schema.py` | validate against FDA's published schemas |
+| `scripts/validate_vich_schema.py` | validate VICH HL7 against FDA's published schemas |
+| `scripts/validate_emdr_schema.py` | validate CDRH eMDR HL7 against `Con170227.xsd` |
 | `scripts/build_1932_template.py`, `build_caption_vocabulary.py` | regenerate the field template / caption vocabulary from a blank form |
 | `scripts/verify_official_roundtrip.py`, `verify_1932_roundtrip.py` | fill a form, read it back, compare |
 

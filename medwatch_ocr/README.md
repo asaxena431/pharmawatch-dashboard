@@ -245,3 +245,11 @@ they are not redistributable, so they are downloaded once into
 python scripts/check_vich_hl7.py out.xml            # datatype rules, no download
 python scripts/validate_vich_schema.py out.xml      # the published schemas
 ```
+
+A CDRH `emdr-hl7` message has its own schema, `Con170227.xsd`, which FDA ships
+inside the eMDR Implementation Package; the script fetches that package and
+caches its schemas under `~/.cache/medwatch_ocr/emdr-schemas`:
+
+```bash
+python scripts/validate_emdr_schema.py out.xml
+```
