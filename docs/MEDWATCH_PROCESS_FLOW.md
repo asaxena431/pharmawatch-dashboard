@@ -257,7 +257,10 @@ uploaded expected message.
 message stays in the browser — or `dev`, which writes it to the DEV gateway's
 inbound folder
 `\\FDSWV26252\lsmvdev\aersesubdev\inbound\cvm-drug\xml_cvm-drug`, overridable
-with the `MEDWATCH_DEV_INBOUND` environment variable or CLI `--deliver-dir`.
+with the `MEDWATCH_DEV_INBOUND` environment variable or CLI `--deliver-dir`, or
+`dev-postmkt`, the CDRH post-market folder
+`\\FDSWV26252\lsmvdev\aersesubdev\inbound\cdrh\tt_3500A_emdr`
+(`MEDWATCH_DEV_POSTMKT_INBOUND`).
 Each run takes its own filename — the form's name, the time to the millisecond
 and a random suffix — so re-submitting a case never overwrites a message that is
 still waiting to be picked up.

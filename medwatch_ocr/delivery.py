@@ -26,7 +26,7 @@ DEV_INBOUND = os.environ.get(
 )
 DEV_POSTMARKET_INBOUND = os.environ.get(
     "MEDWATCH_DEV_POSTMKT_INBOUND",
-    r"\\FDSWV26252\lsmvdev\aersesubdev\inbound\cdrh\xml_cdrh",
+    r"\\FDSWV26252\lsmvdev\aersesubdev\inbound\cdrh\tt_3500A_emdr",
 )
 
 DESTINATIONS: Dict[str, Optional[str]] = {

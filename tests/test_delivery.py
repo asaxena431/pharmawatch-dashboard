@@ -19,7 +19,7 @@ from medwatch_ocr.delivery import (  # noqa: E402
 
 
 def test_the_post_market_destination_is_the_cdrh_inbound_folder():
-    assert DESTINATIONS[DESTINATION_DEV_POSTMARKET].replace("\\", "/").endswith("inbound/cdrh/xml_cdrh")
+    assert DESTINATIONS[DESTINATION_DEV_POSTMARKET].replace("\\", "/").endswith("inbound/cdrh/tt_3500A_emdr")
 
 
 def test_dev_postmkt_writes_the_message(tmp_path):
