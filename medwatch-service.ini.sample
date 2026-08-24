@@ -42,13 +42,24 @@ poll_seconds = 30
 settle_seconds = 5
 
 [email]
-; The note sent when a case is moved to the error folder.  Leave host empty to
-; log the failure without mailing anyone.
+; The note sent when a case is moved to the error folder, with the case ZIP
+; itself attached.  Leave host empty to log the failure without mailing anyone.
+; host, sender and at least one recipient are all needed before anything is sent.
+; e.g. host = smtp.yourcompany.com
 host =
+; 25 for a plain relay, 587 with use_tls
 port = 25
+; true for a server that wants STARTTLS (port 587 as a rule)
 use_tls = false
-sender = medwatch-ocr@example.org
-recipients = safety-ops@example.org, oncall@example.org
+sender = medwatch-ocr@yourcompany.com
+; one or more, separated by commas or semicolons
+recipients = safety-ops@yourcompany.com, oncall@yourcompany.com
+; only for a server that asks to authenticate
 username =
 password =
 subject_prefix = [medwatch-ocr]
+; Send the ZIP that failed with the note, so the reader has the input to hand.
+attach_zip = true
+; A ZIP larger than this is named in the note but not attached, since mail
+; servers refuse large messages.
+max_attachment_mb = 10

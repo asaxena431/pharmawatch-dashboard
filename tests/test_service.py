@@ -25,6 +25,22 @@ def _config(tmp_path, **overrides) -> service.ServiceConfig:
     return config
 
 
+class _FakeServer:
+    """A mail server that only remembers what it was handed."""
+
+    def __init__(self, messages):
+        self.messages = messages
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *_):
+        return False
+
+    def send_message(self, message):
+        self.messages.append(message)
+
+
 def _zip(path, files) -> str:
     with zipfile.ZipFile(path, "w") as archive:
         for name, payload in files:
@@ -152,7 +168,11 @@ def test_a_zip_that_cannot_be_read_moves_to_error_and_is_mailed(tmp_path, monkey
     config = _config(tmp_path, output_format=FORMAT_EMDR_HL7)
     _zip(os.path.join(config.inbound, "broken.zip"), [("note.txt", "no form here")])
     sent = []
-    monkeypatch.setattr(service, "send_failure_email", lambda config, archive, reason: sent.append((archive, reason)))
+    monkeypatch.setattr(
+        service,
+        "send_failure_email",
+        lambda config, archive, reason, attachment=None: sent.append((archive, reason, attachment)),
+    )
 
     done = service.run_once(config)
 
@@ -161,6 +181,8 @@ def test_a_zip_that_cannot_be_read_moves_to_error_and_is_mailed(tmp_path, monkey
     assert os.listdir(config.processed) == []
     assert os.listdir(config.outbound) == []
     assert len(sent) == 1 and "no PDF" in sent[0][1]
+    # the ZIP is mailed from where it now lives, the error folder
+    assert sent[0][2] == os.path.join(config.error, "broken.zip")
 
 
 def test_a_second_zip_of_the_same_name_does_not_overwrite_the_first(tmp_path, form_pdf):
@@ -178,24 +200,38 @@ def test_the_mail_reports_the_zip_the_folder_and_the_reason(monkeypatch, tmp_pat
         email=service.EmailSettings(host="smtp.example.org", sender="a@example.org", recipients=["b@example.org"]),
     )
     messages = []
+    monkeypatch.setattr(service.smtplib, "SMTP", lambda *args, **kwargs: _FakeServer(messages))
+    archive = _zip(tmp_path / "case.zip", [("note.txt", "the case as it arrived")])
+    assert service.send_failure_email(config, archive, "ValueError: unreadable")
 
-    class Server:
-        def __enter__(self):
-            return self
-
-        def __exit__(self, *_):
-            return False
-
-        def send_message(self, message):
-            messages.append(message)
-
-    monkeypatch.setattr(service.smtplib, "SMTP", lambda *args, **kwargs: Server())
-    assert service.send_failure_email(config, "/in/case.zip", "ValueError: unreadable")
-
-    body = messages[0].get_content()
+    body = messages[0].get_body(preferencelist=("plain",)).get_content()
     assert "case.zip" in messages[0]["Subject"]
     assert messages[0]["To"] == "b@example.org"
     assert "ValueError: unreadable" in body and config.error in body
+    # the ZIP that failed travels with the note
+    attached = list(messages[0].iter_attachments())
+    assert [part.get_filename() for part in attached] == ["case.zip"]
+    assert attached[0].get_content() == open(archive, "rb").read()
+
+
+def test_a_zip_over_the_mail_limit_is_named_but_not_attached(monkeypatch, tmp_path):
+    config = _config(
+        tmp_path,
+        email=service.EmailSettings(
+            host="smtp.example.org",
+            sender="a@example.org",
+            recipients=["b@example.org"],
+            max_attachment_mb=0.0001,
+        ),
+    )
+    messages = []
+    monkeypatch.setattr(service.smtplib, "SMTP", lambda *args, **kwargs: _FakeServer(messages))
+    archive = _zip(tmp_path / "big.zip", [("note.txt", "x" * 5000)])
+
+    assert service.send_failure_email(config, archive, "boom")
+
+    assert list(messages[0].iter_attachments()) == []
+    assert "big.zip" in messages[0]["Subject"]
 
 
 def test_nothing_is_mailed_when_no_server_is_configured(tmp_path):

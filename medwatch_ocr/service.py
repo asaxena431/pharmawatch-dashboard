@@ -60,6 +60,10 @@ class EmailSettings:
     password: Optional[str] = None
     use_tls: bool = False
     subject_prefix: str = "[medwatch-ocr]"
+    # Send the case ZIP itself with the note, so the reader has the input to hand.
+    attach_zip: bool = True
+    # Mail servers refuse large messages, so a ZIP over this is only named.
+    max_attachment_mb: float = 10.0
 
     @property
     def configured(self) -> bool:
@@ -141,6 +145,8 @@ def load_config(path: str) -> ServiceConfig:
             username=mail.get("username") or None,
             password=mail.get("password") or None,
             use_tls=str(mail.get("use_tls", "false")).strip().lower() in ("1", "true", "yes", "on"),
+            attach_zip=str(mail.get("attach_zip", "true")).strip().lower() in ("1", "true", "yes", "on"),
+            max_attachment_mb=float(mail.get("max_attachment_mb", 10) or 10),
             subject_prefix=mail.get("subject_prefix") or "[medwatch-ocr]",
         ),
     )
@@ -233,8 +239,33 @@ def _move(path: str, directory: str) -> str:
     return target
 
 
-def send_failure_email(config: ServiceConfig, archive: str, reason: str) -> bool:
-    """Tell the addresses in the configuration about a case that failed."""
+def _attach_archive(message: EmailMessage, path: str, limit_mb: float) -> Optional[str]:
+    """Put the case ZIP in the message, unless it is too big to mail."""
+    name = os.path.basename(path)
+    try:
+        size = os.path.getsize(path)
+    except OSError as exc:
+        LOGGER.warning("could not attach %s: %s", name, exc)
+        return None
+    if limit_mb and size > limit_mb * 1024 * 1024:
+        LOGGER.warning("%s is %.1f MB, over the %.1f MB mail limit, so it was not attached", name, size / 1048576, limit_mb)
+        return None
+    try:
+        with open(path, "rb") as handle:
+            payload = handle.read()
+    except OSError as exc:
+        LOGGER.warning("could not attach %s: %s", name, exc)
+        return None
+    message.add_attachment(payload, maintype="application", subtype="zip", filename=name)
+    return name
+
+
+def send_failure_email(config: ServiceConfig, archive: str, reason: str, attachment: Optional[str] = None) -> bool:
+    """Tell the addresses in the configuration about a case that failed.
+
+    ``attachment`` is the ZIP as it now sits in the error folder; it is sent with
+    the note unless ``[email] attach_zip`` says otherwise.
+    """
     settings = config.email
     if not settings.configured:
         LOGGER.warning("no [email] settings, so no note was sent about %s", os.path.basename(archive))
@@ -249,6 +280,8 @@ def send_failure_email(config: ServiceConfig, archive: str, reason: str) -> bool
         f"Time: {datetime.now().isoformat(timespec='seconds')}\n\n"
         f"{reason}\n"
     )
+    if settings.attach_zip:
+        _attach_archive(message, attachment or archive, settings.max_attachment_mb)
     try:
         with smtplib.SMTP(settings.host, settings.port, timeout=30) as server:
             if settings.use_tls:
@@ -304,7 +337,7 @@ def process_zip(archive: str, config: ServiceConfig) -> Processed:
         reason = f"{type(exc).__name__}: {exc}\n\n{traceback.format_exc()}"
         LOGGER.error("%s failed: %s: %s", os.path.basename(archive), type(exc).__name__, exc)
         moved = _move(archive, config.error)
-        send_failure_email(config, archive, reason)
+        send_failure_email(config, archive, reason, attachment=moved)
         return Processed(archive=archive, moved_to=moved, error=f"{type(exc).__name__}: {exc}")
 
     moved = _move(archive, config.processed)

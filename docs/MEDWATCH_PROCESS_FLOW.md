@@ -303,6 +303,26 @@ python -m medwatch_ocr.cli service --config medwatch-service.ini --once \
     --format auto --format-cvm vich-hl7 --outbound /tmp/try
 ```
 
+The note sent when a case lands in `error` carries the ZIP itself, read from the
+error folder so the copy attached is the one kept:
+
+```ini
+[email]
+host = smtp.yourcompany.com
+port = 587
+use_tls = true                 ; STARTTLS; leave false for a plain relay on 25
+sender = medwatch-ocr@yourcompany.com
+recipients = safety-ops@yourcompany.com, oncall@yourcompany.com
+username =                     ; only if the server asks to authenticate
+password =
+attach_zip = true
+max_attachment_mb = 10         ; a bigger ZIP is named but not attached
+```
+
+An empty `host` logs the failure and mails no one, which is the default in the
+sample. `password` belongs in the deployed copy of the file only, never in the
+repository; keep the file readable by the service account alone.
+
 As a systemd unit:
 
 ```ini
