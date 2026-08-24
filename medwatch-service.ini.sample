@@ -43,8 +43,18 @@ settle_seconds = 5
 
 [email]
 ; The note sent when a case is moved to the error folder, with the case ZIP
-; itself attached.  Leave host empty to log the failure without mailing anyone.
-; host, sender and at least one recipient are all needed before anything is sent.
+; itself attached.  Nothing is sent while recipients is empty.
+;
+; How the note leaves this machine:
+;   smtp    - a mail server; needs host, sender and recipients below
+;   outlook - the Outlook this Windows account is already signed in to; needs
+;             only recipients, and no relay, so it works where SMTP is blocked
+;             (requires pywin32: pip install pywin32)
+;   eml     - write the note as a .eml file in drop_dir for something else to
+;             send; also the way to see exactly what would have been mailed
+transport = smtp
+drop_dir =
+; Only for transport = smtp.  Leave host empty to log the failure and mail no one.
 ; e.g. host = smtp.yourcompany.com
 host =
 ; 25 for a plain relay, 587 with use_tls

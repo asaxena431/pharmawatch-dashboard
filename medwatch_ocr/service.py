@@ -38,6 +38,14 @@ SECTION_CONVERSION = "conversion"
 SECTION_SERVICE = "service"
 SECTION_EMAIL = "email"
 
+# How the note leaves the machine.  A server that may not talk to a mail relay -
+# the usual case on a locked-down network - can hand the note to the Outlook the
+# operator is already signed in to, or write it as a .eml file to be picked up.
+TRANSPORT_SMTP = "smtp"
+TRANSPORT_OUTLOOK = "outlook"
+TRANSPORT_EML = "eml"
+TRANSPORTS = (TRANSPORT_SMTP, TRANSPORT_OUTLOOK, TRANSPORT_EML)
+
 # A ZIP still being copied into the inbound folder must not be picked up, so its
 # size has to stay unchanged for this long before it is taken.
 SETTLE_SECONDS = 5.0
@@ -64,10 +72,22 @@ class EmailSettings:
     attach_zip: bool = True
     # Mail servers refuse large messages, so a ZIP over this is only named.
     max_attachment_mb: float = 10.0
+    transport: str = TRANSPORT_SMTP
+    # Where the ``eml`` transport leaves the note; the error folder if unset.
+    drop_dir: Optional[str] = None
 
     @property
     def configured(self) -> bool:
-        return bool(self.host and self.sender and self.recipients)
+        """True once enough is set for this transport to deliver the note.
+
+        Outlook knows the account itself and a dropped file needs no server, so
+        only ``smtp`` asks for a host and a sender.
+        """
+        if not self.recipients:
+            return False
+        if self.transport == TRANSPORT_SMTP:
+            return bool(self.host and self.sender)
+        return True
 
 
 @dataclass
@@ -148,8 +168,18 @@ def load_config(path: str) -> ServiceConfig:
             attach_zip=str(mail.get("attach_zip", "true")).strip().lower() in ("1", "true", "yes", "on"),
             max_attachment_mb=float(mail.get("max_attachment_mb", 10) or 10),
             subject_prefix=mail.get("subject_prefix") or "[medwatch-ocr]",
+            transport=_transport(mail.get("transport"), path),
+            drop_dir=os.path.expanduser(mail.get("drop_dir", "") or "") or None,
         ),
     )
+
+
+def _transport(named: Optional[str], path: str) -> str:
+    """The transport the file asks for, defaulting to a mail server."""
+    wanted = (named or TRANSPORT_SMTP).strip().lower()
+    if wanted not in TRANSPORTS:
+        raise ConfigError(f"[{SECTION_EMAIL}] transport in {path} must be one of: {', '.join(TRANSPORTS)}")
+    return wanted
 
 
 def _settled(path: str, settle_seconds: float) -> bool:
@@ -239,17 +269,9 @@ def _move(path: str, directory: str) -> str:
     return target
 
 
-def _attach_archive(message: EmailMessage, path: str, limit_mb: float) -> Optional[str]:
-    """Put the case ZIP in the message, unless it is too big to mail."""
+def _attach_archive(message: EmailMessage, path: str) -> Optional[str]:
+    """Put the case ZIP in the message."""
     name = os.path.basename(path)
-    try:
-        size = os.path.getsize(path)
-    except OSError as exc:
-        LOGGER.warning("could not attach %s: %s", name, exc)
-        return None
-    if limit_mb and size > limit_mb * 1024 * 1024:
-        LOGGER.warning("%s is %.1f MB, over the %.1f MB mail limit, so it was not attached", name, size / 1048576, limit_mb)
-        return None
     try:
         with open(path, "rb") as handle:
             payload = handle.read()
@@ -260,37 +282,96 @@ def _attach_archive(message: EmailMessage, path: str, limit_mb: float) -> Option
     return name
 
 
+def _mailable(path: str, limit_mb: float) -> Optional[str]:
+    """The ZIP's path if it can travel with the note, else None."""
+    name = os.path.basename(path)
+    try:
+        size = os.path.getsize(path)
+    except OSError as exc:
+        LOGGER.warning("could not attach %s: %s", name, exc)
+        return None
+    if limit_mb and size > limit_mb * 1024 * 1024:
+        LOGGER.warning("%s is %.1f MB, over the %.1f MB mail limit, so it was not attached", name, size / 1048576, limit_mb)
+        return None
+    return path
+
+
+def _send_smtp(settings: EmailSettings, message: EmailMessage) -> None:
+    """Hand the note to the mail server named in the configuration."""
+    with smtplib.SMTP(settings.host, settings.port, timeout=30) as server:
+        if settings.use_tls:
+            server.starttls()
+        if settings.username:
+            server.login(settings.username, settings.password or "")
+        server.send_message(message)
+
+
+def _send_outlook(settings: EmailSettings, subject: str, body: str, attachment: Optional[str]) -> None:
+    """Send through the Outlook this Windows account is already signed in to.
+
+    Nothing is configured here beyond the recipients: Outlook holds the account,
+    the server and the credentials, so a machine that may not reach a mail relay
+    itself can still get the note out.
+    """
+    import win32com.client  # pywin32, and Windows: only this transport needs it
+
+    item = win32com.client.Dispatch("Outlook.Application").CreateItem(0)
+    item.Subject = subject
+    item.Body = body
+    item.To = "; ".join(settings.recipients)
+    if attachment:
+        item.Attachments.Add(os.path.abspath(attachment))
+    item.Send()
+
+
+def _write_eml(config: ServiceConfig, message: EmailMessage, archive: str) -> str:
+    """Leave the note, attachment and all, as a .eml file to be picked up."""
+    directory = config.email.drop_dir or os.path.join(config.error, "notices")
+    os.makedirs(directory, exist_ok=True)
+    path = os.path.join(directory, unique_name(archive, extension=".eml"))
+    with open(path, "wb") as handle:
+        handle.write(bytes(message))
+    return path
+
+
 def send_failure_email(config: ServiceConfig, archive: str, reason: str, attachment: Optional[str] = None) -> bool:
     """Tell the addresses in the configuration about a case that failed.
 
-    ``attachment`` is the ZIP as it now sits in the error folder; it is sent with
-    the note unless ``[email] attach_zip`` says otherwise.
+    ``attachment`` is the ZIP as it now sits in the error folder; it travels with
+    the note unless ``[email] attach_zip`` says otherwise.  ``[email] transport``
+    chooses how the note leaves: a mail server, the local Outlook, or a .eml file
+    written for something else to send.
     """
     settings = config.email
+    name = os.path.basename(archive)
     if not settings.configured:
-        LOGGER.warning("no [email] settings, so no note was sent about %s", os.path.basename(archive))
+        LOGGER.warning("no [email] settings, so no note was sent about %s", name)
         return False
-    message = EmailMessage()
-    message["Subject"] = f"{settings.subject_prefix} {os.path.basename(archive)} could not be processed"
-    message["From"] = settings.sender
-    message["To"] = ", ".join(settings.recipients)
-    message.set_content(
-        f"{os.path.basename(archive)} was moved to the error folder {config.error}.\n\n"
+    subject = f"{settings.subject_prefix} {name} could not be processed"
+    body = (
+        f"{name} was moved to the error folder {config.error}.\n\n"
         f"Inbound folder: {config.inbound}\n"
         f"Time: {datetime.now().isoformat(timespec='seconds')}\n\n"
         f"{reason}\n"
     )
-    if settings.attach_zip:
-        _attach_archive(message, attachment or archive, settings.max_attachment_mb)
+    zip_path = _mailable(attachment or archive, settings.max_attachment_mb) if settings.attach_zip else None
     try:
-        with smtplib.SMTP(settings.host, settings.port, timeout=30) as server:
-            if settings.use_tls:
-                server.starttls()
-            if settings.username:
-                server.login(settings.username, settings.password or "")
-            server.send_message(message)
-    except OSError as exc:
-        LOGGER.error("could not send the note about %s: %s", os.path.basename(archive), exc)
+        if settings.transport == TRANSPORT_OUTLOOK:
+            _send_outlook(settings, subject, body, zip_path)
+        else:
+            message = EmailMessage()
+            message["Subject"] = subject
+            message["From"] = settings.sender or "medwatch-ocr@localhost"
+            message["To"] = ", ".join(settings.recipients)
+            message.set_content(body)
+            if zip_path:
+                _attach_archive(message, zip_path)
+            if settings.transport == TRANSPORT_EML:
+                LOGGER.info("the note about %s was written to %s", name, _write_eml(config, message, archive))
+            else:
+                _send_smtp(settings, message)
+    except Exception as exc:  # a mail failure must not lose the case
+        LOGGER.error("could not send the note about %s: %s: %s", name, type(exc).__name__, exc)
         return False
     return True
 

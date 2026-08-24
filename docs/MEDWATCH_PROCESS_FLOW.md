@@ -326,6 +326,19 @@ An empty `host` logs the failure and mails no one, which is the default in the
 sample. `password` belongs in the deployed copy of the file only, never in the
 repository; keep the file readable by the service account alone.
 
+A server that may not talk to a mail relay — `10061`, `relay denied`, or no
+relay at all — sends the same note another way, chosen by `transport`:
+
+| `transport` | needs | how it goes out |
+| --- | --- | --- |
+| `smtp` (default) | `host`, `sender`, `recipients` | `smtplib`, STARTTLS with `use_tls` |
+| `outlook` | `recipients` | the Outlook that Windows account is signed in to, over COM (`pip install pywin32`); Outlook holds the server and the credentials |
+| `eml` | `recipients`, `drop_dir` | the complete message, ZIP attached, written as a `.eml` file for a mail agent — or a person — to send |
+
+`eml` is also how to see exactly what would have been mailed: the file opens in
+Outlook with the attachment on it. Whatever the transport, a mail that cannot be
+sent is logged and the case still lands in the error folder.
+
 As a systemd unit:
 
 ```ini

@@ -1,6 +1,10 @@
 """The folder service: a case ZIP in, one XML out, the ZIP filed away."""
 
+import email
+import email.policy
 import os
+import sys
+import types
 import zipfile
 
 import pytest
@@ -232,6 +236,85 @@ def test_a_zip_over_the_mail_limit_is_named_but_not_attached(monkeypatch, tmp_pa
 
     assert list(messages[0].iter_attachments()) == []
     assert "big.zip" in messages[0]["Subject"]
+
+
+def test_the_eml_transport_writes_the_note_where_no_mail_server_can_be_reached(tmp_path):
+    config = _config(
+        tmp_path,
+        email=service.EmailSettings(
+            transport=service.TRANSPORT_EML,
+            recipients=["anurag.saxena@example.gov"],
+            drop_dir=str(tmp_path / "notices"),
+        ),
+    )
+    archive = _zip(tmp_path / "case.zip", [("note.txt", "the case as it arrived")])
+
+    assert service.send_failure_email(config, archive, "ValueError: unreadable")
+
+    written = os.listdir(str(tmp_path / "notices"))
+    assert len(written) == 1 and written[0].endswith(".eml")
+    with open(os.path.join(str(tmp_path / "notices"), written[0]), "rb") as handle:
+        message = email.message_from_binary_file(handle, policy=email.policy.default)
+    assert message["To"] == "anurag.saxena@example.gov"
+    assert [part.get_filename() for part in message.iter_attachments()] == ["case.zip"]
+
+
+def test_the_outlook_transport_needs_only_the_recipients(monkeypatch, tmp_path):
+    config = _config(
+        tmp_path,
+        email=service.EmailSettings(transport=service.TRANSPORT_OUTLOOK, recipients=["a@example.gov", "b@example.gov"]),
+    )
+    assert config.email.configured
+    archive = _zip(tmp_path / "case.zip", [("note.txt", "x")])
+    sent = {}
+
+    def fake_outlook(settings, subject, body, attachment):
+        sent.update(subject=subject, body=body, attachment=attachment, to=settings.recipients)
+
+    monkeypatch.setattr(service, "_send_outlook", fake_outlook)
+    assert service.send_failure_email(config, archive, "ValueError: unreadable")
+    assert sent["attachment"] == archive
+    assert sent["to"] == ["a@example.gov", "b@example.gov"]
+    assert "case.zip" in sent["subject"] and "ValueError: unreadable" in sent["body"]
+
+
+def test_outlook_is_handed_the_recipients_subject_body_and_the_zip(monkeypatch, tmp_path):
+    """The COM call itself, against a stand-in for Outlook."""
+
+    class Item:
+        def __init__(self):
+            self.attachments = []
+            self.sent = False
+            self.Attachments = type("Adder", (), {"Add": lambda _self, path: self.attachments.append(path)})()
+
+        def Send(self):
+            self.sent = True
+
+    item = Item()
+    client = types.ModuleType("win32com.client")
+    client.Dispatch = lambda name: type("App", (), {"CreateItem": lambda _self, kind: item})()
+    package = types.ModuleType("win32com")
+    package.client = client
+    monkeypatch.setitem(sys.modules, "win32com", package)
+    monkeypatch.setitem(sys.modules, "win32com.client", client)
+
+    archive = _zip(tmp_path / "case.zip", [("note.txt", "x")])
+    settings = service.EmailSettings(transport=service.TRANSPORT_OUTLOOK, recipients=["a@example.gov", "b@example.gov"])
+    service._send_outlook(settings, "subject", "body", archive)
+
+    assert (item.Subject, item.Body, item.To) == ("subject", "body", "a@example.gov; b@example.gov")
+    assert item.attachments == [os.path.abspath(archive)]
+    assert item.sent
+
+
+def test_a_transport_the_service_does_not_have_is_refused(tmp_path):
+    path = tmp_path / "service.ini"
+    path.write_text(
+        "[folders]\ninbound = in\noutbound = out\nprocessed = done\nerror = bad\n[email]\ntransport = fax\n",
+        encoding="utf-8",
+    )
+    with pytest.raises(service.ConfigError, match="transport"):
+        service.load_config(str(path))
 
 
 def test_nothing_is_mailed_when_no_server_is_configured(tmp_path):
