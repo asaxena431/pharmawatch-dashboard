@@ -293,7 +293,17 @@ format_cvm = vich-hl7
 
 Without that, a veterinary ZIP in a `format = emdr-hl7` folder fails with
 "veterinary reports are only serialised as gl42 or vich-hl7" and lands in
-`error`. As a systemd unit:
+`error`. Every one of those, and the four folders, can be overridden on the
+command line without touching the file — useful for trying the error path:
+
+```bash
+python -m medwatch_ocr.cli service --config medwatch-service.ini --once \
+    --format emdr-hl7                      # forces the wrong format: ZIP -> error/
+python -m medwatch_ocr.cli service --config medwatch-service.ini --once \
+    --format auto --format-cvm vich-hl7 --outbound /tmp/try
+```
+
+As a systemd unit:
 
 ```ini
 [Service]

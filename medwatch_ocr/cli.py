@@ -120,6 +120,15 @@ def build_parser() -> argparse.ArgumentParser:
                          help="the service's configuration file (default: medwatch-service.ini)")
     service.add_argument("--once", action="store_true",
                          help="process what is waiting in the inbound folder and exit")
+    service.add_argument("--format", "-f", dest="output_format",
+                         choices=["auto", FORMAT_E2B, FORMAT_E2B_FDA, FORMAT_MDR, FORMAT_EMDR_HL7, FORMAT_GL42,
+                                  FORMAT_PVX_1932A, FORMAT_VICH_HL7],
+                         help="override [conversion] format; auto uses the per-center formats")
+    service.add_argument("--format-cder", help="override [conversion] format_cder")
+    service.add_argument("--format-cdrh", help="override [conversion] format_cdrh")
+    service.add_argument("--format-cvm", help="override [conversion] format_cvm")
+    for folder in ("inbound", "outbound", "processed", "error"):
+        service.add_argument(f"--{folder}", help=f"override [folders] {folder}")
 
     batch = sub.add_parser("demo", help="generate both samples and convert them end-to-end")
     batch.add_argument("--output-dir", "-d", default="out", help="directory for samples and XML output")
@@ -177,6 +186,7 @@ def _run_service(args: argparse.Namespace) -> int:
     except ConfigError as exc:
         print(f"configuration error: {exc}", file=sys.stderr)
         return 2
+    _override_service_config(config, args)
     if not args.once:
         try:
             return run_forever(config)
@@ -188,6 +198,19 @@ def _run_service(args: argparse.Namespace) -> int:
         name = os.path.basename(entry.archive)
         print(f"{name}: {entry.xml_path}" if entry.ok else f"{name}: FAILED {entry.error} -> {entry.moved_to}")
     return 1 if any(not entry.ok for entry in done) else 0
+
+
+def _override_service_config(config, args: argparse.Namespace) -> None:
+    """Apply the command-line overrides on top of the configuration file."""
+    for folder in ("inbound", "outbound", "processed", "error"):
+        value = getattr(args, folder, None)
+        if value:
+            setattr(config, folder, os.path.expanduser(value))
+    if args.output_format:
+        config.output_format = None if args.output_format == "auto" else args.output_format
+    for center, value in ((CENTER_CDER, args.format_cder), (CENTER_CDRH, args.format_cdrh), (CENTER_CVM, args.format_cvm)):
+        if value:
+            config.formats_by_center[center] = value
 
 
 def _make_samples(output_dir: str, facsimile: bool) -> dict:
