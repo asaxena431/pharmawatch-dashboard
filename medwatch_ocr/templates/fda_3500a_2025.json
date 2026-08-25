@@ -1,0 +1,4281 @@
+{
+ "form": "FDA-3500A",
+ "revision": "09/2025",
+ "source": "fda.gov/media/69876",
+ "pages": {
+  "0": {
+   "width": 612.0,
+   "height": 792.0
+  },
+  "1": {
+   "width": 612.0,
+   "height": 792.0
+  },
+  "2": {
+   "width": 612.0,
+   "height": 792.0
+  },
+  "3": {
+   "width": 612.0,
+   "height": 792.0
+  },
+  "4": {
+   "width": 612.0,
+   "height": 792.0
+  },
+  "5": {
+   "width": 612.0,
+   "height": 792.0
+  },
+  "6": {
+   "width": 612.0,
+   "height": 792.0
+  },
+  "7": {
+   "width": 612.0,
+   "height": 792.0
+  },
+  "8": {
+   "width": 612.0,
+   "height": 792.0
+  }
+ },
+ "fields": [
+  {
+   "page": 0,
+   "name": "patAge",
+   "type": "Tx",
+   "rect": [
+    300.362,
+    612.289,
+    325.196,
+    624.895
+   ],
+   "on": null
+  },
+  {
+   "page": 0,
+   "name": "ageYrs",
+   "type": "Btn",
+   "rect": [
+    271.052,
+    602.056,
+    281.722,
+    612.726
+   ],
+   "on": "1"
+  },
+  {
+   "page": 0,
+   "name": "patID",
+   "type": "Tx",
+   "rect": [
+    41.769,
+    598.913,
+    250.671,
+    611.904
+   ],
+   "on": null
+  },
+  {
+   "page": 0,
+   "name": "ageMons",
+   "type": "Btn",
+   "rect": [
+    332.501,
+    602.056,
+    343.171,
+    612.726
+   ],
+   "on": "1"
+  },
+  {
+   "page": 0,
+   "name": "ageWks",
+   "type": "Btn",
+   "rect": [
+    271.052,
+    587.885,
+    281.722,
+    598.555
+   ],
+   "on": "1"
+  },
+  {
+   "page": 0,
+   "name": "ageDays",
+   "type": "Btn",
+   "rect": [
+    332.501,
+    587.885,
+    343.171,
+    598.555
+   ],
+   "on": "1"
+  },
+  {
+   "page": 0,
+   "name": "patDOB",
+   "type": "Tx",
+   "rect": [
+    270.972,
+    555.997,
+    369.738,
+    568.987
+   ],
+   "on": null
+  },
+  {
+   "page": 0,
+   "name": "dateAdvEvent",
+   "type": "Tx",
+   "rect": [
+    181.661,
+    361.037,
+    284.664,
+    374.037
+   ],
+   "on": null
+  },
+  {
+   "page": 0,
+   "name": "dateReport",
+   "type": "Tx",
+   "rect": [
+    461.052,
+    361.037,
+    577.034,
+    374.037
+   ],
+   "on": null
+  },
+  {
+   "page": 0,
+   "name": "hispanic",
+   "type": "Btn",
+   "rect": [
+    127.043,
+    484.239,
+    137.713,
+    494.909
+   ],
+   "on": "1"
+  },
+  {
+   "page": 0,
+   "name": "AmInAlNa",
+   "type": "Btn",
+   "rect": [
+    127.043,
+    524.967,
+    137.713,
+    535.637
+   ],
+   "on": "1"
+  },
+  {
+   "page": 0,
+   "name": "asian",
+   "type": "Btn",
+   "rect": [
+    127.043,
+    511.375,
+    137.713,
+    522.045
+   ],
+   "on": "1"
+  },
+  {
+   "page": 0,
+   "name": "black",
+   "type": "Btn",
+   "rect": [
+    127.043,
+    497.789,
+    137.713,
+    508.459
+   ],
+   "on": "1"
+  },
+  {
+   "page": 0,
+   "name": "middleEastern",
+   "type": "Btn",
+   "rect": [
+    293.029,
+    524.443,
+    303.699,
+    535.113
+   ],
+   "on": "1"
+  },
+  {
+   "page": 0,
+   "name": "NaHIOtherPI",
+   "type": "Btn",
+   "rect": [
+    293.029,
+    510.893,
+    303.699,
+    521.563
+   ],
+   "on": "1"
+  },
+  {
+   "page": 0,
+   "name": "white",
+   "type": "Btn",
+   "rect": [
+    293.029,
+    497.273,
+    303.699,
+    507.943
+   ],
+   "on": "1"
+  },
+  {
+   "page": 0,
+   "name": "prodProblem",
+   "type": "Btn",
+   "rect": [
+    43.067,
+    422.954,
+    53.737,
+    433.624
+   ],
+   "on": "1"
+  },
+  {
+   "page": 0,
+   "name": "adverse",
+   "type": "Btn",
+   "rect": [
+    42.471,
+    437.048,
+    53.141,
+    447.718
+   ],
+   "on": "1"
+  },
+  {
+   "page": 0,
+   "name": "disability",
+   "type": "Btn",
+   "rect": [
+    402.925,
+    435.18,
+    413.595,
+    445.85
+   ],
+   "on": "1"
+  },
+  {
+   "page": 0,
+   "name": "reqInterv",
+   "type": "Btn",
+   "rect": [
+    206.144,
+    380.902,
+    216.814,
+    391.572
+   ],
+   "on": "1"
+  },
+  {
+   "page": 0,
+   "name": "otherOutcome",
+   "type": "Btn",
+   "rect": [
+    402.925,
+    408.078,
+    413.595,
+    418.748
+   ],
+   "on": "1"
+  },
+  {
+   "page": 0,
+   "name": "hospital",
+   "type": "Btn",
+   "rect": [
+    206.144,
+    394.494,
+    216.814,
+    405.164
+   ],
+   "on": "1"
+  },
+  {
+   "page": 0,
+   "name": "lifeThr",
+   "type": "Btn",
+   "rect": [
+    206.144,
+    408.673,
+    216.814,
+    419.343
+   ],
+   "on": "1"
+  },
+  {
+   "page": 0,
+   "name": "deathDate",
+   "type": "Tx",
+   "rect": [
+    220.87,
+    422.197,
+    282.87,
+    435.197
+   ],
+   "on": null
+  },
+  {
+   "page": 0,
+   "name": "death",
+   "type": "Btn",
+   "rect": [
+    206.144,
+    434.619,
+    216.814,
+    445.289
+   ],
+   "on": "1"
+  },
+  {
+   "page": 0,
+   "name": "congenital",
+   "type": "Btn",
+   "rect": [
+    402.925,
+    421.56,
+    413.595,
+    432.23
+   ],
+   "on": "1"
+  },
+  {
+   "page": 0,
+   "name": "sexF",
+   "type": "Btn",
+   "rect": [
+    465.386,
+    587.885,
+    476.056,
+    598.555
+   ],
+   "on": "1"
+  },
+  {
+   "page": 0,
+   "name": "sexM",
+   "type": "Btn",
+   "rect": [
+    465.386,
+    602.056,
+    476.056,
+    612.726
+   ],
+   "on": "1"
+  },
+  {
+   "page": 0,
+   "name": "patWeight",
+   "type": "Tx",
+   "rect": [
+    82.531,
+    537.767,
+    107.348,
+    550.372
+   ],
+   "on": null
+  },
+  {
+   "page": 0,
+   "name": "weightKG",
+   "type": "Btn",
+   "rect": [
+    51.931,
+    510.893,
+    62.601,
+    521.563
+   ],
+   "on": "1"
+  },
+  {
+   "page": 0,
+   "name": "weightLB",
+   "type": "Btn",
+   "rect": [
+    51.931,
+    524.497,
+    62.601,
+    535.167
+   ],
+   "on": "1"
+  },
+  {
+   "page": 0,
+   "name": "advEvDesc",
+   "type": "Tx",
+   "rect": [
+    42.917,
+    116.977,
+    578.132,
+    337.521
+   ],
+   "on": null
+  },
+  {
+   "page": 0,
+   "name": "charCountDesc",
+   "type": "Tx",
+   "rect": [
+    547.804,
+    340.869,
+    577.324,
+    352.604
+   ],
+   "on": null
+  },
+  {
+   "page": 0,
+   "name": "mfr",
+   "type": "Tx",
+   "rect": [
+    447.707,
+    703.813,
+    577.286,
+    717.959
+   ],
+   "on": null
+  },
+  {
+   "page": 0,
+   "name": "ufNum",
+   "type": "Tx",
+   "rect": [
+    478.519,
+    685.53,
+    577.285,
+    699.676
+   ],
+   "on": null
+  },
+  {
+   "page": 0,
+   "name": "varNum",
+   "type": "Tx",
+   "rect": [
+    478.905,
+    667.23,
+    577.286,
+    681.375
+   ],
+   "on": null
+  },
+  {
+   "page": 1,
+   "name": "advEvDescribe",
+   "type": "Tx",
+   "rect": [
+    45.326,
+    50.831,
+    570.421,
+    737.297
+   ],
+   "on": null
+  },
+  {
+   "page": 1,
+   "name": "charCountDesc",
+   "type": "Tx",
+   "rect": [
+    544.578,
+    738.635,
+    574.098,
+    750.37
+   ],
+   "on": null
+  },
+  {
+   "page": 2,
+   "name": "testData1",
+   "type": "Tx",
+   "rect": [
+    42.443,
+    715.202,
+    283.396,
+    729.202
+   ],
+   "on": null
+  },
+  {
+   "page": 2,
+   "name": "testDDate1",
+   "type": "Tx",
+   "rect": [
+    487.017,
+    714.64,
+    568.648,
+    728.64
+   ],
+   "on": null
+  },
+  {
+   "page": 2,
+   "name": "testData2",
+   "type": "Tx",
+   "rect": [
+    42.443,
+    697.08,
+    283.396,
+    711.08
+   ],
+   "on": null
+  },
+  {
+   "page": 2,
+   "name": "testDDate2",
+   "type": "Tx",
+   "rect": [
+    486.383,
+    697.08,
+    568.015,
+    711.08
+   ],
+   "on": null
+  },
+  {
+   "page": 2,
+   "name": "testData3",
+   "type": "Tx",
+   "rect": [
+    42.443,
+    678.629,
+    283.396,
+    692.629
+   ],
+   "on": null
+  },
+  {
+   "page": 2,
+   "name": "testDDate3",
+   "type": "Tx",
+   "rect": [
+    486.383,
+    678.629,
+    568.015,
+    692.629
+   ],
+   "on": null
+  },
+  {
+   "page": 2,
+   "name": "testData4",
+   "type": "Tx",
+   "rect": [
+    42.443,
+    660.7,
+    283.396,
+    674.7
+   ],
+   "on": null
+  },
+  {
+   "page": 2,
+   "name": "testDDate4",
+   "type": "Tx",
+   "rect": [
+    486.383,
+    660.7,
+    568.015,
+    674.7
+   ],
+   "on": null
+  },
+  {
+   "page": 2,
+   "name": "testData5",
+   "type": "Tx",
+   "rect": [
+    42.443,
+    642.278,
+    283.396,
+    656.278
+   ],
+   "on": null
+  },
+  {
+   "page": 2,
+   "name": "testDDate5",
+   "type": "Tx",
+   "rect": [
+    486.383,
+    642.278,
+    568.015,
+    656.278
+   ],
+   "on": null
+  },
+  {
+   "page": 2,
+   "name": "testData6",
+   "type": "Tx",
+   "rect": [
+    42.443,
+    623.49,
+    283.396,
+    637.49
+   ],
+   "on": null
+  },
+  {
+   "page": 2,
+   "name": "testDDate6",
+   "type": "Tx",
+   "rect": [
+    486.383,
+    623.49,
+    568.015,
+    637.49
+   ],
+   "on": null
+  },
+  {
+   "page": 2,
+   "name": "testData7",
+   "type": "Tx",
+   "rect": [
+    42.443,
+    604.444,
+    283.396,
+    618.444
+   ],
+   "on": null
+  },
+  {
+   "page": 2,
+   "name": "testDDate7",
+   "type": "Tx",
+   "rect": [
+    486.383,
+    604.444,
+    568.015,
+    618.444
+   ],
+   "on": null
+  },
+  {
+   "page": 2,
+   "name": "testData8",
+   "type": "Tx",
+   "rect": [
+    42.443,
+    585.919,
+    283.396,
+    599.919
+   ],
+   "on": null
+  },
+  {
+   "page": 2,
+   "name": "testDDate8",
+   "type": "Tx",
+   "rect": [
+    486.383,
+    585.919,
+    568.015,
+    599.919
+   ],
+   "on": null
+  },
+  {
+   "page": 2,
+   "name": "lowTestRange1",
+   "type": "Tx",
+   "rect": [
+    287.835,
+    715.202,
+    384.009,
+    729.202
+   ],
+   "on": null
+  },
+  {
+   "page": 2,
+   "name": "highTestRange1",
+   "type": "Tx",
+   "rect": [
+    387.547,
+    715.202,
+    483.721,
+    729.202
+   ],
+   "on": null
+  },
+  {
+   "page": 2,
+   "name": "highTestRange2",
+   "type": "Tx",
+   "rect": [
+    387.547,
+    697.08,
+    483.721,
+    711.08
+   ],
+   "on": null
+  },
+  {
+   "page": 2,
+   "name": "lowTestRange2",
+   "type": "Tx",
+   "rect": [
+    287.835,
+    697.08,
+    384.009,
+    711.08
+   ],
+   "on": null
+  },
+  {
+   "page": 2,
+   "name": "highTestRange3",
+   "type": "Tx",
+   "rect": [
+    387.547,
+    678.629,
+    483.721,
+    692.629
+   ],
+   "on": null
+  },
+  {
+   "page": 2,
+   "name": "lowTestRange3",
+   "type": "Tx",
+   "rect": [
+    287.835,
+    678.629,
+    384.009,
+    692.629
+   ],
+   "on": null
+  },
+  {
+   "page": 2,
+   "name": "highTestRange4",
+   "type": "Tx",
+   "rect": [
+    387.547,
+    660.7,
+    483.721,
+    674.7
+   ],
+   "on": null
+  },
+  {
+   "page": 2,
+   "name": "lowTestRange4",
+   "type": "Tx",
+   "rect": [
+    287.835,
+    660.7,
+    384.009,
+    674.7
+   ],
+   "on": null
+  },
+  {
+   "page": 2,
+   "name": "highTestRange5",
+   "type": "Tx",
+   "rect": [
+    387.547,
+    642.278,
+    483.721,
+    656.278
+   ],
+   "on": null
+  },
+  {
+   "page": 2,
+   "name": "lowTestRange5",
+   "type": "Tx",
+   "rect": [
+    287.835,
+    642.278,
+    384.009,
+    656.278
+   ],
+   "on": null
+  },
+  {
+   "page": 2,
+   "name": "highTestRange6",
+   "type": "Tx",
+   "rect": [
+    387.547,
+    623.49,
+    483.721,
+    637.49
+   ],
+   "on": null
+  },
+  {
+   "page": 2,
+   "name": "lowTestRange6",
+   "type": "Tx",
+   "rect": [
+    287.835,
+    623.49,
+    384.009,
+    637.49
+   ],
+   "on": null
+  },
+  {
+   "page": 2,
+   "name": "highTestRange7",
+   "type": "Tx",
+   "rect": [
+    387.547,
+    604.444,
+    483.721,
+    618.444
+   ],
+   "on": null
+  },
+  {
+   "page": 2,
+   "name": "lowTestRange7",
+   "type": "Tx",
+   "rect": [
+    287.835,
+    604.444,
+    384.009,
+    618.444
+   ],
+   "on": null
+  },
+  {
+   "page": 2,
+   "name": "highTestRange8",
+   "type": "Tx",
+   "rect": [
+    387.547,
+    585.919,
+    483.721,
+    599.919
+   ],
+   "on": null
+  },
+  {
+   "page": 2,
+   "name": "lowTestRange8",
+   "type": "Tx",
+   "rect": [
+    287.835,
+    585.919,
+    384.009,
+    599.919
+   ],
+   "on": null
+  },
+  {
+   "page": 2,
+   "name": "addComm",
+   "type": "Tx",
+   "rect": [
+    46.426,
+    349.873,
+    567.907,
+    559.696
+   ],
+   "on": null
+  },
+  {
+   "page": 2,
+   "name": "otherHist",
+   "type": "Tx",
+   "rect": [
+    47.423,
+    88.112,
+    566.509,
+    303.086
+   ],
+   "on": null
+  },
+  {
+   "page": 2,
+   "name": "CharCounterAddComments",
+   "type": "Tx",
+   "rect": [
+    542.165,
+    563.032,
+    568.499,
+    574.767
+   ],
+   "on": null
+  },
+  {
+   "page": 2,
+   "name": "CharCounterOther",
+   "type": "Tx",
+   "rect": [
+    539.181,
+    305.459,
+    565.515,
+    317.194
+   ],
+   "on": null
+  },
+  {
+   "page": 3,
+   "name": "prodName1",
+   "type": "Tx",
+   "rect": [
+    45.24,
+    673.917,
+    277.74,
+    687.917
+   ],
+   "on": null
+  },
+  {
+   "page": 3,
+   "name": "prodStr1",
+   "type": "Tx",
+   "rect": [
+    285.939,
+    673.822,
+    376.939,
+    687.917
+   ],
+   "on": null
+  },
+  {
+   "page": 3,
+   "name": "prodUnit1",
+   "type": "Ch",
+   "rect": [
+    384.009,
+    673.2,
+    574.809,
+    687.6
+   ],
+   "on": "Type"
+  },
+  {
+   "page": 3,
+   "name": "ndc1",
+   "type": "Tx",
+   "rect": [
+    45.683,
+    641.733,
+    192.806,
+    655.733
+   ],
+   "on": null
+  },
+  {
+   "page": 3,
+   "name": "manu1",
+   "type": "Tx",
+   "rect": [
+    201.77,
+    641.733,
+    573.599,
+    655.733
+   ],
+   "on": null
+  },
+  {
+   "page": 3,
+   "name": "FEINum1",
+   "type": "Tx",
+   "rect": [
+    201.77,
+    608.468,
+    573.599,
+    622.468
+   ],
+   "on": null
+  },
+  {
+   "page": 3,
+   "name": "lot1",
+   "type": "Tx",
+   "rect": [
+    45.745,
+    608.468,
+    189.544,
+    622.468
+   ],
+   "on": null
+  },
+  {
+   "page": 3,
+   "name": "dose1",
+   "type": "Tx",
+   "rect": [
+    49.691,
+    572.601,
+    241.691,
+    585.601
+   ],
+   "on": null
+  },
+  {
+   "page": 3,
+   "name": "freq1",
+   "type": "Ch",
+   "rect": [
+    250.667,
+    573.601,
+    409.417,
+    585.601
+   ],
+   "on": "Type"
+  },
+  {
+   "page": 3,
+   "name": "route1",
+   "type": "Ch",
+   "rect": [
+    417.486,
+    573.601,
+    567.736,
+    585.601
+   ],
+   "on": "Type"
+  },
+  {
+   "page": 3,
+   "name": "doseUnit1",
+   "type": "Ch",
+   "rect": [
+    49.691,
+    541.61,
+    241.691,
+    555.61
+   ],
+   "on": "Type"
+  },
+  {
+   "page": 3,
+   "name": "freq1Other",
+   "type": "Tx",
+   "rect": [
+    250.667,
+    541.61,
+    409.417,
+    555.61
+   ],
+   "on": null
+  },
+  {
+   "page": 3,
+   "name": "route1Other",
+   "type": "Tx",
+   "rect": [
+    417.486,
+    541.61,
+    567.736,
+    555.61
+   ],
+   "on": null
+  },
+  {
+   "page": 3,
+   "name": "start1Date",
+   "type": "Tx",
+   "rect": [
+    237.458,
+    506.206,
+    309.458,
+    520.206
+   ],
+   "on": null
+  },
+  {
+   "page": 3,
+   "name": "end1Date",
+   "type": "Tx",
+   "rect": [
+    237.458,
+    488.829,
+    309.458,
+    502.829
+   ],
+   "on": null
+  },
+  {
+   "page": 3,
+   "name": "red1Date",
+   "type": "Tx",
+   "rect": [
+    237.458,
+    471.396,
+    309.458,
+    485.396
+   ],
+   "on": null
+  },
+  {
+   "page": 3,
+   "name": "duration1",
+   "type": "Tx",
+   "rect": [
+    395.291,
+    497.815,
+    450.541,
+    511.815
+   ],
+   "on": null
+  },
+  {
+   "page": 3,
+   "name": "durUnit1",
+   "type": "Ch",
+   "rect": [
+    395.291,
+    477.406,
+    545.791,
+    491.406
+   ],
+   "on": "Type"
+  },
+  {
+   "page": 3,
+   "name": "diagnosis1",
+   "type": "Tx",
+   "rect": [
+    48.466,
+    319.539,
+    260.866,
+    452.767
+   ],
+   "on": null
+  },
+  {
+   "page": 3,
+   "name": "expDate1",
+   "type": "Tx",
+   "rect": [
+    485.447,
+    429.165,
+    557.447,
+    443.166
+   ],
+   "on": null
+  },
+  {
+   "page": 3,
+   "name": "Prod1Brand",
+   "type": "Btn",
+   "rect": [
+    286.37,
+    430.37,
+    297.04,
+    441.04
+   ],
+   "on": "1"
+  },
+  {
+   "page": 3,
+   "name": "Prod1Generic",
+   "type": "Btn",
+   "rect": [
+    286.574,
+    415.788,
+    297.244,
+    426.458
+   ],
+   "on": "1"
+  },
+  {
+   "page": 3,
+   "name": "Prod1OTC",
+   "type": "Btn",
+   "rect": [
+    286.574,
+    400.507,
+    297.244,
+    411.177
+   ],
+   "on": "1"
+  },
+  {
+   "page": 3,
+   "name": "Prod1PdtOther",
+   "type": "Btn",
+   "rect": [
+    286.35,
+    291.563,
+    297.02,
+    302.233
+   ],
+   "on": "1"
+  },
+  {
+   "page": 3,
+   "name": "Prod1Cannabi",
+   "type": "Btn",
+   "rect": [
+    286.35,
+    313.103,
+    297.02,
+    323.773
+   ],
+   "on": "1"
+  },
+  {
+   "page": 3,
+   "name": "Prod1CosRetail",
+   "type": "Btn",
+   "rect": [
+    286.35,
+    339.321,
+    297.02,
+    349.991
+   ],
+   "on": "1"
+  },
+  {
+   "page": 3,
+   "name": "Prod1Compounded",
+   "type": "Btn",
+   "rect": [
+    286.35,
+    384.579,
+    297.02,
+    395.249
+   ],
+   "on": "1"
+  },
+  {
+   "page": 3,
+   "name": "Prod1CosmProf",
+   "type": "Btn",
+   "rect": [
+    286.446,
+    353.241,
+    297.116,
+    363.911
+   ],
+   "on": "1"
+  },
+  {
+   "page": 3,
+   "name": "abate1Yes",
+   "type": "Btn",
+   "rect": [
+    55.8,
+    256.492,
+    66.47,
+    267.162
+   ],
+   "on": "Yes"
+  },
+  {
+   "page": 3,
+   "name": "abate1No",
+   "type": "Btn",
+   "rect": [
+    115.653,
+    256.492,
+    126.323,
+    267.162
+   ],
+   "on": "Yes"
+  },
+  {
+   "page": 3,
+   "name": "abate1NA",
+   "type": "Btn",
+   "rect": [
+    177.19,
+    256.084,
+    187.86,
+    266.754
+   ],
+   "on": "Yes"
+  },
+  {
+   "page": 3,
+   "name": "reappear1Yes",
+   "type": "Btn",
+   "rect": [
+    334.692,
+    256.492,
+    345.362,
+    267.162
+   ],
+   "on": "Yes"
+  },
+  {
+   "page": 3,
+   "name": "reappear1No",
+   "type": "Btn",
+   "rect": [
+    387.215,
+    256.492,
+    397.885,
+    267.162
+   ],
+   "on": "Yes"
+  },
+  {
+   "page": 3,
+   "name": "reappear1NA",
+   "type": "Btn",
+   "rect": [
+    437.51,
+    256.492,
+    448.18,
+    267.162
+   ],
+   "on": "Yes"
+  },
+  {
+   "page": 4,
+   "name": "lot2",
+   "type": "Tx",
+   "rect": [
+    41.771,
+    633.775,
+    191.496,
+    647.775
+   ],
+   "on": null
+  },
+  {
+   "page": 4,
+   "name": "manu2",
+   "type": "Tx",
+   "rect": [
+    196.166,
+    664.789,
+    570.237,
+    678.789
+   ],
+   "on": null
+  },
+  {
+   "page": 4,
+   "name": "feiNum2",
+   "type": "Tx",
+   "rect": [
+    196.727,
+    633.775,
+    570.798,
+    647.775
+   ],
+   "on": null
+  },
+  {
+   "page": 4,
+   "name": "dose2",
+   "type": "Tx",
+   "rect": [
+    48.608,
+    599.141,
+    240.608,
+    612.141
+   ],
+   "on": null
+  },
+  {
+   "page": 4,
+   "name": "freq2",
+   "type": "Ch",
+   "rect": [
+    249.585,
+    600.141,
+    408.335,
+    612.141
+   ],
+   "on": "Type"
+  },
+  {
+   "page": 4,
+   "name": "route2",
+   "type": "Ch",
+   "rect": [
+    416.404,
+    600.141,
+    566.654,
+    612.141
+   ],
+   "on": "Type"
+  },
+  {
+   "page": 4,
+   "name": "doseUnit2",
+   "type": "Ch",
+   "rect": [
+    48.608,
+    568.15,
+    240.608,
+    582.15
+   ],
+   "on": "Type"
+  },
+  {
+   "page": 4,
+   "name": "freq2Other",
+   "type": "Tx",
+   "rect": [
+    249.585,
+    568.15,
+    408.335,
+    582.15
+   ],
+   "on": null
+  },
+  {
+   "page": 4,
+   "name": "route2Other",
+   "type": "Tx",
+   "rect": [
+    416.404,
+    568.15,
+    566.654,
+    582.15
+   ],
+   "on": null
+  },
+  {
+   "page": 4,
+   "name": "start2Date",
+   "type": "Tx",
+   "rect": [
+    236.375,
+    532.745,
+    308.375,
+    546.745
+   ],
+   "on": null
+  },
+  {
+   "page": 4,
+   "name": "end2Date",
+   "type": "Tx",
+   "rect": [
+    236.375,
+    515.369,
+    308.375,
+    529.369
+   ],
+   "on": null
+  },
+  {
+   "page": 4,
+   "name": "red2Date",
+   "type": "Tx",
+   "rect": [
+    236.375,
+    497.936,
+    308.375,
+    511.936
+   ],
+   "on": null
+  },
+  {
+   "page": 4,
+   "name": "duration2",
+   "type": "Tx",
+   "rect": [
+    394.208,
+    524.355,
+    449.458,
+    538.355
+   ],
+   "on": null
+  },
+  {
+   "page": 4,
+   "name": "durUnit2",
+   "type": "Ch",
+   "rect": [
+    394.208,
+    503.945,
+    544.708,
+    517.945
+   ],
+   "on": "Type"
+  },
+  {
+   "page": 4,
+   "name": "diagnosis2",
+   "type": "Tx",
+   "rect": [
+    47.384,
+    346.078,
+    259.784,
+    479.306
+   ],
+   "on": null
+  },
+  {
+   "page": 4,
+   "name": "expDate2",
+   "type": "Tx",
+   "rect": [
+    484.364,
+    455.704,
+    556.364,
+    469.705
+   ],
+   "on": null
+  },
+  {
+   "page": 4,
+   "name": "Prod2Brand",
+   "type": "Btn",
+   "rect": [
+    285.287,
+    456.909,
+    295.957,
+    467.579
+   ],
+   "on": "1"
+  },
+  {
+   "page": 4,
+   "name": "Prod2Generic",
+   "type": "Btn",
+   "rect": [
+    285.491,
+    442.328,
+    296.161,
+    452.998
+   ],
+   "on": "1"
+  },
+  {
+   "page": 4,
+   "name": "Prod2OTC",
+   "type": "Btn",
+   "rect": [
+    285.491,
+    427.046,
+    296.161,
+    437.716
+   ],
+   "on": "1"
+  },
+  {
+   "page": 4,
+   "name": "Prod2PdtOther",
+   "type": "Btn",
+   "rect": [
+    287.195,
+    318.412,
+    297.865,
+    329.082
+   ],
+   "on": "1"
+  },
+  {
+   "page": 4,
+   "name": "Prod2Cannabi",
+   "type": "Btn",
+   "rect": [
+    287.195,
+    339.952,
+    297.865,
+    350.622
+   ],
+   "on": "1"
+  },
+  {
+   "page": 4,
+   "name": "Prod2CosRetail",
+   "type": "Btn",
+   "rect": [
+    287.195,
+    363.542,
+    297.865,
+    374.212
+   ],
+   "on": "1"
+  },
+  {
+   "page": 4,
+   "name": "Prod2Compounded",
+   "type": "Btn",
+   "rect": [
+    285.267,
+    411.714,
+    295.937,
+    422.384
+   ],
+   "on": "1"
+  },
+  {
+   "page": 4,
+   "name": "Prod2CosmProf",
+   "type": "Btn",
+   "rect": [
+    287.195,
+    379.699,
+    297.865,
+    390.369
+   ],
+   "on": "1"
+  },
+  {
+   "page": 4,
+   "name": "abate2Yes",
+   "type": "Btn",
+   "rect": [
+    54.717,
+    286.267,
+    65.387,
+    296.937
+   ],
+   "on": "Yes"
+  },
+  {
+   "page": 4,
+   "name": "abate2No",
+   "type": "Btn",
+   "rect": [
+    114.571,
+    286.267,
+    125.241,
+    296.937
+   ],
+   "on": "Yes"
+  },
+  {
+   "page": 4,
+   "name": "abate2NA",
+   "type": "Btn",
+   "rect": [
+    175.547,
+    286.267,
+    186.217,
+    296.937
+   ],
+   "on": "Yes"
+  },
+  {
+   "page": 4,
+   "name": "reappear2Yes",
+   "type": "Btn",
+   "rect": [
+    333.609,
+    286.114,
+    344.279,
+    296.784
+   ],
+   "on": "Yes"
+  },
+  {
+   "page": 4,
+   "name": "reappear2No",
+   "type": "Btn",
+   "rect": [
+    386.132,
+    286.037,
+    396.802,
+    296.707
+   ],
+   "on": "Yes"
+  },
+  {
+   "page": 4,
+   "name": "reappear2NA",
+   "type": "Btn",
+   "rect": [
+    436.428,
+    285.966,
+    447.098,
+    296.636
+   ],
+   "on": "Yes"
+  },
+  {
+   "page": 4,
+   "name": "prodName2",
+   "type": "Tx",
+   "rect": [
+    42.5,
+    695.042,
+    275.0,
+    709.042
+   ],
+   "on": null
+  },
+  {
+   "page": 4,
+   "name": "prodStr2",
+   "type": "Tx",
+   "rect": [
+    281.0,
+    694.948,
+    372.0,
+    709.042
+   ],
+   "on": null
+  },
+  {
+   "page": 4,
+   "name": "prodUnit2",
+   "type": "Ch",
+   "rect": [
+    378.0,
+    695.042,
+    570.0,
+    709.042
+   ],
+   "on": "Type"
+  },
+  {
+   "page": 4,
+   "name": "ndc2",
+   "type": "Tx",
+   "rect": [
+    42.055,
+    664.087,
+    189.178,
+    678.087
+   ],
+   "on": null
+  },
+  {
+   "page": 5,
+   "name": "commonName",
+   "type": "Tx",
+   "rect": [
+    333.074,
+    493.755,
+    560.883,
+    506.755
+   ],
+   "on": null
+  },
+  {
+   "page": 5,
+   "name": "proCode",
+   "type": "Tx",
+   "rect": [
+    271.024,
+    493.755,
+    325.139,
+    506.755
+   ],
+   "on": null
+  },
+  {
+   "page": 5,
+   "name": "brandName",
+   "type": "Tx",
+   "rect": [
+    41.109,
+    493.755,
+    266.278,
+    506.755
+   ],
+   "on": null
+  },
+  {
+   "page": 5,
+   "name": "manuNameAddr",
+   "type": "Tx",
+   "rect": [
+    39.734,
+    448.224,
+    565.009,
+    462.486
+   ],
+   "on": null
+  },
+  {
+   "page": 5,
+   "name": "lotNum",
+   "type": "Tx",
+   "rect": [
+    160.96,
+    409.166,
+    305.402,
+    422.166
+   ],
+   "on": null
+  },
+  {
+   "page": 5,
+   "name": "catNum",
+   "type": "Tx",
+   "rect": [
+    311.46,
+    409.166,
+    564.557,
+    422.166
+   ],
+   "on": null
+  },
+  {
+   "page": 5,
+   "name": "modelNum",
+   "type": "Tx",
+   "rect": [
+    40.511,
+    409.166,
+    153.535,
+    422.166
+   ],
+   "on": null
+  },
+  {
+   "page": 5,
+   "name": "expDate",
+   "type": "Tx",
+   "rect": [
+    183.337,
+    384.67,
+    255.337,
+    398.67
+   ],
+   "on": null
+  },
+  {
+   "page": 5,
+   "name": "serNum",
+   "type": "Tx",
+   "rect": [
+    350.023,
+    384.565,
+    494.465,
+    398.565
+   ],
+   "on": null
+  },
+  {
+   "page": 5,
+   "name": "cProdName1",
+   "type": "Tx",
+   "rect": [
+    52.98,
+    705.583,
+    268.447,
+    719.583
+   ],
+   "on": null
+  },
+  {
+   "page": 5,
+   "name": "cProdStart1",
+   "type": "Tx",
+   "rect": [
+    273.768,
+    705.583,
+    432.936,
+    719.583
+   ],
+   "on": null
+  },
+  {
+   "page": 5,
+   "name": "cProdEnd1",
+   "type": "Tx",
+   "rect": [
+    438.141,
+    705.583,
+    569.391,
+    719.583
+   ],
+   "on": null
+  },
+  {
+   "page": 5,
+   "name": "cProdName2",
+   "type": "Tx",
+   "rect": [
+    52.98,
+    688.824,
+    268.447,
+    702.824
+   ],
+   "on": null
+  },
+  {
+   "page": 5,
+   "name": "cProdStart2",
+   "type": "Tx",
+   "rect": [
+    273.768,
+    688.824,
+    432.936,
+    702.824
+   ],
+   "on": null
+  },
+  {
+   "page": 5,
+   "name": "cProdEnd2",
+   "type": "Tx",
+   "rect": [
+    438.141,
+    688.824,
+    569.391,
+    702.824
+   ],
+   "on": null
+  },
+  {
+   "page": 5,
+   "name": "cProdName3",
+   "type": "Tx",
+   "rect": [
+    52.98,
+    672.066,
+    268.447,
+    686.066
+   ],
+   "on": null
+  },
+  {
+   "page": 5,
+   "name": "cProdStart3",
+   "type": "Tx",
+   "rect": [
+    273.768,
+    672.066,
+    432.936,
+    686.066
+   ],
+   "on": null
+  },
+  {
+   "page": 5,
+   "name": "cProdEnd3",
+   "type": "Tx",
+   "rect": [
+    438.141,
+    672.066,
+    569.391,
+    686.066
+   ],
+   "on": null
+  },
+  {
+   "page": 5,
+   "name": "cProdName4",
+   "type": "Tx",
+   "rect": [
+    52.98,
+    655.305,
+    268.447,
+    669.305
+   ],
+   "on": null
+  },
+  {
+   "page": 5,
+   "name": "cProdStart4",
+   "type": "Tx",
+   "rect": [
+    273.768,
+    655.305,
+    432.936,
+    669.305
+   ],
+   "on": null
+  },
+  {
+   "page": 5,
+   "name": "cProdEnd4",
+   "type": "Tx",
+   "rect": [
+    438.141,
+    655.305,
+    569.391,
+    669.305
+   ],
+   "on": null
+  },
+  {
+   "page": 5,
+   "name": "cProdName5",
+   "type": "Tx",
+   "rect": [
+    52.98,
+    638.546,
+    268.447,
+    652.546
+   ],
+   "on": null
+  },
+  {
+   "page": 5,
+   "name": "cProdStart5",
+   "type": "Tx",
+   "rect": [
+    273.768,
+    638.546,
+    432.936,
+    652.546
+   ],
+   "on": null
+  },
+  {
+   "page": 5,
+   "name": "cProdEnd5",
+   "type": "Tx",
+   "rect": [
+    438.141,
+    638.546,
+    569.391,
+    652.546
+   ],
+   "on": null
+  },
+  {
+   "page": 5,
+   "name": "cProdName6",
+   "type": "Tx",
+   "rect": [
+    52.98,
+    621.788,
+    268.447,
+    635.788
+   ],
+   "on": null
+  },
+  {
+   "page": 5,
+   "name": "cProdStart6",
+   "type": "Tx",
+   "rect": [
+    273.768,
+    621.788,
+    432.936,
+    635.788
+   ],
+   "on": null
+  },
+  {
+   "page": 5,
+   "name": "cProdEnd6",
+   "type": "Tx",
+   "rect": [
+    438.141,
+    621.788,
+    569.391,
+    635.788
+   ],
+   "on": null
+  },
+  {
+   "page": 5,
+   "name": "cProdName7",
+   "type": "Tx",
+   "rect": [
+    52.98,
+    605.027,
+    268.447,
+    619.027
+   ],
+   "on": null
+  },
+  {
+   "page": 5,
+   "name": "cProdStart7",
+   "type": "Tx",
+   "rect": [
+    273.768,
+    605.027,
+    432.936,
+    619.027
+   ],
+   "on": null
+  },
+  {
+   "page": 5,
+   "name": "cProdEnd7",
+   "type": "Tx",
+   "rect": [
+    438.141,
+    605.027,
+    569.391,
+    619.027
+   ],
+   "on": null
+  },
+  {
+   "page": 5,
+   "name": "cProdName8",
+   "type": "Tx",
+   "rect": [
+    52.98,
+    588.268,
+    268.447,
+    602.268
+   ],
+   "on": null
+  },
+  {
+   "page": 5,
+   "name": "cProdStart8",
+   "type": "Tx",
+   "rect": [
+    273.768,
+    588.268,
+    432.936,
+    602.268
+   ],
+   "on": null
+  },
+  {
+   "page": 5,
+   "name": "cProdEnd8",
+   "type": "Tx",
+   "rect": [
+    438.141,
+    588.268,
+    569.391,
+    602.268
+   ],
+   "on": null
+  },
+  {
+   "page": 5,
+   "name": "cProdName9",
+   "type": "Tx",
+   "rect": [
+    52.98,
+    570.914,
+    268.447,
+    584.914
+   ],
+   "on": null
+  },
+  {
+   "page": 5,
+   "name": "cProdStart9",
+   "type": "Tx",
+   "rect": [
+    273.768,
+    570.914,
+    432.936,
+    584.914
+   ],
+   "on": null
+  },
+  {
+   "page": 5,
+   "name": "cProdEnd9",
+   "type": "Tx",
+   "rect": [
+    438.141,
+    570.914,
+    569.391,
+    584.914
+   ],
+   "on": null
+  },
+  {
+   "page": 5,
+   "name": "cProdName10",
+   "type": "Tx",
+   "rect": [
+    52.98,
+    553.518,
+    268.447,
+    567.518
+   ],
+   "on": null
+  },
+  {
+   "page": 5,
+   "name": "cProdStart10",
+   "type": "Tx",
+   "rect": [
+    273.768,
+    553.518,
+    432.936,
+    567.518
+   ],
+   "on": null
+  },
+  {
+   "page": 5,
+   "name": "cProdEnd10",
+   "type": "Tx",
+   "rect": [
+    438.141,
+    553.518,
+    569.391,
+    567.518
+   ],
+   "on": null
+  },
+  {
+   "page": 5,
+   "name": "CharCounterUDI",
+   "type": "Tx",
+   "rect": [
+    541.268,
+    362.837,
+    567.602,
+    374.572
+   ],
+   "on": null
+  },
+  {
+   "page": 5,
+   "name": "udi",
+   "type": "Tx",
+   "rect": [
+    43.558,
+    139.847,
+    567.486,
+    361.451
+   ],
+   "on": null
+  },
+  {
+   "page": 6,
+   "name": "devOpHP",
+   "type": "Btn",
+   "rect": [
+    46.862,
+    726.1,
+    57.532,
+    736.77
+   ],
+   "on": "1"
+  },
+  {
+   "page": 6,
+   "name": "devOpPat",
+   "type": "Btn",
+   "rect": [
+    138.86,
+    726.1,
+    149.53,
+    736.77
+   ],
+   "on": "1"
+  },
+  {
+   "page": 6,
+   "name": "devOpOther",
+   "type": "Btn",
+   "rect": [
+    46.863,
+    712.568,
+    57.532,
+    723.237
+   ],
+   "on": "1"
+  },
+  {
+   "page": 6,
+   "name": "devOpOtherSpec",
+   "type": "Tx",
+   "rect": [
+    82.321,
+    709.745,
+    218.021,
+    723.745
+   ],
+   "on": null
+  },
+  {
+   "page": 6,
+   "name": "explantDate",
+   "type": "Tx",
+   "rect": [
+    244.417,
+    713.214,
+    316.417,
+    727.214
+   ],
+   "on": null
+  },
+  {
+   "page": 6,
+   "name": "implantDate",
+   "type": "Tx",
+   "rect": [
+    411.366,
+    712.737,
+    480.361,
+    727.761
+   ],
+   "on": null
+  },
+  {
+   "page": 6,
+   "name": "singleUseY",
+   "type": "Btn",
+   "rect": [
+    47.695,
+    663.202,
+    58.365,
+    673.872
+   ],
+   "on": "1"
+  },
+  {
+   "page": 6,
+   "name": "singleUseN",
+   "type": "Btn",
+   "rect": [
+    83.695,
+    663.202,
+    94.365,
+    673.872
+   ],
+   "on": "1"
+  },
+  {
+   "page": 6,
+   "name": "reproAddr",
+   "type": "Tx",
+   "rect": [
+    228.5,
+    651.436,
+    566.75,
+    684.326
+   ],
+   "on": null
+  },
+  {
+   "page": 6,
+   "name": "thirdParY",
+   "type": "Btn",
+   "rect": [
+    47.667,
+    607.521,
+    58.337,
+    618.191
+   ],
+   "on": "1"
+  },
+  {
+   "page": 6,
+   "name": "thirdParN",
+   "type": "Btn",
+   "rect": [
+    83.667,
+    607.521,
+    94.337,
+    618.191
+   ],
+   "on": "1"
+  },
+  {
+   "page": 6,
+   "name": "thirdParU",
+   "type": "Btn",
+   "rect": [
+    121.665,
+    607.521,
+    132.335,
+    618.191
+   ],
+   "on": "1"
+  },
+  {
+   "page": 6,
+   "name": "evalY",
+   "type": "Btn",
+   "rect": [
+    232.832,
+    622.185,
+    243.502,
+    632.855
+   ],
+   "on": "1"
+  },
+  {
+   "page": 6,
+   "name": "evalN",
+   "type": "Btn",
+   "rect": [
+    274.189,
+    621.711,
+    284.859,
+    632.381
+   ],
+   "on": "1"
+  },
+  {
+   "page": 6,
+   "name": "evalRet",
+   "type": "Btn",
+   "rect": [
+    232.832,
+    606.33,
+    243.502,
+    617.0
+   ],
+   "on": "1"
+  },
+  {
+   "page": 6,
+   "name": "returnDate",
+   "type": "Tx",
+   "rect": [
+    404.081,
+    605.761,
+    466.081,
+    618.761
+   ],
+   "on": null
+  },
+  {
+   "page": 6,
+   "name": "cProdName1",
+   "type": "Tx",
+   "rect": [
+    57.033,
+    551.336,
+    287.783,
+    565.336
+   ],
+   "on": null
+  },
+  {
+   "page": 6,
+   "name": "cProdStart1",
+   "type": "Tx",
+   "rect": [
+    293.533,
+    551.336,
+    426.033,
+    565.336
+   ],
+   "on": null
+  },
+  {
+   "page": 6,
+   "name": "cProdEnd1",
+   "type": "Tx",
+   "rect": [
+    432.034,
+    551.336,
+    562.034,
+    565.336
+   ],
+   "on": null
+  },
+  {
+   "page": 6,
+   "name": "cProdName2",
+   "type": "Tx",
+   "rect": [
+    57.033,
+    534.578,
+    287.783,
+    548.578
+   ],
+   "on": null
+  },
+  {
+   "page": 6,
+   "name": "cProdStart2",
+   "type": "Tx",
+   "rect": [
+    293.533,
+    534.578,
+    426.033,
+    548.578
+   ],
+   "on": null
+  },
+  {
+   "page": 6,
+   "name": "cProdEnd2",
+   "type": "Tx",
+   "rect": [
+    432.034,
+    534.578,
+    562.034,
+    548.578
+   ],
+   "on": null
+  },
+  {
+   "page": 6,
+   "name": "cProdName3",
+   "type": "Tx",
+   "rect": [
+    57.033,
+    517.819,
+    287.783,
+    531.819
+   ],
+   "on": null
+  },
+  {
+   "page": 6,
+   "name": "cProdStart3",
+   "type": "Tx",
+   "rect": [
+    293.533,
+    517.819,
+    426.033,
+    531.819
+   ],
+   "on": null
+  },
+  {
+   "page": 6,
+   "name": "cProdEnd3",
+   "type": "Tx",
+   "rect": [
+    432.034,
+    517.819,
+    562.034,
+    531.819
+   ],
+   "on": null
+  },
+  {
+   "page": 6,
+   "name": "cProdName4",
+   "type": "Tx",
+   "rect": [
+    57.033,
+    501.058,
+    287.783,
+    515.058
+   ],
+   "on": null
+  },
+  {
+   "page": 6,
+   "name": "cProdStart4",
+   "type": "Tx",
+   "rect": [
+    293.533,
+    501.058,
+    426.033,
+    515.058
+   ],
+   "on": null
+  },
+  {
+   "page": 6,
+   "name": "cProdEnd4",
+   "type": "Tx",
+   "rect": [
+    432.034,
+    501.058,
+    562.034,
+    515.058
+   ],
+   "on": null
+  },
+  {
+   "page": 6,
+   "name": "cProdName5",
+   "type": "Tx",
+   "rect": [
+    57.033,
+    484.3,
+    287.783,
+    498.3
+   ],
+   "on": null
+  },
+  {
+   "page": 6,
+   "name": "cProdStart5",
+   "type": "Tx",
+   "rect": [
+    293.533,
+    484.3,
+    426.033,
+    498.3
+   ],
+   "on": null
+  },
+  {
+   "page": 6,
+   "name": "cProdEnd5",
+   "type": "Tx",
+   "rect": [
+    432.034,
+    484.3,
+    562.034,
+    498.3
+   ],
+   "on": null
+  },
+  {
+   "page": 6,
+   "name": "cProdName6",
+   "type": "Tx",
+   "rect": [
+    57.033,
+    467.541,
+    287.783,
+    481.541
+   ],
+   "on": null
+  },
+  {
+   "page": 6,
+   "name": "cProdStart6",
+   "type": "Tx",
+   "rect": [
+    293.533,
+    467.541,
+    426.033,
+    481.541
+   ],
+   "on": null
+  },
+  {
+   "page": 6,
+   "name": "cProdEnd6",
+   "type": "Tx",
+   "rect": [
+    432.034,
+    467.541,
+    562.034,
+    481.541
+   ],
+   "on": null
+  },
+  {
+   "page": 6,
+   "name": "cProdName7",
+   "type": "Tx",
+   "rect": [
+    57.033,
+    450.783,
+    287.783,
+    464.783
+   ],
+   "on": null
+  },
+  {
+   "page": 6,
+   "name": "cProdStart7",
+   "type": "Tx",
+   "rect": [
+    293.533,
+    450.783,
+    426.033,
+    464.783
+   ],
+   "on": null
+  },
+  {
+   "page": 6,
+   "name": "cProdEnd7",
+   "type": "Tx",
+   "rect": [
+    432.034,
+    450.783,
+    562.034,
+    464.783
+   ],
+   "on": null
+  },
+  {
+   "page": 6,
+   "name": "cProdName8",
+   "type": "Tx",
+   "rect": [
+    57.033,
+    434.022,
+    287.783,
+    448.022
+   ],
+   "on": null
+  },
+  {
+   "page": 6,
+   "name": "cProdStart8",
+   "type": "Tx",
+   "rect": [
+    293.533,
+    434.022,
+    426.033,
+    448.022
+   ],
+   "on": null
+  },
+  {
+   "page": 6,
+   "name": "cProdEnd8",
+   "type": "Tx",
+   "rect": [
+    432.034,
+    434.022,
+    562.034,
+    448.022
+   ],
+   "on": null
+  },
+  {
+   "page": 6,
+   "name": "cProdName9",
+   "type": "Tx",
+   "rect": [
+    57.033,
+    417.263,
+    287.783,
+    431.263
+   ],
+   "on": null
+  },
+  {
+   "page": 6,
+   "name": "cProdStart9",
+   "type": "Tx",
+   "rect": [
+    293.533,
+    417.263,
+    426.033,
+    431.263
+   ],
+   "on": null
+  },
+  {
+   "page": 6,
+   "name": "cProdEnd9",
+   "type": "Tx",
+   "rect": [
+    432.034,
+    417.263,
+    562.034,
+    431.263
+   ],
+   "on": null
+  },
+  {
+   "page": 6,
+   "name": "cProdStart10",
+   "type": "Tx",
+   "rect": [
+    293.723,
+    400.737,
+    426.223,
+    414.737
+   ],
+   "on": null
+  },
+  {
+   "page": 6,
+   "name": "cProdEnd10",
+   "type": "Tx",
+   "rect": [
+    432.224,
+    400.737,
+    562.224,
+    414.737
+   ],
+   "on": null
+  },
+  {
+   "page": 6,
+   "name": "cProdName10",
+   "type": "Tx",
+   "rect": [
+    57.223,
+    400.737,
+    287.973,
+    414.737
+   ],
+   "on": null
+  },
+  {
+   "page": 6,
+   "name": "repOccupation",
+   "type": "Ch",
+   "rect": [
+    142.99,
+    173.041,
+    322.99,
+    187.041
+   ],
+   "on": "Type"
+  },
+  {
+   "page": 6,
+   "name": "reportPhone",
+   "type": "Tx",
+   "rect": [
+    40.226,
+    209.382,
+    150.278,
+    223.382
+   ],
+   "on": null
+  },
+  {
+   "page": 6,
+   "name": "reportZip",
+   "type": "Tx",
+   "rect": [
+    496.768,
+    270.154,
+    569.539,
+    284.154
+   ],
+   "on": null
+  },
+  {
+   "page": 6,
+   "name": "reportSt",
+   "type": "Tx",
+   "rect": [
+    305.393,
+    270.154,
+    487.122,
+    284.154
+   ],
+   "on": null
+  },
+  {
+   "page": 6,
+   "name": "reportCity",
+   "type": "Tx",
+   "rect": [
+    41.417,
+    270.154,
+    299.174,
+    284.154
+   ],
+   "on": null
+  },
+  {
+   "page": 6,
+   "name": "reportCountry",
+   "type": "Ch",
+   "rect": [
+    39.979,
+    238.553,
+    569.539,
+    252.553
+   ],
+   "on": "Type"
+  },
+  {
+   "page": 6,
+   "name": "reportLast",
+   "type": "Tx",
+   "rect": [
+    39.806,
+    335.308,
+    302.411,
+    349.308
+   ],
+   "on": null
+  },
+  {
+   "page": 6,
+   "name": "reportFirst",
+   "type": "Tx",
+   "rect": [
+    307.012,
+    335.308,
+    568.307,
+    349.308
+   ],
+   "on": null
+  },
+  {
+   "page": 6,
+   "name": "reportAddr",
+   "type": "Tx",
+   "rect": [
+    39.806,
+    302.879,
+    568.156,
+    316.879
+   ],
+   "on": null
+  },
+  {
+   "page": 6,
+   "name": "reportEmail",
+   "type": "Tx",
+   "rect": [
+    153.589,
+    209.382,
+    568.659,
+    223.382
+   ],
+   "on": null
+  },
+  {
+   "page": 6,
+   "name": "repHPY",
+   "type": "Btn",
+   "rect": [
+    42.383,
+    176.539,
+    53.053,
+    187.209
+   ],
+   "on": "1"
+  },
+  {
+   "page": 6,
+   "name": "repHPN",
+   "type": "Btn",
+   "rect": [
+    80.764,
+    176.539,
+    91.434,
+    187.209
+   ],
+   "on": "Yes"
+  },
+  {
+   "page": 6,
+   "name": "reportFDAY",
+   "type": "Btn",
+   "rect": [
+    355.121,
+    175.943,
+    365.791,
+    186.613
+   ],
+   "on": "1"
+  },
+  {
+   "page": 6,
+   "name": "reportFDAN",
+   "type": "Btn",
+   "rect": [
+    392.122,
+    175.943,
+    402.792,
+    186.613
+   ],
+   "on": "1"
+  },
+  {
+   "page": 6,
+   "name": "reportFDAU",
+   "type": "Btn",
+   "rect": [
+    427.121,
+    175.943,
+    437.791,
+    186.613
+   ],
+   "on": "1"
+  },
+  {
+   "page": 7,
+   "name": "userAwareDate",
+   "type": "Tx",
+   "rect": [
+    301.022,
+    636.013,
+    373.022,
+    650.013
+   ],
+   "on": null
+  },
+  {
+   "page": 7,
+   "name": "reptInitial",
+   "type": "Btn",
+   "rect": [
+    461.049,
+    651.912,
+    471.719,
+    662.582
+   ],
+   "on": "1"
+  },
+  {
+   "page": 7,
+   "name": "reptFollowUp",
+   "type": "Btn",
+   "rect": [
+    461.582,
+    637.186,
+    472.252,
+    647.856
+   ],
+   "on": "1"
+  },
+  {
+   "page": 7,
+   "name": "followUpNum",
+   "type": "Tx",
+   "rect": [
+    526.13,
+    635.727,
+    575.867,
+    649.727
+   ],
+   "on": null
+  },
+  {
+   "page": 7,
+   "name": "deviceAgeMonth",
+   "type": "Btn",
+   "rect": [
+    295.897,
+    615.311,
+    306.567,
+    625.981
+   ],
+   "on": "1"
+  },
+  {
+   "page": 7,
+   "name": "ageMonths",
+   "type": "Tx",
+   "rect": [
+    346.64,
+    612.573,
+    372.061,
+    626.573
+   ],
+   "on": null
+  },
+  {
+   "page": 7,
+   "name": "deviceAgeYears",
+   "type": "Btn",
+   "rect": [
+    174.509,
+    615.906,
+    185.179,
+    626.576
+   ],
+   "on": "1"
+  },
+  {
+   "page": 7,
+   "name": "ageYears",
+   "type": "Tx",
+   "rect": [
+    225.839,
+    613.171,
+    251.232,
+    627.171
+   ],
+   "on": null
+  },
+  {
+   "page": 7,
+   "name": "healthClinCode",
+   "type": "Tx",
+   "rect": [
+    42.916,
+    565.433,
+    152.968,
+    579.433
+   ],
+   "on": null
+  },
+  {
+   "page": 7,
+   "name": "reportManuRecDate",
+   "type": "Tx",
+   "rect": [
+    443.755,
+    266.494,
+    515.755,
+    280.494
+   ],
+   "on": null
+  },
+  {
+   "page": 7,
+   "name": "repFollow",
+   "type": "Btn",
+   "rect": [
+    419.04,
+    135.411,
+    429.71,
+    146.081
+   ],
+   "on": "1"
+  },
+  {
+   "page": 7,
+   "name": "repFollowNum",
+   "type": "Tx",
+   "rect": [
+    479.976,
+    132.676,
+    529.713,
+    146.676
+   ],
+   "on": null
+  },
+  {
+   "page": 7,
+   "name": "otc",
+   "type": "Btn",
+   "rect": [
+    310.115,
+    171.555,
+    320.785,
+    182.225
+   ],
+   "on": "Yes"
+  },
+  {
+   "page": 7,
+   "name": "compounded",
+   "type": "Btn",
+   "rect": [
+    365.845,
+    171.555,
+    376.515,
+    182.225
+   ],
+   "on": "Yes"
+  },
+  {
+   "page": 7,
+   "name": "numPMA",
+   "type": "Tx",
+   "rect": [
+    469.734,
+    203.463,
+    569.02,
+    217.463
+   ],
+   "on": null
+  },
+  {
+   "page": 7,
+   "name": "numBLA",
+   "type": "Tx",
+   "rect": [
+    363.044,
+    203.463,
+    463.519,
+    217.463
+   ],
+   "on": null
+  },
+  {
+   "page": 7,
+   "name": "numIND",
+   "type": "Tx",
+   "rect": [
+    255.206,
+    203.463,
+    355.681,
+    217.463
+   ],
+   "on": null
+  },
+  {
+   "page": 7,
+   "name": "numANDA",
+   "type": "Tx",
+   "rect": [
+    146.247,
+    203.463,
+    246.722,
+    217.463
+   ],
+   "on": null
+  },
+  {
+   "page": 7,
+   "name": "numNDA",
+   "type": "Tx",
+   "rect": [
+    42.355,
+    203.463,
+    134.902,
+    217.463
+   ],
+   "on": null
+  },
+  {
+   "page": 7,
+   "name": "advTerms",
+   "type": "Tx",
+   "rect": [
+    52.52,
+    78.058,
+    357.129,
+    92.058
+   ],
+   "on": null
+  },
+  {
+   "page": 7,
+   "name": "manuName",
+   "type": "Tx",
+   "rect": [
+    42.916,
+    388.33,
+    328.498,
+    402.33
+   ],
+   "on": null
+  },
+  {
+   "page": 7,
+   "name": "manuEmail",
+   "type": "Tx",
+   "rect": [
+    333.776,
+    388.33,
+    467.943,
+    402.33
+   ],
+   "on": null
+  },
+  {
+   "page": 7,
+   "name": "manuPhone",
+   "type": "Tx",
+   "rect": [
+    472.464,
+    388.33,
+    570.211,
+    402.33
+   ],
+   "on": null
+  },
+  {
+   "page": 7,
+   "name": "manuAddr",
+   "type": "Tx",
+   "rect": [
+    44.597,
+    359.638,
+    573.158,
+    373.638
+   ],
+   "on": null
+  },
+  {
+   "page": 7,
+   "name": "comp503B",
+   "type": "Btn",
+   "rect": [
+    45.742,
+    327.971,
+    56.412,
+    338.641
+   ],
+   "on": "1"
+  },
+  {
+   "page": 7,
+   "name": "outsrcFac",
+   "type": "Tx",
+   "rect": [
+    218.505,
+    325.052,
+    566.318,
+    339.052
+   ],
+   "on": null
+  },
+  {
+   "page": 7,
+   "name": "repsrcFor",
+   "type": "Btn",
+   "rect": [
+    58.708,
+    288.139,
+    69.378,
+    298.809
+   ],
+   "on": "Yes"
+  },
+  {
+   "page": 7,
+   "name": "rptsrcStu",
+   "type": "Btn",
+   "rect": [
+    58.708,
+    272.092,
+    69.378,
+    282.762
+   ],
+   "on": "Yes"
+  },
+  {
+   "page": 7,
+   "name": "repsrcLit",
+   "type": "Btn",
+   "rect": [
+    125.336,
+    288.139,
+    136.006,
+    298.809
+   ],
+   "on": "Yes"
+  },
+  {
+   "page": 7,
+   "name": "repsrcCons",
+   "type": "Btn",
+   "rect": [
+    125.336,
+    274.331,
+    136.006,
+    285.001
+   ],
+   "on": "Yes"
+  },
+  {
+   "page": 7,
+   "name": "repsrcHP",
+   "type": "Btn",
+   "rect": [
+    194.791,
+    288.139,
+    205.461,
+    298.809
+   ],
+   "on": "Yes"
+  },
+  {
+   "page": 7,
+   "name": "repsrcUF",
+   "type": "Btn",
+   "rect": [
+    194.791,
+    272.092,
+    205.461,
+    282.762
+   ],
+   "on": "Yes"
+  },
+  {
+   "page": 7,
+   "name": "repsrcCR",
+   "type": "Btn",
+   "rect": [
+    296.756,
+    288.139,
+    307.426,
+    298.809
+   ],
+   "on": "Yes"
+  },
+  {
+   "page": 7,
+   "name": "repsrcDI",
+   "type": "Btn",
+   "rect": [
+    296.756,
+    272.653,
+    307.426,
+    283.323
+   ],
+   "on": "Yes"
+  },
+  {
+   "page": 7,
+   "name": "repsrcOther",
+   "type": "Btn",
+   "rect": [
+    296.756,
+    258.542,
+    307.426,
+    269.212
+   ],
+   "on": "1"
+  },
+  {
+   "page": 7,
+   "name": "repsrcOtherList",
+   "type": "Tx",
+   "rect": [
+    57.588,
+    242.221,
+    421.749,
+    256.221
+   ],
+   "on": null
+  },
+  {
+   "page": 7,
+   "name": "combo",
+   "type": "Btn",
+   "rect": [
+    41.21,
+    171.555,
+    51.88,
+    182.225
+   ],
+   "on": "Yes"
+  },
+  {
+   "page": 7,
+   "name": "preANDA",
+   "type": "Btn",
+   "rect": [
+    146.78,
+    171.555,
+    157.45,
+    182.225
+   ],
+   "on": "Yes"
+  },
+  {
+   "page": 7,
+   "name": "pre1938",
+   "type": "Btn",
+   "rect": [
+    232.721,
+    171.555,
+    243.391,
+    182.225
+   ],
+   "on": "Yes"
+  },
+  {
+   "page": 7,
+   "name": "protNum",
+   "type": "Tx",
+   "rect": [
+    52.52,
+    133.266,
+    152.995,
+    147.266
+   ],
+   "on": null
+  },
+  {
+   "page": 7,
+   "name": "rep5",
+   "type": "Btn",
+   "rect": [
+    203.808,
+    136.593,
+    214.478,
+    147.263
+   ],
+   "on": "Yes"
+  },
+  {
+   "page": 7,
+   "name": "rep7",
+   "type": "Btn",
+   "rect": [
+    203.808,
+    120.776,
+    214.478,
+    131.446
+   ],
+   "on": "Yes"
+  },
+  {
+   "page": 7,
+   "name": "rep15",
+   "type": "Btn",
+   "rect": [
+    251.784,
+    136.593,
+    262.454,
+    147.263
+   ],
+   "on": "Yes"
+  },
+  {
+   "page": 7,
+   "name": "rep30",
+   "type": "Btn",
+   "rect": [
+    251.784,
+    120.776,
+    262.454,
+    131.446
+   ],
+   "on": "Yes"
+  },
+  {
+   "page": 7,
+   "name": "repPer",
+   "type": "Btn",
+   "rect": [
+    302.859,
+    135.964,
+    313.529,
+    146.634
+   ],
+   "on": "Yes"
+  },
+  {
+   "page": 7,
+   "name": "repInit",
+   "type": "Btn",
+   "rect": [
+    302.859,
+    120.776,
+    313.529,
+    131.446
+   ],
+   "on": "Yes"
+  },
+  {
+   "page": 7,
+   "name": "manuRepNum",
+   "type": "Tx",
+   "rect": [
+    382.782,
+    78.058,
+    483.257,
+    92.058
+   ],
+   "on": null
+  },
+  {
+   "page": 7,
+   "name": "reportNum",
+   "type": "Tx",
+   "rect": [
+    446.695,
+    724.967,
+    556.747,
+    736.736
+   ],
+   "on": null
+  },
+  {
+   "page": 7,
+   "name": "userImport",
+   "type": "Btn",
+   "rect": [
+    194.876,
+    726.066,
+    205.546,
+    736.736
+   ],
+   "on": "Yes"
+  },
+  {
+   "page": 7,
+   "name": "userFac",
+   "type": "Btn",
+   "rect": [
+    113.57,
+    726.066,
+    124.24,
+    736.736
+   ],
+   "on": "Yes"
+  },
+  {
+   "page": 7,
+   "name": "facilityNAddr",
+   "type": "Tx",
+   "rect": [
+    43.588,
+    634.528,
+    266.014,
+    701.156
+   ],
+   "on": null
+  },
+  {
+   "page": 7,
+   "name": "facPhone",
+   "type": "Tx",
+   "rect": [
+    481.691,
+    688.862,
+    566.512,
+    702.862
+   ],
+   "on": null
+  },
+  {
+   "page": 7,
+   "name": "facPOC",
+   "type": "Tx",
+   "rect": [
+    281.27,
+    687.156,
+    454.589,
+    701.156
+   ],
+   "on": null
+  },
+  {
+   "page": 7,
+   "name": "healthImpCode",
+   "type": "Tx",
+   "rect": [
+    175.065,
+    565.433,
+    285.117,
+    579.433
+   ],
+   "on": null
+  },
+  {
+   "page": 7,
+   "name": "devProbCode",
+   "type": "Tx",
+   "rect": [
+    310.501,
+    565.433,
+    420.553,
+    579.433
+   ],
+   "on": null
+  },
+  {
+   "page": 7,
+   "name": "compCode",
+   "type": "Tx",
+   "rect": [
+    446.519,
+    565.433,
+    556.571,
+    579.433
+   ],
+   "on": null
+  },
+  {
+   "page": 7,
+   "name": "reptFDAY",
+   "type": "Btn",
+   "rect": [
+    42.5,
+    522.97,
+    53.17,
+    533.64
+   ],
+   "on": "1"
+  },
+  {
+   "page": 7,
+   "name": "reptFDAN",
+   "type": "Btn",
+   "rect": [
+    121.946,
+    522.771,
+    132.616,
+    533.441
+   ],
+   "on": "1"
+  },
+  {
+   "page": 7,
+   "name": "reportSentDate",
+   "type": "Tx",
+   "rect": [
+    42.5,
+    506.483,
+    114.5,
+    520.483
+   ],
+   "on": null
+  },
+  {
+   "page": 7,
+   "name": "locAmb",
+   "type": "Btn",
+   "rect": [
+    195.5,
+    536.97,
+    206.17,
+    547.64
+   ],
+   "on": "Yes"
+  },
+  {
+   "page": 7,
+   "name": "locHome",
+   "type": "Btn",
+   "rect": [
+    195.5,
+    522.97,
+    206.17,
+    533.64
+   ],
+   "on": "Yes"
+  },
+  {
+   "page": 7,
+   "name": "locHosp",
+   "type": "Btn",
+   "rect": [
+    195.5,
+    508.97,
+    206.17,
+    519.64
+   ],
+   "on": "Yes"
+  },
+  {
+   "page": 7,
+   "name": "locTreat",
+   "type": "Btn",
+   "rect": [
+    326.5,
+    536.97,
+    337.17,
+    547.64
+   ],
+   "on": "Yes"
+  },
+  {
+   "page": 7,
+   "name": "locDiag",
+   "type": "Btn",
+   "rect": [
+    326.5,
+    522.97,
+    337.17,
+    533.64
+   ],
+   "on": "Yes"
+  },
+  {
+   "page": 7,
+   "name": "locNurs",
+   "type": "Btn",
+   "rect": [
+    326.5,
+    508.97,
+    337.17,
+    519.64
+   ],
+   "on": "Yes"
+  },
+  {
+   "page": 7,
+   "name": "locOther",
+   "type": "Btn",
+   "rect": [
+    462.5,
+    536.97,
+    473.17,
+    547.64
+   ],
+   "on": "1"
+  },
+  {
+   "page": 7,
+   "name": "locOtherSpec",
+   "type": "Tx",
+   "rect": [
+    478.0,
+    506.109,
+    570.0,
+    534.987
+   ],
+   "on": null
+  },
+  {
+   "page": 7,
+   "name": "reptManuY",
+   "type": "Btn",
+   "rect": [
+    42.355,
+    465.738,
+    53.025,
+    476.408
+   ],
+   "on": "1"
+  },
+  {
+   "page": 7,
+   "name": "reportManuSentDate",
+   "type": "Tx",
+   "rect": [
+    75.557,
+    463.638,
+    147.557,
+    477.638
+   ],
+   "on": null
+  },
+  {
+   "page": 7,
+   "name": "reptManuN",
+   "type": "Btn",
+   "rect": [
+    42.5,
+    451.207,
+    53.17,
+    461.877
+   ],
+   "on": "1"
+  },
+  {
+   "page": 7,
+   "name": "manuNameAddr2",
+   "type": "Tx",
+   "rect": [
+    212.289,
+    451.547,
+    548.319,
+    487.689
+   ],
+   "on": null
+  },
+  {
+   "page": 8,
+   "name": "eventMal",
+   "type": "Btn",
+   "rect": [
+    51.965,
+    687.074,
+    62.635,
+    697.744
+   ],
+   "on": "Yes"
+  },
+  {
+   "page": 8,
+   "name": "eventSummRept",
+   "type": "Btn",
+   "rect": [
+    130.541,
+    714.06,
+    141.211,
+    724.73
+   ],
+   "on": "1"
+  },
+  {
+   "page": 8,
+   "name": "numEvents",
+   "type": "Tx",
+   "rect": [
+    144.969,
+    689.911,
+    178.163,
+    701.911
+   ],
+   "on": null
+  },
+  {
+   "page": 8,
+   "name": "eventDeath",
+   "type": "Btn",
+   "rect": [
+    51.5,
+    714.97,
+    62.17,
+    725.64
+   ],
+   "on": "Yes"
+  },
+  {
+   "page": 8,
+   "name": "eventSInj",
+   "type": "Btn",
+   "rect": [
+    51.5,
+    700.97,
+    62.17,
+    711.64
+   ],
+   "on": "Yes"
+  },
+  {
+   "page": 8,
+   "name": "correction",
+   "type": "Btn",
+   "rect": [
+    259.5,
+    714.97,
+    270.17,
+    725.64
+   ],
+   "on": "Yes"
+  },
+  {
+   "page": 8,
+   "name": "addlInfo",
+   "type": "Btn",
+   "rect": [
+    259.5,
+    700.97,
+    270.17,
+    711.64
+   ],
+   "on": "Yes"
+  },
+  {
+   "page": 8,
+   "name": "reqResp",
+   "type": "Btn",
+   "rect": [
+    259.5,
+    686.97,
+    270.17,
+    697.64
+   ],
+   "on": "Yes"
+  },
+  {
+   "page": 8,
+   "name": "devEval",
+   "type": "Btn",
+   "rect": [
+    259.5,
+    672.97,
+    270.17,
+    683.64
+   ],
+   "on": "Yes"
+  },
+  {
+   "page": 8,
+   "name": "evalManuY",
+   "type": "Btn",
+   "rect": [
+    398.5,
+    712.59,
+    409.17,
+    723.26
+   ],
+   "on": "Yes"
+  },
+  {
+   "page": 8,
+   "name": "evalManuN",
+   "type": "Btn",
+   "rect": [
+    438.5,
+    712.59,
+    449.17,
+    723.26
+   ],
+   "on": "Yes"
+  },
+  {
+   "page": 8,
+   "name": "devDate",
+   "type": "Tx",
+   "rect": [
+    51.146,
+    643.998,
+    123.146,
+    656.161
+   ],
+   "on": null
+  },
+  {
+   "page": 8,
+   "name": "singleUseY2",
+   "type": "Btn",
+   "rect": [
+    230.499,
+    643.756,
+    241.169,
+    654.426
+   ],
+   "on": "Yes"
+  },
+  {
+   "page": 8,
+   "name": "singleUseN2",
+   "type": "Btn",
+   "rect": [
+    267.5,
+    643.756,
+    278.17,
+    654.426
+   ],
+   "on": "Yes"
+  },
+  {
+   "page": 8,
+   "name": "healthClinCode2",
+   "type": "Tx",
+   "rect": [
+    43.872,
+    599.026,
+    153.924,
+    613.026
+   ],
+   "on": null
+  },
+  {
+   "page": 8,
+   "name": "healthImpCode2",
+   "type": "Tx",
+   "rect": [
+    175.065,
+    599.621,
+    285.117,
+    613.621
+   ],
+   "on": null
+  },
+  {
+   "page": 8,
+   "name": "devProbCode2",
+   "type": "Tx",
+   "rect": [
+    310.501,
+    599.621,
+    420.553,
+    613.621
+   ],
+   "on": null
+  },
+  {
+   "page": 8,
+   "name": "compCode2",
+   "type": "Tx",
+   "rect": [
+    447.369,
+    599.621,
+    557.421,
+    613.621
+   ],
+   "on": null
+  },
+  {
+   "page": 8,
+   "name": "investCodes",
+   "type": "Tx",
+   "rect": [
+    43.872,
+    569.662,
+    218.929,
+    583.662
+   ],
+   "on": null
+  },
+  {
+   "page": 8,
+   "name": "invFindings",
+   "type": "Tx",
+   "rect": [
+    222.78,
+    569.662,
+    396.649,
+    583.662
+   ],
+   "on": null
+  },
+  {
+   "page": 8,
+   "name": "invConc",
+   "type": "Tx",
+   "rect": [
+    400.105,
+    569.662,
+    573.181,
+    583.662
+   ],
+   "on": null
+  },
+  {
+   "page": 8,
+   "name": "remRecall",
+   "type": "Btn",
+   "rect": [
+    52.5,
+    537.993,
+    63.17,
+    548.663
+   ],
+   "on": "1"
+  },
+  {
+   "page": 8,
+   "name": "remRepair",
+   "type": "Btn",
+   "rect": [
+    52.5,
+    523.995,
+    63.17,
+    534.665
+   ],
+   "on": "1"
+  },
+  {
+   "page": 8,
+   "name": "remReplace",
+   "type": "Btn",
+   "rect": [
+    52.5,
+    509.995,
+    63.17,
+    520.665
+   ],
+   "on": "1"
+  },
+  {
+   "page": 8,
+   "name": "remRel",
+   "type": "Btn",
+   "rect": [
+    143.405,
+    538.021,
+    154.075,
+    548.691
+   ],
+   "on": "1"
+  },
+  {
+   "page": 8,
+   "name": "remNot",
+   "type": "Btn",
+   "rect": [
+    143.405,
+    524.024,
+    154.075,
+    534.694
+   ],
+   "on": "1"
+  },
+  {
+   "page": 8,
+   "name": "remInsp",
+   "type": "Btn",
+   "rect": [
+    143.405,
+    510.023,
+    154.075,
+    520.693
+   ],
+   "on": "1"
+  },
+  {
+   "page": 8,
+   "name": "remMonitor",
+   "type": "Btn",
+   "rect": [
+    233.501,
+    537.397,
+    244.171,
+    548.067
+   ],
+   "on": "1"
+  },
+  {
+   "page": 8,
+   "name": "remMod",
+   "type": "Btn",
+   "rect": [
+    233.501,
+    523.4,
+    244.171,
+    534.07
+   ],
+   "on": "1"
+  },
+  {
+   "page": 8,
+   "name": "remOther",
+   "type": "Btn",
+   "rect": [
+    233.501,
+    509.4,
+    244.171,
+    520.07
+   ],
+   "on": "1"
+  },
+  {
+   "page": 8,
+   "name": "remOtherSpec",
+   "type": "Tx",
+   "rect": [
+    277.795,
+    508.924,
+    393.108,
+    522.924
+   ],
+   "on": null
+  },
+  {
+   "page": 8,
+   "name": "useInit",
+   "type": "Btn",
+   "rect": [
+    410.499,
+    537.397,
+    421.169,
+    548.067
+   ],
+   "on": "Yes"
+  },
+  {
+   "page": 8,
+   "name": "useRe",
+   "type": "Btn",
+   "rect": [
+    410.499,
+    523.4,
+    421.169,
+    534.07
+   ],
+   "on": "Yes"
+  },
+  {
+   "page": 8,
+   "name": "useUnk",
+   "type": "Btn",
+   "rect": [
+    410.499,
+    509.4,
+    421.169,
+    520.07
+   ],
+   "on": "Yes"
+  },
+  {
+   "page": 8,
+   "name": "rep21USC",
+   "type": "Tx",
+   "rect": [
+    52.444,
+    469.375,
+    255.644,
+    483.375
+   ],
+   "on": null
+  },
+  {
+   "page": 8,
+   "name": "relRepNum",
+   "type": "Tx",
+   "rect": [
+    276.605,
+    469.375,
+    570.614,
+    483.375
+   ],
+   "on": null
+  },
+  {
+   "page": 8,
+   "name": "addNarr",
+   "type": "Tx",
+   "rect": [
+    42.355,
+    401.882,
+    573.684,
+    449.867
+   ],
+   "on": null
+  },
+  {
+   "page": 8,
+   "name": "CharCounterAddManuf",
+   "type": "Tx",
+   "rect": [
+    546.409,
+    452.172,
+    572.743,
+    463.907
+   ],
+   "on": null
+  }
+ ]
+}

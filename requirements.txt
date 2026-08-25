@@ -3,3 +3,6 @@ openai==2.38.0
 requests==2.32.5
 gunicorn==21.2.0
 python-dotenv==1.0.1
+reportlab==5.0.0
+pypdfium2==5.12.1
+pypdf==6.6.0
