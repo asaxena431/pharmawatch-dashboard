@@ -23,6 +23,11 @@ format = auto
 format_cder = e2b-r2-fda
 format_cdrh = emdr-hl7
 format_cvm = vich-hl7
+; The reporting user facility's or importer's FDA registration number: its
+; 10-digit FEI or 7-digit CFN.  FDA takes an eMDR report number as
+; FEI-year-sequence and rejects the report otherwise, so the number in block F.1
+; is rewritten that way, keeping the year and sequence it carries.
+uf_fei =
 ; Optional overrides, normally left empty: CDER | CDRH | CVM, premarket | postmarket.
 center =
 stage =

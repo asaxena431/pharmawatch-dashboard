@@ -133,6 +133,20 @@
 
     <div class="grid md:grid-cols-2 gap-4 items-end">
       <div>
+        <label class="block text-xs text-slate-400 mb-1">Reporting facility's FEI or CFN (eMDR)</label>
+        <input id="ufFeiInput" type="text" placeholder="1234567890"
+          class="w-full bg-slate-800 border border-slate-600 rounded-xl px-3 py-2 text-sm"/>
+      </div>
+      <p class="text-xs text-slate-500">
+        FDA takes a user facility / importer report number as
+        <code>FEI-year-sequence</code> (10-digit FEI or 7-digit CFN), and rejects the report otherwise, so the
+        facility's registration number is given here and the year and sequence are taken from block F.1.
+        <code>MEDWATCH_UF_FEI</code> sets it for every run.
+      </p>
+    </div>
+
+    <div class="grid md:grid-cols-2 gap-4 items-end">
+      <div>
         <label class="block text-xs text-slate-400 mb-1">Expected XML to compare against (optional)</label>
         <input id="expectedInput" type="file" accept=".xml,text/xml,application/xml"
           class="w-full text-xs bg-slate-800 border border-slate-600 rounded-xl px-3 py-2 file:mr-3 file:px-3 file:py-1 file:rounded-lg file:border-0 file:bg-slate-600 file:text-white"/>
@@ -224,6 +238,8 @@ async function runConvert() {
   const format = document.getElementById('formatInput').value;
   if (format) form.append('format', format);
   form.append('destination', document.getElementById('destinationInput').value);
+  const ufFei = document.getElementById('ufFeiInput').value.trim();
+  if (ufFei) form.append('uf_fei', ufFei);
 
   button.disabled = true;
   spinner.classList.remove('hidden');

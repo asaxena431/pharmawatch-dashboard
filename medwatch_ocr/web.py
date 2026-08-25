@@ -132,6 +132,7 @@ def api_medwatch_convert():
     layout = request.form.get("layout") or payload.get("layout") or LAYOUT_AUTO
     if layout not in LAYOUTS:
         return jsonify({"error": f"unknown layout: {layout}"}), 400
+    uf_fei = request.form.get("uf_fei") or payload.get("uf_fei") or None
     facsimile = _is_facsimile(request.form.get("facsimile") or payload.get("facsimile") or "")
     destination = (request.form.get("destination") or payload.get("destination") or DESTINATION_NONE).lower()
     if destination not in DESTINATIONS:
@@ -171,6 +172,7 @@ def api_medwatch_convert():
             dpi=dpi,
             layout=layout,
             attachments=attachments,
+            uf_fei=uf_fei,
         )
         response = {
             "summary": result.summary,

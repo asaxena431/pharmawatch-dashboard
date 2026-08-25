@@ -223,3 +223,60 @@ def test_a_manufacturer_box_without_a_street_still_splits_into_town_and_state():
         "02451",
         "USA",
     )
+
+
+def _facility_number(xml: str) -> str:
+    holder = _root(xml).find(".//v3:pertinentInformation1/v3:secondaryCaseNotification/v3:id", NS)
+    return holder.get("extension") or f"nullFlavor={holder.get('nullFlavor')}"
+
+
+def _facility_email(xml: str) -> str:
+    contact = _root(xml).find(
+        ".//v3:pertinentInformation1/v3:secondaryCaseNotification/v3:author/v3:assignedEntity"
+        "/v3:assignedOrganization/v3:contactParty/v3:contactPerson",
+        NS,
+    )
+    return [each.get("value") for each in contact.findall("v3:telecom", NS) if each.get("value").startswith("mailto:")][0]
+
+
+def test_a_report_number_already_written_fdas_way_is_sent_as_it_stands():
+    facility = UserFacility(report_number="1234567890-2026-00001")
+    assert emdr_hl7.uf_report_number(facility, "9999999") == "1234567890-2026-00001"
+
+
+def test_the_report_number_is_rebuilt_from_the_facilitys_registration_number():
+    facility = UserFacility(report_number="26-002332CLY", date_sent_to_fda="2026-07-27")
+    assert emdr_hl7.uf_report_number(facility, "1825400000") == "1825400000-2026-02332"
+    # A 7-digit CFN stands in for the FEI, and punctuation in it is ignored.
+    assert emdr_hl7.uf_report_number(facility, "182-5400") == "1825400-2026-02332"
+
+
+def test_a_report_number_without_its_own_year_takes_the_year_it_was_sent():
+    facility = UserFacility(report_number="002332", date_sent_to_fda="2025-01-04")
+    assert emdr_hl7.uf_report_number(facility, "1825400000") == "1825400000-2025-02332"
+
+
+def test_the_number_on_the_form_is_kept_where_no_registration_number_is_configured(monkeypatch):
+    monkeypatch.delenv(emdr_hl7.UF_FEI_ENV, raising=False)
+    facility = UserFacility(report_number="26-002332CLY")
+    # Neither configured nor of a registration number's length: the form's own
+    # number is all there is to send.
+    assert emdr_hl7.uf_report_number(facility) == "26-002332CLY"
+    assert emdr_hl7.uf_report_number(facility, "12345") == "26-002332CLY"
+    assert emdr_hl7.uf_report_number(UserFacility()) is None
+
+
+def test_the_registration_number_reaches_the_message_from_the_environment(monkeypatch):
+    monkeypatch.setenv(emdr_hl7.UF_FEI_ENV, "1825400000")
+    assert _facility_number(emdr_hl7.to_xml_string(_report())) == "1825400000-2026-02332"
+    # An argument, from the ini or the command line, is preferred to it.
+    assert _facility_number(emdr_hl7.to_xml_string(_report(), uf_fei="1234567")) == "1234567-2026-02332"
+    assert _facility_number(render_xml(_report(), FORMAT_EMDR_HL7, uf_fei="1234567")) == "1234567-2026-02332"
+
+
+def test_the_facility_contact_is_reachable_by_e_mail():
+    report = _report()
+    # Block F has no e-mail box of its own, so the reporter's stands in for it.
+    assert _facility_email(emdr_hl7.to_xml_string(report)) == "mailto:aartz@claytonmo.gov"
+    report.user_facility.email = "safety@claytonmo.gov"
+    assert _facility_email(emdr_hl7.to_xml_string(report)) == "mailto:safety@claytonmo.gov"

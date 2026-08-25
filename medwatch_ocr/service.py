@@ -102,6 +102,9 @@ class ServiceConfig:
     formats_by_center: Dict[str, str] = field(default_factory=dict)
     center: Optional[str] = None
     stage: Optional[str] = None
+    # The reporting facility's FDA registration number, which an eMDR report
+    # number is built from.
+    uf_fei: Optional[str] = None
     layout: str = LAYOUT_AUTO
     engine: str = ENGINE_TEXT_LAYER
     dpi: int = 200
@@ -151,6 +154,7 @@ def load_config(path: str) -> ServiceConfig:
         formats_by_center=by_center,
         center=conversion.get("center") or None,
         stage=conversion.get("stage") or None,
+        uf_fei=conversion.get("uf_fei") or None,
         layout=conversion.get("layout") or LAYOUT_AUTO,
         engine=conversion.get("engine") or ENGINE_TEXT_LAYER,
         dpi=int(conversion.get("dpi", 200) or 200),
@@ -409,6 +413,7 @@ def process_zip(archive: str, config: ServiceConfig) -> Processed:
                 lang=config.lang,
                 layout=config.layout,
                 attachments=attachments,
+                uf_fei=config.uf_fei,
             )
             os.makedirs(config.outbound, exist_ok=True)
             xml_path = os.path.join(config.outbound, unique_name(archive))

@@ -168,6 +168,23 @@ def test_the_command_line_overrides_the_folders_and_formats_in_the_file(tmp_path
     assert config.inbound == "in"
 
 
+def test_the_facilitys_registration_number_comes_from_the_file_or_the_command_line(tmp_path):
+    from medwatch_ocr.cli import _override_service_config, build_parser
+
+    path = tmp_path / "service.ini"
+    path.write_text(
+        "[folders]\ninbound = in\noutbound = out\nprocessed = done\nerror = bad\n"
+        "[conversion]\nformat = auto\nuf_fei = 1825400000\n",
+        encoding="utf-8",
+    )
+    config = service.load_config(str(path))
+    assert config.uf_fei == "1825400000"
+
+    args = build_parser().parse_args(["service", "--config", str(path), "--uf-fei", "1234567"])
+    _override_service_config(config, args)
+    assert config.uf_fei == "1234567"
+
+
 def test_a_zip_that_cannot_be_read_moves_to_error_and_is_mailed(tmp_path, monkeypatch):
     config = _config(tmp_path, output_format=FORMAT_EMDR_HL7)
     _zip(os.path.join(config.inbound, "broken.zip"), [("note.txt", "no form here")])

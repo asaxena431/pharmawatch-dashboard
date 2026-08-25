@@ -106,6 +106,9 @@ def build_parser() -> argparse.ArgumentParser:
     convert.add_argument("--deliver", choices=list(DESTINATIONS), default=DESTINATION_NONE,
                          help="also copy the message to a gateway inbound folder (default: none)")
     convert.add_argument("--deliver-dir", help="the inbound folder to deliver to, overriding the destination's")
+    convert.add_argument("--uf-fei", help="the reporting user facility's or importer's 10-digit FEI or "
+                                         "7-digit CFN, which an eMDR report number is built from "
+                                         "(default: $MEDWATCH_UF_FEI)")
     convert.add_argument("--output", "-o", help="write the XML here instead of stdout")
     convert.add_argument("--json", dest="json_path", help="also write the parsed 3500A fields as JSON")
     convert.add_argument("--quiet", "-q", action="store_true", help="suppress the extraction summary on stderr")
@@ -127,6 +130,7 @@ def build_parser() -> argparse.ArgumentParser:
     service.add_argument("--format-cder", help="override [conversion] format_cder")
     service.add_argument("--format-cdrh", help="override [conversion] format_cdrh")
     service.add_argument("--format-cvm", help="override [conversion] format_cvm")
+    service.add_argument("--uf-fei", help="override [conversion] uf_fei")
     for folder in ("inbound", "outbound", "processed", "error"):
         service.add_argument(f"--{folder}", help=f"override [folders] {folder}")
 
@@ -159,6 +163,7 @@ def _run_convert(args: argparse.Namespace) -> int:
         lang=args.lang,
         layout=args.layout,
         attachments=args.attach,
+        uf_fei=args.uf_fei,
     )
     _write(args.output, result.xml)
     if args.json_path:
@@ -211,6 +216,8 @@ def _override_service_config(config, args: argparse.Namespace) -> None:
     for center, value in ((CENTER_CDER, args.format_cder), (CENTER_CDRH, args.format_cdrh), (CENTER_CVM, args.format_cvm)):
         if value:
             config.formats_by_center[center] = value
+    if args.uf_fei:
+        config.uf_fei = args.uf_fei
 
 
 def _make_samples(output_dir: str, facsimile: bool) -> dict:

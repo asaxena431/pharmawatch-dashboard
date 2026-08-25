@@ -139,7 +139,11 @@ def resolve_format(
     return fallback or default_format(center)
 
 
-def render_xml(report: Union[MedWatchReport, VeterinaryReport], output_format: Optional[str] = None) -> str:
+def render_xml(
+    report: Union[MedWatchReport, VeterinaryReport],
+    output_format: Optional[str] = None,
+    uf_fei: Optional[str] = None,
+) -> str:
     """Serialise ``report`` in ``output_format`` (defaults to the center's format)."""
     fmt = output_format or default_format(report.center)
     if fmt == FORMAT_PVX_1932A:
@@ -157,7 +161,7 @@ def render_xml(report: Union[MedWatchReport, VeterinaryReport], output_format: O
     if fmt == FORMAT_MDR:
         return mdr_xml.to_xml_string(report)
     if fmt == FORMAT_EMDR_HL7:
-        return emdr_hl7.to_xml_string(report)
+        return emdr_hl7.to_xml_string(report, uf_fei=uf_fei)
     if fmt == FORMAT_E2B:
         receiver = "FDACDRH" if report.center == CENTER_CDRH else "FDACDER"
         return e2b_r2.to_xml_string(report, receiver_id=receiver)
@@ -175,8 +179,13 @@ def convert_pdf(
     layout: str = LAYOUT_AUTO,
     attachments: Sequence[str] = (),
     formats_by_center: Optional[Mapping[str, str]] = None,
+    uf_fei: Optional[str] = None,
 ) -> ConversionResult:
     """Read a form PDF and convert it to E2B(R2), MDR or GL42 XML.
+
+    ``uf_fei`` is the reporting user facility's or importer's FDA registration
+    number, which an eMDR report number is built from; see
+    :func:`medwatch_ocr.emdr_hl7.uf_report_number`.
 
     ``formats_by_center`` names the format to use per center when
     ``output_format`` is not given, for a caller reading mixed forms.
@@ -205,13 +214,15 @@ def convert_pdf(
     ):
         return _convert_1932(pdf_path, output_format, engine, dpi, lang, attachments, formats_by_center)
     if layout == LAYOUT_LABELLED:
-        return _convert_labelled(pdf_path, center, stage, output_format, dpi, formats_by_center)
+        return _convert_labelled(pdf_path, center, stage, output_format, dpi, formats_by_center, uf_fei)
     if layout == LAYOUT_AUTO and engine == ENGINE_TEXT_LAYER:
         variant = detect_variant(pdf_path)
         if variant in CAPTION_ANCHORED_VARIANTS and not _has_acroform_values(pdf_path):
-            return _convert_labelled(pdf_path, center, stage, output_format, dpi, formats_by_center)
+            return _convert_labelled(pdf_path, center, stage, output_format, dpi, formats_by_center, uf_fei)
     if layout == LAYOUT_OFFICIAL or (layout == LAYOUT_AUTO and is_official_form(pdf_path)):
-        return _convert_official(pdf_path, center, stage, output_format, engine, dpi, lang, attachments, formats_by_center)
+        return _convert_official(
+            pdf_path, center, stage, output_format, engine, dpi, lang, attachments, formats_by_center, uf_fei
+        )
 
     ocr = ocr_pdf(pdf_path, dpi=dpi, lang=lang, engine=engine)
     report = build_report(
@@ -225,7 +236,7 @@ def convert_pdf(
     return ConversionResult(
         report=report,
         ocr=ocr,
-        xml=render_xml(report, fmt),
+        xml=render_xml(report, fmt, uf_fei=uf_fei),
         output_format=fmt,
         layout=LAYOUT_FLAT,
     )
@@ -241,6 +252,7 @@ def _convert_official(
     lang: str,
     attachments: Sequence[str] = (),
     formats_by_center: Optional[Mapping[str, str]] = None,
+    uf_fei: Optional[str] = None,
 ) -> ConversionResult:
     """Template-guided conversion of the genuine FDA 3500A form."""
     from .form_extract import (
@@ -280,9 +292,11 @@ def _convert_official(
         xml = e2b_r2_fda.to_xml_string(form)
     elif fmt == FORMAT_EMDR_HL7:
         # The eMDR message carries the form it was read from, and any file with it.
-        xml = emdr_hl7.to_xml_string(report, documents=emdr_hl7.documents_from([pdf_path, *attachments]))
+        xml = emdr_hl7.to_xml_string(
+            report, documents=emdr_hl7.documents_from([pdf_path, *attachments]), uf_fei=uf_fei
+        )
     else:
-        xml = render_xml(report, fmt)
+        xml = render_xml(report, fmt, uf_fei=uf_fei)
     return ConversionResult(
         report=report,
         ocr=ocr,
@@ -309,6 +323,7 @@ def _convert_labelled(
     output_format: Optional[str],
     dpi: int,
     formats_by_center: Optional[Mapping[str, str]] = None,
+    uf_fei: Optional[str] = None,
 ) -> ConversionResult:
     """Caption-anchored conversion of a 3500A whose revision has no template."""
     from .anchors_3500a import extract_by_labels
@@ -320,7 +335,7 @@ def _convert_labelled(
     lines += [f"[x] {key}" for key in sorted(form.checks)]
     ocr = OcrResult(lines=lines, pages=form.pages, engine=form.engine)
     fmt = resolve_format(report.center, output_format, formats_by_center)
-    xml = e2b_r2_fda.to_xml_string(form) if fmt == FORMAT_E2B_FDA else render_xml(report, fmt)
+    xml = e2b_r2_fda.to_xml_string(form) if fmt == FORMAT_E2B_FDA else render_xml(report, fmt, uf_fei=uf_fei)
     return ConversionResult(report=report, ocr=ocr, xml=xml, output_format=fmt, layout=LAYOUT_LABELLED)
 
 

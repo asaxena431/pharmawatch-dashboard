@@ -189,6 +189,7 @@ class UserFacility:
     contact_given_name: Optional[str] = None
     contact_family_name: Optional[str] = None
     phone: Optional[str] = None
+    email: Optional[str] = None
     date_aware: Optional[str] = None  # F.4 date user facility became aware
     date_sent_to_fda: Optional[str] = None  # F.7 date report sent to FDA
     report_type: Optional[str] = None  # initial / follow-up

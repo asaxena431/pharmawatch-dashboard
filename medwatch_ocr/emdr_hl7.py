@@ -19,6 +19,7 @@ omitted.
 from __future__ import annotations
 
 import base64
+import logging
 import os
 import re
 import uuid
@@ -27,7 +28,9 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Iterable, Mapping, Optional, Sequence, Tuple
 
-from .models import MedWatchReport
+from .models import MedWatchReport, UserFacility
+
+LOGGER = logging.getLogger(__name__)
 
 NS = "urn:hl7-org:v3"
 XSI = "http://www.w3.org/2001/XMLSchema-instance"
@@ -47,6 +50,11 @@ CS_HL7_INTERACTION = "2.16.840.1.113883.1.6"
 # street address to.
 ABSENT_DATE = "19000101"
 STREET_LIMIT = 30
+
+# F.1's report number as FDA's importers and user facilities must write it: the
+# facility's 10-digit FEI or 7-digit CFN, the year, and a five-digit sequence.
+UF_REPORT_NUMBER_RE = re.compile(r"^(?:\d{7}|\d{10})-\d{4}-\d{5}$")
+UF_FEI_ENV = "MEDWATCH_UF_FEI"
 
 # NCI codes of the concepts the message states, by what they describe.
 CODE_REPORT = ("C53054", "Adverse_Event_Or_Product_Problem_Report")
@@ -430,14 +438,15 @@ def _primary_source(parent: ET.Element, report: MedWatchReport) -> None:
     _element(_element(entity, "representedOrganization"), "name")
 
 
-def _facility_notification(parent: ET.Element, report: MedWatchReport) -> None:
+def _facility_notification(parent: ET.Element, report: MedWatchReport, uf_fei: Optional[str] = None) -> None:
     """F: the user facility's report of the event to FDA."""
     facility = report.user_facility
     holder = _element(parent, "pertinentInformation1")
     _element(holder, "sequenceNumber", nullFlavor="NI")
     notification = _element(holder, "secondaryCaseNotification")
-    if facility.report_number:
-        _element(notification, "id", assigningAuthorityName="FDA", extension=facility.report_number, root=CS_FDA)
+    number = uf_report_number(facility, uf_fei)
+    if number:
+        _element(notification, "id", assigningAuthorityName="FDA", extension=number, root=CS_FDA)
     else:
         _element(notification, "id", nullFlavor="NA")
     _coded(notification, "code", CODE_REPORT_TYPE)
@@ -467,7 +476,9 @@ def _facility_notification(parent: ET.Element, report: MedWatchReport) -> None:
     _text(addr, "postalCode", facility.postcode)
     contact = _element(_element(organisation, "contactParty"), "contactPerson")
     _person_name(contact, facility.contact_given_name, facility.contact_family_name)
-    _telecoms(contact, facility.phone)
+    # FDA rejects a facility notification with no contact e-mail, and block F has
+    # no e-mail box of its own, so block E's reporter stands in for it.
+    _telecoms(contact, facility.phone, facility.email or report.reporter.email)
 
 
 def _manufacturer_notification(parent: ET.Element, report: MedWatchReport, address: PostalAddress) -> None:
@@ -491,6 +502,48 @@ def _manufacturer_notification(parent: ET.Element, report: MedWatchReport, addre
     _text(addr, "state", address.state)
     _text(addr, "country", address.country)
     _text(addr, "postalCode", address.postcode)
+
+
+def uf_report_number(facility: UserFacility, fei: Optional[str] = None) -> Optional[str]:
+    """F.1's report number in FDA's ``registration-year-sequence`` form.
+
+    A facility writes its own number in the box, and FDA rejects the report
+    unless that number is its registration number, the year and a sequence.  The
+    registration number is a property of the reporting facility rather than of
+    the form, so it is configured (``uf_fei``, or ``MEDWATCH_UF_FEI``); the year
+    and the sequence come from the number and dates the form does carry.  A box
+    already written FDA's way is passed through, and with no registration number
+    configured the box is sent as it reads and the mismatch logged.
+    """
+    written = re.sub(r"\s+", "", facility.report_number or "")
+    if UF_REPORT_NUMBER_RE.match(written):
+        return written
+    registration = re.sub(r"\D", "", fei if fei is not None else os.environ.get(UF_FEI_ENV, ""))
+    digits = re.sub(r"\D", "", written)
+    if len(registration) not in (7, 10) or not digits:
+        if written:
+            LOGGER.warning(
+                "user facility report number %r is not FDA's registration-year-sequence "
+                "form; set %s to the facility's 10-digit FEI or 7-digit CFN",
+                facility.report_number,
+                UF_FEI_ENV,
+            )
+        return written or None
+    head, _, tail = written.partition("-")
+    sequence = re.sub(r"\D", "", tail) or digits
+    year = _uf_year(head, facility)
+    return f"{registration}-{year}-{int(sequence[-5:]):05d}"
+
+
+def _uf_year(head: str, facility: UserFacility) -> str:
+    """The four-digit year of F.1's number: the one it starts with, or F.4's."""
+    leading = re.sub(r"\D", "", head)
+    if len(leading) == 4:
+        return leading
+    if len(leading) == 2:
+        return f"20{leading}"
+    dated = _date(facility.date_sent_to_fda) or _date(facility.date_aware)
+    return (dated or ABSENT_DATE)[:4]
 
 
 def _occupation(value: Optional[str]) -> str:
@@ -680,6 +733,7 @@ def to_xml_string(
     documents: Sequence[Tuple[str, bytes]] = (),
     created: Optional[datetime] = None,
     message_id: Optional[str] = None,
+    uf_fei: Optional[str] = None,
 ) -> str:
     """Serialise ``report`` as FDA's eMDR ``PORR_IN040001UV01`` submission message."""
     moment = created or datetime.now()
@@ -773,7 +827,7 @@ def to_xml_string(
     _primary_source(reaction, report)
 
     address = parse_address(report.device.manufacturer_address or report.device.manufacturer_name)
-    _facility_notification(investigation, report)
+    _facility_notification(investigation, report, uf_fei)
     _manufacturer_notification(investigation, report, parse_address(report.manufacturer.notified_name_address))
     _seriousness(investigation, report)
     _device(_element(investigation, "pertainsTo"), report, address)
