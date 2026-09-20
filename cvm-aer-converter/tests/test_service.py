@@ -294,3 +294,25 @@ def test_a_transport_the_service_does_not_have_is_refused(tmp_path):
 
 def test_nothing_is_mailed_when_no_server_is_configured(tmp_path):
     assert not service.send_failure_email(_config(tmp_path), "/in/case.zip", "boom")
+
+
+def test_the_service_is_the_default_command():
+    from cvm_aer.cli import with_default_command
+
+    assert with_default_command([]) == ["service"]
+    assert with_default_command(["--once", "--config", "x.ini"]) == ["service", "--once", "--config", "x.ini"]
+    assert with_default_command(["convert", "a.pdf"]) == ["convert", "a.pdf"]
+    assert with_default_command(["--help"]) == ["--help"]
+
+
+def test_running_with_no_command_sweeps_the_inbound_folder(tmp_path, monkeypatch):
+    from cvm_aer.cli import main
+
+    config = _config(tmp_path, output_format=FORMAT_GL42)
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / "cvm-aer-service.ini").write_text(
+        "[folders]\n" + "\n".join(f"{name} = {path}" for name, path in
+                                  zip(("inbound", "outbound", "processed", "error"), config.folders)) + "\n",
+        encoding="utf-8",
+    )
+    assert main(["--once"]) == 0

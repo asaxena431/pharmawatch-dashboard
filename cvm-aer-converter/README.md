@@ -88,10 +88,11 @@ files are its supporting documents. The XML goes to `outbound`, the ZIP moves to
 
 ```bash
 cp cvm-aer-service.ini.sample cvm-aer-service.ini      # edit the folders
-python -m cvm_aer service --once          # one sweep
-python -m cvm_aer service                 # keep watching
+python -m cvm_aer --once                  # one sweep
+python -m cvm_aer                         # keep watching
 ```
-The ini is `cvm-aer-service.ini` in the current folder unless you pass `--config <path>`.
+The service is the default command (`python -m cvm_aer service ...` also works). The ini is
+`cvm-aer-service.ini` in the current folder unless you pass `--config <path>`.
 `--inbound/--outbound/--processed/--error` override the folders in the ini.
 
 ## Tests

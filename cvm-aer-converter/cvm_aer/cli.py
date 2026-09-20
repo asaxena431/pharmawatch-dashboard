@@ -14,8 +14,9 @@ Examples::
     # see what was read off the form
     python -m cvm_aer ocr case.pdf
 
-    # folder service: ZIPs in inbound/ -> XML in outbound/
-    python -m cvm_aer service --once          # reads ./cvm-aer-service.ini, or --config <path>
+    # folder service: ZIPs in inbound/ -> XML in outbound/ (the default when no command is given)
+    python -m cvm_aer                         # reads ./cvm-aer-service.ini, or --config <path>
+    python -m cvm_aer --once                  # one sweep and exit
 """
 
 import argparse
@@ -38,6 +39,8 @@ from .pipeline import (
 )
 
 PROG = "cvm-aer"
+COMMANDS = ("samples", "ocr", "convert", "service")
+DEFAULT_COMMAND = "service"
 
 
 def _add_common_ocr_args(parser: argparse.ArgumentParser) -> None:
@@ -51,7 +54,8 @@ def _add_common_ocr_args(parser: argparse.ArgumentParser) -> None:
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog=PROG,
-        description="Read Form FDA 1932 / 1932a veterinary adverse event reports and write VICH GL42 XML.",
+        description="Read Form FDA 1932 / 1932a veterinary adverse event reports and write VICH GL42 XML. "
+                    f"Without a command, '{DEFAULT_COMMAND}' is run.",
     )
     sub = parser.add_subparsers(dest="command", required=True)
 
@@ -149,8 +153,16 @@ def _run_service(args: argparse.Namespace) -> int:
     return 1 if any(not entry.ok for entry in done) else 0
 
 
+def with_default_command(argv: List[str]) -> List[str]:
+    """Prepend the default command unless one, or a help flag, was given."""
+    if argv and (argv[0] in COMMANDS or argv[0] in ("-h", "--help")):
+        return argv
+    return [DEFAULT_COMMAND, *argv]
+
+
 def main(argv: Optional[List[str]] = None) -> int:
-    args = build_parser().parse_args(argv)
+    argv = list(sys.argv[1:] if argv is None else argv)
+    args = build_parser().parse_args(with_default_command(argv))
     try:
         if args.command == "samples":
             for name, path in generate_1932_samples(args.output_dir).items():

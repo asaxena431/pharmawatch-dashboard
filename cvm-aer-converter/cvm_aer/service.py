@@ -7,8 +7,8 @@ ZIP to the processed folder, or to the error folder with an e-mail when the case
 cannot be converted.  Every folder, and the format, poll interval and mail
 server, come from a configuration file - see ``cvm-aer-service.ini.sample``.
 
-    python -m cvm_aer service --config cvm-aer-service.ini
-    python -m cvm_aer service --config cvm-aer-service.ini --once
+    python -m cvm_aer                     # same as: python -m cvm_aer service
+    python -m cvm_aer --once --config cvm-aer-service.ini
 """
 
 from __future__ import annotations

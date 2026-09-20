@@ -1,6 +1,6 @@
 ; Configuration for the folder service:
-;   python -m cvm_aer service            (reads cvm-aer-service.ini from the current folder;
-;                                        use --config <path> for another file)
+;   python -m cvm_aer                    (reads cvm-aer-service.ini from the current folder;
+;                                        use --config <path> for another file, --once for one sweep)
 ; One ZIP in [folders] inbound is one case - the Form FDA 1932 / 1932a PDF inside
 ; it becomes the GL42 message and every other file in it is a supporting document.  The XML
 ; is written to outbound, and the ZIP is moved to processed, or to error with an
