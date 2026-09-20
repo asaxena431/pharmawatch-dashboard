@@ -8,8 +8,9 @@ Examples::
     # one veterinary report -> GL42 AER XML
     python -m cvm_aer convert samples/FDA-1932_cvm_veterinary.pdf -o out/cvm_veterinary_gl42.xml
 
-    # a 1932a case with its supporting documents
-    python -m cvm_aer convert case.pdf --attach att1.pdf --attach att2.pdf -o out.xml
+    # CVM's HL7 v3 submission message, the case's supporting documents embedded
+    python -m cvm_aer convert case.pdf --format vich-hl7 --attach att1.pdf --attach att2.pdf -o out.xml
+    python -m cvm_aer validate out.xml
 
     # see what was read off the form
     python -m cvm_aer ocr case.pdf
@@ -39,7 +40,7 @@ from .pipeline import (
 )
 
 PROG = "cvm-aer"
-COMMANDS = ("samples", "ocr", "convert", "service")
+COMMANDS = ("samples", "ocr", "convert", "validate", "service")
 DEFAULT_COMMAND = "service"
 
 
@@ -67,10 +68,11 @@ def build_parser() -> argparse.ArgumentParser:
     ocr.add_argument("--output", "-o", help="write the text to this file instead of stdout")
     _add_common_ocr_args(ocr)
 
-    convert = sub.add_parser("convert", help="read a 1932 / 1932a PDF and convert it to GL42 XML")
+    convert = sub.add_parser("convert", help="read a 1932 / 1932a PDF and convert it to GL42 or VICH HL7 XML")
     convert.add_argument("pdf")
     convert.add_argument("--format", "-f", dest="output_format", choices=list(FORMATS), default=FORMAT_GL42,
-                         help="output message format (default: gl42)")
+                         help="gl42: compact GL42 XML for review; vich-hl7: CVM's HL7 v3 submission message "
+                              "with the documents embedded (default: gl42)")
     convert.add_argument("--layout", choices=list(LAYOUTS), default=LAYOUT_AUTO,
                          help="form revision: 1932 (static), 1932a (dynamic XFA) or auto (default)")
     convert.add_argument("--attach", action="append", default=[], metavar="FILE",
@@ -80,6 +82,11 @@ def build_parser() -> argparse.ArgumentParser:
     convert.add_argument("--quiet", "-q", action="store_true", help="suppress the extraction summary on stderr")
     _add_common_ocr_args(convert)
 
+    validate = sub.add_parser("validate", help="check a vich-hl7 message against FDA CVM's published schemas")
+    validate.add_argument("xml", nargs="+", help="the message(s) to validate")
+    validate.add_argument("--schema-dir", help="where the schemas are (default: the bundled vich-schemas/, "
+                                                 "else ~/.cache/cvm_aer/vich-schemas, fetched once)")
+
     service = sub.add_parser(
         "service",
         help="watch an inbound folder for case ZIPs and write GL42 XML to an outbound folder",
@@ -88,6 +95,8 @@ def build_parser() -> argparse.ArgumentParser:
                          help="the configuration file (default: cvm-aer-service.ini)")
     service.add_argument("--once", action="store_true",
                          help="process what is in the inbound folder now and exit instead of running forever")
+    service.add_argument("--format", "-f", dest="output_format", choices=list(FORMATS),
+                         help="override [conversion] format")
     for folder in ("inbound", "outbound", "processed", "error"):
         service.add_argument(f"--{folder}", help=f"override [folders] {folder}")
     return parser
@@ -123,6 +132,23 @@ def _run_convert(args: argparse.Namespace) -> int:
     return 0
 
 
+def _run_validate(args: argparse.Namespace) -> int:
+    from .validate import ENTRY, fetch, validate
+
+    schema = fetch(args.schema_dir)
+    complaints = validate(args.xml, schema)
+    if complaints is None:
+        print(f"schemas under {os.path.dirname(os.path.dirname(schema))}", file=sys.stderr)
+        print("no validator found: install libxml2-utils (xmllint) or lxml", file=sys.stderr)
+        return 2
+    for line in complaints:
+        print(line)
+    if not complaints:
+        for path in args.xml:
+            print(f"{path}: validates against {ENTRY}")
+    return 1 if complaints else 0
+
+
 def _run_service(args: argparse.Namespace) -> int:
     from .service import ConfigError, load_config, run_forever, run_once
 
@@ -140,6 +166,8 @@ def _run_service(args: argparse.Namespace) -> int:
         value = getattr(args, folder, None)
         if value:
             setattr(config, folder, os.path.expanduser(value))
+    if args.output_format:
+        config.output_format = args.output_format
     if not args.once:
         try:
             return run_forever(config)
@@ -175,6 +203,8 @@ def main(argv: Optional[List[str]] = None) -> int:
             return 0
         if args.command == "convert":
             return _run_convert(args)
+        if args.command == "validate":
+            return _run_validate(args)
         if args.command == "service":
             return _run_service(args)
     except OcrError as exc:

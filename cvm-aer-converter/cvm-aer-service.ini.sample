@@ -14,7 +14,9 @@ processed = /srv/cvm-aer/processed
 error = /srv/cvm-aer/error
 
 [conversion]
-; gl42 - VICH GL42 adverse event report XML (the only format of this converter)
+; gl42     - compact VICH GL42 XML, one element per data element, for review
+; vich-hl7 - CVM's HL7 v3 submission message (GL42 in MCCI_IN200100UV01) with the
+;            form and every attachment embedded; validate with: python -m cvm_aer validate
 format = gl42
 ; auto | 1932 (static form) | 1932a (dynamic XFA form)
 layout = auto

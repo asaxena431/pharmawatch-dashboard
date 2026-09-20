@@ -29,7 +29,7 @@ from datetime import datetime
 from email.message import EmailMessage
 from typing import List, Optional, Sequence, Tuple
 
-from .pipeline import ENGINE_TEXT_LAYER, FORMAT_GL42, LAYOUT_AUTO, convert_pdf
+from .pipeline import ENGINE_TEXT_LAYER, FORMAT_GL42, FORMATS, LAYOUT_AUTO, convert_pdf
 
 LOGGER = logging.getLogger("cvm_aer.service")
 
@@ -136,6 +136,8 @@ def load_config(path: str) -> ServiceConfig:
 
     conversion = parser[SECTION_CONVERSION] if parser.has_section(SECTION_CONVERSION) else {}
     wanted = str(conversion.get("format", "")).strip()
+    if wanted and wanted not in FORMATS:
+        raise ConfigError(f"[{SECTION_CONVERSION}] format must be one of {', '.join(FORMATS)}, not {wanted}")
 
     service = parser[SECTION_SERVICE] if parser.has_section(SECTION_SERVICE) else {}
     mail = parser[SECTION_EMAIL] if parser.has_section(SECTION_EMAIL) else {}

@@ -6,15 +6,20 @@ from its AcroForm when it is fillable, or rasterised and OCRed with PaddleOCR
 against the committed field template when it is a printed or scanned copy.
 """
 
+import os
 from dataclasses import dataclass
-from typing import List, Optional, Sequence
+from typing import List, Optional, Sequence, Tuple
 
-from . import gl42
+from . import gl42, vich_hl7
 from .models import VeterinaryReport
 from .ocr import OcrResult
 
+# Compact GL42 XML, one element per GL42 data element: readable, for review.
 FORMAT_GL42 = "gl42"
-FORMATS = (FORMAT_GL42,)
+# CVM's electronic submission message: GL42 carried in HL7 v3 (MCCI_IN200100UV01),
+# supporting documents embedded; validates against FDA's published schemas.
+FORMAT_VICH_HL7 = "vich-hl7"
+FORMATS = (FORMAT_GL42, FORMAT_VICH_HL7)
 
 LAYOUT_AUTO = "auto"
 LAYOUT_1932 = "1932"
@@ -53,11 +58,17 @@ class ConversionResult:
         }
 
 
-def render_xml(report: VeterinaryReport, output_format: Optional[str] = None) -> str:
+def render_xml(
+    report: VeterinaryReport,
+    output_format: Optional[str] = None,
+    documents: Sequence[Tuple[str, bytes]] = (),
+) -> str:
     fmt = output_format or FORMAT_GL42
-    if fmt != FORMAT_GL42:
-        raise ValueError(f"unknown output format: {fmt} (choose from {', '.join(FORMATS)})")
-    return gl42.to_xml_string(report)
+    if fmt == FORMAT_GL42:
+        return gl42.to_xml_string(report)
+    if fmt == FORMAT_VICH_HL7:
+        return vich_hl7.to_xml_string(report, documents=documents)
+    raise ValueError(f"unknown output format: {fmt} (choose from {', '.join(FORMATS)})")
 
 
 def convert_pdf(
@@ -79,8 +90,8 @@ def convert_pdf(
     runs PaddleOCR and falls back to the text layer; ``paddleocr`` forces OCR.
     Printed or scanned copies have no text layer and need one of the latter.
 
-    ``attachments`` are the case's supporting documents.  GL42 itself carries no
-    documents, so they are recorded on the result only through the caller.
+    ``attachments`` are the case's supporting documents: named in the report,
+    and embedded with the form itself in the ``vich-hl7`` message.
     """
     from .xfa_1932a import is_1932a_form
 
@@ -90,7 +101,7 @@ def convert_pdf(
         raise ValueError(f"unknown engine: {engine}")
     if layout == LAYOUT_1932A or (layout == LAYOUT_AUTO and is_1932a_form(pdf_path)):
         return _convert_1932a(pdf_path, output_format, attachments)
-    return _convert_1932(pdf_path, output_format, engine, dpi, lang)
+    return _convert_1932(pdf_path, output_format, engine, dpi, lang, attachments)
 
 
 def _convert_1932a(pdf_path: str, output_format: Optional[str], attachments: Sequence[str]) -> ConversionResult:
@@ -100,16 +111,24 @@ def _convert_1932a(pdf_path: str, output_format: Optional[str], attachments: Seq
     report = xfa_1932a.map_veterinary_report(form)
     lines = [f"{key} = {value}" for key, value in form.values.items() if value]
     ocr = OcrResult(lines=lines, pages=0, engine=form.engine)
+    documents = [(document.name, document.data) for document in form.documents]
     return ConversionResult(
         report=report,
         ocr=ocr,
-        xml=render_xml(report, output_format),
+        xml=render_xml(report, output_format, documents),
         output_format=output_format or FORMAT_GL42,
         layout=LAYOUT_1932A,
     )
 
 
-def _convert_1932(pdf_path: str, output_format: Optional[str], engine: str, dpi: int, lang: str) -> ConversionResult:
+def _convert_1932(
+    pdf_path: str,
+    output_format: Optional[str],
+    engine: str,
+    dpi: int,
+    lang: str,
+    attachments: Sequence[str] = (),
+) -> ConversionResult:
     from .vet_extract import extract_1932_fields, extract_1932_form, map_veterinary_report
 
     if engine == ENGINE_TEXT_LAYER:
@@ -127,10 +146,13 @@ def _convert_1932(pdf_path: str, output_format: Optional[str], engine: str, dpi:
     lines: List[str] = [f"{key} = {value}" for key, value in sorted(form.values.items())]
     lines += [f"[x] {key}" for key in sorted(form.checks)]
     ocr = OcrResult(lines=lines, pages=form.pages, engine=form.engine)
+    if attachments:
+        report.attachments = [os.path.basename(path) for path in attachments]
+    documents = vich_hl7.documents_from([pdf_path, *attachments]) if output_format == FORMAT_VICH_HL7 else []
     return ConversionResult(
         report=report,
         ocr=ocr,
-        xml=render_xml(report, output_format),
+        xml=render_xml(report, output_format, documents),
         output_format=output_format or FORMAT_GL42,
         layout=LAYOUT_1932,
     )

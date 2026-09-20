@@ -7,7 +7,7 @@ dosage form and outcome are coded values, the animal's weight and age are
 ``IVL_PQ`` intervals, and each attachment is embedded base64 in a
 ``reference/document``.
 
-The serialiser writes that message from a :class:`~medwatch_ocr.models.VeterinaryReport`.
+The serialiser writes that message from a :class:`~cvm_aer.models.VeterinaryReport`.
 Codes the source document does not carry (VeDDRA reaction codes, breed codes,
 ATCvet, ingredient UNII, NDC) are written ``nullFlavor="NI"`` with the reported
 wording in ``originalText`` rather than guessed.

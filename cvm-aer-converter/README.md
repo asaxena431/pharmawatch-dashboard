@@ -2,7 +2,14 @@
 
 Command-line converter for FDA CVM veterinary adverse event reports. It reads a
 filled **Form FDA 1932** (static, fillable or scanned) or **Form FDA 1932a**
-(dynamic XFA) PDF and writes a **VICH GL42** adverse event report XML.
+(dynamic XFA) PDF and writes the **VICH GL42** adverse event report as XML, in
+one of two shapes:
+
+| `--format` | what it is | schema |
+|---|---|---|
+| `gl42` (default) | compact XML, one element per GL42 data element — for review and downstream systems | none (GL42 is a data-element guideline, VICH published no XSD) |
+| `vich-hl7` | CVM's HL7 v3 submission message (`MCCI_IN200100UV01`, VICH GL35), the form PDF and every attachment embedded base64 | FDA's published VICH schemas — `python -m cvm_aer validate` |
+
 No web server, no GUI — a single Python package (`cvm_aer`) with a CLI and an
 optional folder service.
 
@@ -17,7 +24,9 @@ cvm-aer-converter/
     form_geometry.py        rectangle / checkbox helpers for the template reader
     ocr.py                  PaddleOCR + pypdfium2 wrapper
     models.py               VeterinaryReport and its parts
-    gl42.py                 GL42 serialiser
+    gl42.py                 compact GL42 serialiser
+    vich_hl7.py             HL7 v3 (GL35) message serialiser
+    validate.py             schema validation of vich-hl7 messages
     service.py              folder service: ZIP in -> XML out
     templates/fda_1932_2023.json
   tests/
@@ -56,6 +65,10 @@ python -m cvm_aer convert case.pdf -o out/case_gl42.xml
 # with the case's supporting documents (recorded in the report)
 python -m cvm_aer convert case.pdf --attach "lab report.pdf" --attach photo.jpg -o out.xml
 
+# CVM's HL7 v3 submission message, form + attachments embedded, then schema-check it
+python -m cvm_aer convert case.pdf --format vich-hl7 --attach "lab report.pdf" -o out.xml
+python -m cvm_aer validate out.xml
+
 # also dump the parsed report as JSON
 python -m cvm_aer convert case.pdf -o out.xml --json out.json
 
@@ -66,9 +79,21 @@ python -m cvm_aer ocr case.pdf
 Options: `--layout auto|1932|1932a`, `--engine text-layer|auto|paddleocr`
 (`text-layer` reads a fillable PDF's AcroForm directly; use `auto` or
 `paddleocr` for a printed/scanned copy, ~30 s per page), `--dpi`, `--lang`.
-The only output format is `gl42`.
 
 Exit codes: `0` ok, `2` bad input (file not found, OCR failure, wrong option).
+
+## Schema validation
+
+`python -m cvm_aer validate out.xml [more.xml ...]` checks a `vich-hl7` message
+against FDA's VICH schema set (entry `multicacheschemas/MCCI_IN200100UV01.xsd`).
+The schemas are HL7-licensed and not shipped in this folder: on first use they
+are downloaded from `accessdata.fda.gov/icsr/schema/cvm/schemas/vich/` into
+`~/.cache/cvm_aer/vich-schemas` (63 files, ~1.3 MB); a `vich-schemas/` folder
+next to `cvm_aer/` or `--schema-dir <path>` is used instead when present, so an
+offline box can be given a copy. The check itself runs through `xmllint`
+(`apt install libxml2-utils`) or `pip install lxml` — exit `0` valid, `1`
+complaints listed, `2` no validator installed. The compact `gl42` output has no
+schema to validate against.
 
 ## Sample form
 
@@ -93,7 +118,8 @@ python -m cvm_aer                         # keep watching
 ```
 The service is the default command (`python -m cvm_aer service ...` also works). The ini is
 `cvm-aer-service.ini` in the current folder unless you pass `--config <path>`.
-`--inbound/--outbound/--processed/--error` override the folders in the ini.
+`--inbound/--outbound/--processed/--error` override the folders in the ini, `--format gl42|vich-hl7`
+the `[conversion] format`.
 
 ## Tests
 
