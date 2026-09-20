@@ -15,7 +15,7 @@ Examples::
     python -m cvm_aer ocr case.pdf
 
     # folder service: ZIPs in inbound/ -> XML in outbound/
-    python -m cvm_aer service --config cvm-aer-service.ini --once
+    python -m cvm_aer service --once          # reads ./cvm-aer-service.ini, or --config <path>
 """
 
 import argparse
