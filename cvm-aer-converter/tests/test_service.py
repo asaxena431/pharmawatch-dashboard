@@ -62,14 +62,15 @@ def form_pdf(tmp_path_factory) -> bytes:
 def test_the_ini_file_states_every_folder_and_the_mail_server(tmp_path):
     path = tmp_path / "service.ini"
     path.write_text(
-        "[folders]\ninbound = in\noutbound = out\nprocessed = done\nerror = bad\n"
+        "[folders]\ninbound = /srv/cvm-aer/inbound\noutbound = /srv/cvm-aer/outbound\n"
+        "processed = /srv/cvm-aer/processed\nerror = /srv/cvm-aer/error\n"
         "[conversion]\nformat = gl42\n"
         "[service]\npoll_seconds = 5\nsettle_seconds = 1\n"
         "[email]\nhost = smtp.example.org\nsender = a@example.org\nrecipients = b@example.org; c@example.org\n",
         encoding="utf-8",
     )
     config = service.load_config(str(path))
-    assert config.folders == ("in", "out", "done", "bad")
+    assert config.folders == ("/srv/cvm-aer/inbound", "/srv/cvm-aer/outbound", "/srv/cvm-aer/processed", "/srv/cvm-aer/error")
     assert config.output_format == FORMAT_GL42
     assert (config.poll_seconds, config.settle_seconds) == (5, 1)
     assert config.email.recipients == ["b@example.org", "c@example.org"]
@@ -78,7 +79,7 @@ def test_the_ini_file_states_every_folder_and_the_mail_server(tmp_path):
 
 def test_a_configuration_missing_a_folder_says_which(tmp_path):
     path = tmp_path / "service.ini"
-    path.write_text("[folders]\ninbound = in\noutbound = out\n", encoding="utf-8")
+    path.write_text("[folders]\ninbound = /srv/cvm-aer/inbound\noutbound = /srv/cvm-aer/outbound\n", encoding="utf-8")
     with pytest.raises(service.ConfigError, match="processed, error"):
         service.load_config(str(path))
 
