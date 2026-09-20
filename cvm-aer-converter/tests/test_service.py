@@ -125,15 +125,21 @@ def test_the_command_line_overrides_the_folders_in_the_file(tmp_path):
     from cvm_aer.cli import build_parser, main
 
     path = tmp_path / "service.ini"
+    root = tmp_path / "from-ini"
     path.write_text(
-        "[folders]\ninbound = in\noutbound = out\nprocessed = done\nerror = bad\n",
+        "[folders]\n"
+        f"inbound = {root / 'inbound'}\n"
+        f"outbound = {root / 'outbound'}\n"
+        f"processed = {root / 'processed'}\n"
+        f"error = {root / 'error'}\n",
         encoding="utf-8",
     )
-    args = build_parser().parse_args(["service", "--config", str(path), "--once", "--outbound", "elsewhere"])
-    assert args.outbound == "elsewhere" and args.once
-    inbound = tmp_path / "empty"
-    inbound.mkdir()
-    assert main(["service", "--config", str(path), "--once", "--inbound", str(inbound)]) == 0
+    other_outbound = tmp_path / "from-cli" / "outbound"
+    args = build_parser().parse_args(["service", "--config", str(path), "--once", "--outbound", str(other_outbound)])
+    assert args.outbound == str(other_outbound) and args.once
+    other_inbound = tmp_path / "from-cli" / "inbound"
+    other_inbound.mkdir(parents=True)
+    assert main(["service", "--config", str(path), "--once", "--inbound", str(other_inbound)]) == 0
 
 
 def test_a_zip_that_cannot_be_read_moves_to_error_and_is_mailed(tmp_path, monkeypatch):
