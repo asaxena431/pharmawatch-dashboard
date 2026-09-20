@@ -45,8 +45,7 @@ pip install -r requirements.txt
 pip install -r requirements-ocr.txt
 ```
 
-Optionally `pip install .` installs a `cvm-aer` command; otherwise run
-`python -m cvm_aer` from this folder.
+Nothing is installed into Python: run `python -m cvm_aer ...` from this folder.
 
 ## Convert one report
 
