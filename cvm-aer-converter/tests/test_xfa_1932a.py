@@ -1,4 +1,4 @@
-"""Form FDA 1932a submitted as a dynamic XFA PDF, read and converted to GL42."""
+"""Form FDA 1932a submitted as a dynamic XFA PDF, read and converted to the vich-hl7 message."""
 
 import os
 import sys
@@ -9,7 +9,7 @@ from pypdf.generic import ArrayObject, DecodedStreamObject, DictionaryObject, Na
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from cvm_aer.pipeline import FORMAT_GL42, LAYOUT_1932A, convert_pdf  # noqa: E402
+from cvm_aer.pipeline import FORMAT_VICH_HL7, LAYOUT_1932A, convert_pdf  # noqa: E402
 from cvm_aer.xfa_1932a import is_1932a_form, read_1932a, to_xml_string  # noqa: E402
 
 DATASET = """<xfa:datasets xmlns:xfa="http://www.xfa.org/schema/xfa-data/1.0/"><xfa:data><pvx1932a>
@@ -75,8 +75,9 @@ def test_a_submission_round_trips_through_the_pipeline(tmp_path):
     pdf = _xfa_pdf(str(tmp_path / "case.pdf"))
     result = convert_pdf(pdf, attachments=[str(attachment)])
     assert result.layout == LAYOUT_1932A
-    assert result.output_format == FORMAT_GL42
+    assert result.output_format == FORMAT_VICH_HL7
     assert "Librela" in result.xml
     assert "Subcutaneous" in result.xml  # SCU, in the words GL42 uses
-    assert "<species" in result.xml and "Dog" in result.xml
+    assert 'displayName="Dog"' in result.xml
+    assert result.validated is True
     assert result.summary["attachments"] == ["lab report.pdf"]

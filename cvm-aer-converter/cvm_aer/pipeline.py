@@ -1,25 +1,28 @@
-"""End-to-end pipeline: Form FDA 1932 / 1932a PDF -> report model -> VICH GL42 XML.
+"""End-to-end pipeline: Form FDA 1932 / 1932a PDF -> report model -> VICH HL7 message.
 
 Two revisions of the form are read.  The dynamic XFA 1932a carries its data as
 an XML dataset inside the PDF, which is read directly.  The static 1932 is read
 from its AcroForm when it is fillable, or rasterised and OCRed with PaddleOCR
 against the committed field template when it is a printed or scanned copy.
+
+Whatever the reader, the report is written as CVM's HL7 v3 submission message
+(``vich-hl7``) and validated against FDA's published VICH schemas before it is
+returned: a message the schemas reject raises ``SchemaError``.
 """
 
 import os
 from dataclasses import dataclass
 from typing import List, Optional, Sequence, Tuple
 
-from . import gl42, vich_hl7
+from . import vich_hl7
 from .models import VeterinaryReport
 from .ocr import OcrResult
+from .validate import SchemaError, validate_xml  # noqa: F401  (SchemaError re-exported)
 
-# Compact GL42 XML, one element per GL42 data element: readable, for review.
-FORMAT_GL42 = "gl42"
-# CVM's electronic submission message: GL42 carried in HL7 v3 (MCCI_IN200100UV01),
+# CVM's electronic submission message: VICH GL42 carried in HL7 v3 (MCCI_IN200100UV01),
 # supporting documents embedded; validates against FDA's published schemas.
 FORMAT_VICH_HL7 = "vich-hl7"
-FORMATS = (FORMAT_GL42, FORMAT_VICH_HL7)
+FORMATS = (FORMAT_VICH_HL7,)
 
 LAYOUT_AUTO = "auto"
 LAYOUT_1932 = "1932"
@@ -41,6 +44,7 @@ class ConversionResult:
     xml: str
     output_format: str
     layout: str
+    validated: bool
 
     @property
     def summary(self) -> dict:
@@ -48,6 +52,7 @@ class ConversionResult:
         return {
             "layout": self.layout,
             "output_format": self.output_format,
+            "schema_validated": self.validated,
             "ocr_engine": self.ocr.engine,
             "pages": self.ocr.pages,
             "aer_identifier": report.report_id,
@@ -62,13 +67,16 @@ def render_xml(
     report: VeterinaryReport,
     output_format: Optional[str] = None,
     documents: Sequence[Tuple[str, bytes]] = (),
+    validate: bool = True,
 ) -> str:
-    fmt = output_format or FORMAT_GL42
-    if fmt == FORMAT_GL42:
-        return gl42.to_xml_string(report)
-    if fmt == FORMAT_VICH_HL7:
-        return vich_hl7.to_xml_string(report, documents=documents)
-    raise ValueError(f"unknown output format: {fmt} (choose from {', '.join(FORMATS)})")
+    """The report as the vich-hl7 message, schema-validated unless ``validate`` is off."""
+    fmt = output_format or FORMAT_VICH_HL7
+    if fmt != FORMAT_VICH_HL7:
+        raise ValueError(f"unknown output format: {fmt} (choose from {', '.join(FORMATS)})")
+    xml = vich_hl7.to_xml_string(report, documents=documents)
+    if validate:
+        validate_xml(xml)
+    return xml
 
 
 def convert_pdf(
@@ -79,8 +87,9 @@ def convert_pdf(
     lang: str = "en",
     layout: str = LAYOUT_AUTO,
     attachments: Sequence[str] = (),
+    validate: bool = True,
 ) -> ConversionResult:
-    """Read a 1932 / 1932a PDF and convert it to GL42 XML.
+    """Read a 1932 / 1932a PDF and convert it to the vich-hl7 message.
 
     ``layout`` selects the reader: ``1932a`` the XFA dataset, ``1932`` the
     field-template reader, ``auto`` looks at the PDF and picks.
@@ -90,8 +99,11 @@ def convert_pdf(
     runs PaddleOCR and falls back to the text layer; ``paddleocr`` forces OCR.
     Printed or scanned copies have no text layer and need one of the latter.
 
-    ``attachments`` are the case's supporting documents: named in the report,
-    and embedded with the form itself in the ``vich-hl7`` message.
+    ``attachments`` are the case's supporting documents: named in the report
+    and embedded with the form itself in the message.
+
+    The message is validated against FDA's VICH schemas (``SchemaError`` when it
+    fails) unless ``validate`` is off.
     """
     from .xfa_1932a import is_1932a_form
 
@@ -100,11 +112,13 @@ def convert_pdf(
     if engine not in ENGINES:
         raise ValueError(f"unknown engine: {engine}")
     if layout == LAYOUT_1932A or (layout == LAYOUT_AUTO and is_1932a_form(pdf_path)):
-        return _convert_1932a(pdf_path, output_format, attachments)
-    return _convert_1932(pdf_path, output_format, engine, dpi, lang, attachments)
+        return _convert_1932a(pdf_path, output_format, attachments, validate)
+    return _convert_1932(pdf_path, output_format, engine, dpi, lang, attachments, validate)
 
 
-def _convert_1932a(pdf_path: str, output_format: Optional[str], attachments: Sequence[str]) -> ConversionResult:
+def _convert_1932a(
+    pdf_path: str, output_format: Optional[str], attachments: Sequence[str], validate: bool
+) -> ConversionResult:
     from . import xfa_1932a
 
     form = xfa_1932a.read_1932a(pdf_path, attachments)
@@ -115,9 +129,10 @@ def _convert_1932a(pdf_path: str, output_format: Optional[str], attachments: Seq
     return ConversionResult(
         report=report,
         ocr=ocr,
-        xml=render_xml(report, output_format, documents),
-        output_format=output_format or FORMAT_GL42,
+        xml=render_xml(report, output_format, documents, validate),
+        output_format=output_format or FORMAT_VICH_HL7,
         layout=LAYOUT_1932A,
+        validated=validate,
     )
 
 
@@ -128,6 +143,7 @@ def _convert_1932(
     dpi: int,
     lang: str,
     attachments: Sequence[str] = (),
+    validate: bool = True,
 ) -> ConversionResult:
     from .vet_extract import extract_1932_fields, extract_1932_form, map_veterinary_report
 
@@ -148,11 +164,12 @@ def _convert_1932(
     ocr = OcrResult(lines=lines, pages=form.pages, engine=form.engine)
     if attachments:
         report.attachments = [os.path.basename(path) for path in attachments]
-    documents = vich_hl7.documents_from([pdf_path, *attachments]) if output_format == FORMAT_VICH_HL7 else []
+    documents = vich_hl7.documents_from([pdf_path, *attachments])
     return ConversionResult(
         report=report,
         ocr=ocr,
-        xml=render_xml(report, output_format, documents),
-        output_format=output_format or FORMAT_GL42,
+        xml=render_xml(report, output_format, documents, validate),
+        output_format=output_format or FORMAT_VICH_HL7,
         layout=LAYOUT_1932,
+        validated=validate,
     )

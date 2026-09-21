@@ -1,4 +1,4 @@
-"""Tests for the genuine FORM FDA 1932 path (fill -> extract -> VICH GL42 XML).
+"""Tests for the genuine FORM FDA 1932 path (fill -> extract -> validated vich-hl7 message).
 
 The blank static form is downloaded from fda.gov once and cached; when neither
 the cache nor the network is available these tests skip.  Extraction uses the
@@ -6,6 +6,7 @@ AcroForm reader so the suite stays fast - the PaddleOCR geometry path over the
 same PDF is exercised by ``scripts/verify_1932_roundtrip.py``.
 """
 
+import os
 import xml.etree.ElementTree as ET
 
 import pytest
@@ -17,7 +18,7 @@ from cvm_aer.form_1932 import (
     expected_values,
     fill_1932_form,
 )
-from cvm_aer.pipeline import FORMAT_GL42, LAYOUT_1932, convert_pdf, render_xml
+from cvm_aer.pipeline import FORMAT_VICH_HL7, LAYOUT_1932, convert_pdf, render_xml
 from cvm_aer.vet_extract import (
     extract_1932_fields,
     is_1932_form,
@@ -25,7 +26,7 @@ from cvm_aer.vet_extract import (
     map_veterinary_report,
 )
 
-NAMESPACE = {"g": "urn:vich:gl42:aer"}
+HL7 = {"h": "urn:hl7-org:v3"}
 
 
 @pytest.fixture(scope="module")
@@ -91,47 +92,38 @@ def test_veterinary_mapping(veterinary_pdf):
     assert report.event.attending_vet_assessment == "Probable"
 
 
-def test_1932_form_converts_to_gl42(veterinary_pdf):
+def test_1932_form_converts_to_a_validated_vich_hl7_message(veterinary_pdf):
     result = convert_pdf(veterinary_pdf, engine="text-layer", layout=LAYOUT_1932)
 
     assert result.layout == LAYOUT_1932
-    assert result.output_format == FORMAT_GL42
+    assert result.output_format == FORMAT_VICH_HL7
+    assert result.validated is True
     assert result.summary["species"] == "Dog"
+    assert result.summary["schema_validated"] is True
 
-    root = ET.fromstring(result.xml[result.xml.index("<vichAdverseEventReport") :])
-    assert root.get("standard") == "GL42"
-    assert root.findtext("./g:messageHeader/g:messageReceiverIdentifier", namespaces=NAMESPACE) == "FDACVM"
-    report = root.find("./g:adverseEventReport", NAMESPACE)
-    assert report.findtext("./g:administrativeInformation/g:uniqueAerIdentifier", namespaces=NAMESPACE) == (
-        "US-CAH-2026-000318"
-    )
-    assert report.findtext("./g:administrativeInformation/g:dateFirstReceived", namespaces=NAMESPACE) == "2026-02-03"
-    assert report.findtext("./g:animal/g:species", namespaces=NAMESPACE) == "Dog"
-    assert report.findtext("./g:animal/g:weight/g:basis", namespaces=NAMESPACE) == "Measured"
-    weight = report.find("./g:animal/g:weight/g:minimum", NAMESPACE)
-    assert (weight.get("value"), weight.get("unit")) == ("28.4", "kg")
-    age = report.find("./g:animal/g:age/g:minimum", NAMESPACE)
-    assert (age.get("value"), age.get("unit")) == ("4", "Year")
-    product = report.find("./g:veterinaryMedicinalProduct", NAMESPACE)
-    assert product.findtext("./g:brandName", namespaces=NAMESPACE) == "DERMAQUELL CHEWABLE TABLETS"
-    assert product.findtext("./g:registrationIdentifier", namespaces=NAMESPACE) == "NADA 141-999"
-    assert product.findtext("./g:activeIngredient/g:name", namespaces=NAMESPACE) == "veloxacitinib maleate"
-    signs = [e.findtext("./g:term", namespaces=NAMESPACE) for e in report.findall("./g:adverseEvent/g:clinicalManifestation", NAMESPACE)]
-    assert "Vomiting" in signs
-    assert report.findtext("./g:adverseEvent/g:outcome/g:recoveredNormal", namespaces=NAMESPACE) == "1"
-    assert report.findtext("./g:dechallengeRechallenge/g:eventAbatedAfterStopping", namespaces=NAMESPACE) == "Yes"
-    assert report.findtext("./g:assessment/g:attendingVeterinarian", namespaces=NAMESPACE) == "Probable"
-    # every element carries its GL42 data-element number
-    assert product.get("gl42") == "B.2"
+    root = ET.fromstring(result.xml)
+    assert root.tag == "{urn:hl7-org:v3}MCCI_IN200100UV01"
+    ids = {element.get("extension") for element in root.iterfind(".//h:id", HL7)}
+    assert "US-CAH-2026-000318" in ids and "NADA 141-999" in ids
+    assert root.find(".//h:code[@displayName='Dog']", HL7) is not None
+    names = [element.text for element in root.iterfind(".//h:name", HL7)]
+    assert "DERMAQUELL CHEWABLE TABLETS" in names and "veloxacitinib maleate" in names
+    weight = root.find(".//h:low[@unit='kg']", HL7)
+    assert weight.get("value") == "28.4"
+    texts = [element.text for element in root.iterfind(".//h:originalText", HL7)]
+    assert "Vomiting" in texts and "Probable" in texts
+    # the form itself travels inside the message
+    titles = [element.text for element in root.iterfind(".//h:title", HL7)]
+    assert titles == [os.path.basename(veterinary_pdf)]
 
 
 def test_1932_layout_is_auto_detected(veterinary_pdf):
     result = convert_pdf(veterinary_pdf, engine="text-layer")
     assert result.layout == LAYOUT_1932
-    assert result.output_format == FORMAT_GL42
+    assert result.output_format == FORMAT_VICH_HL7
 
 
-def test_gl42_output_requires_a_veterinary_report(veterinary_pdf):
+def test_only_vich_hl7_is_offered(veterinary_pdf):
     report = map_veterinary_report(extract_1932_fields(veterinary_pdf))
     with pytest.raises(ValueError):
         render_xml(report, "mdr")

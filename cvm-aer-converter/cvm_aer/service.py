@@ -1,11 +1,13 @@
-"""A folder service: ZIPs in, XML out.
+"""A folder service: ZIPs in, validated vich-hl7 messages out.
 
 One ZIP is one case: the form PDF inside it becomes the message and every other
-file in it is the case's supporting documents.  The service watches the
-inbound folder, writes the generated XML to the outbound folder and moves the
-ZIP to the processed folder, or to the error folder with an e-mail when the case
-cannot be converted.  Every folder, and the format, poll interval and mail
-server, come from a configuration file - see ``cvm-aer-service.ini.sample``.
+file in it is the case's supporting documents, embedded.  The service watches
+the inbound folder, validates each generated message against FDA's VICH
+schemas, writes it to the outbound folder and moves the ZIP to the processed
+folder - or to the error folder with an e-mail when the case cannot be
+converted or its message does not validate.  Every folder, the poll interval
+and the mail server come from a configuration file - see
+``cvm-aer-service.ini.sample``.
 
     python -m cvm_aer                     # same as: python -m cvm_aer service
     python -m cvm_aer --once --config cvm-aer-service.ini
@@ -29,7 +31,7 @@ from datetime import datetime
 from email.message import EmailMessage
 from typing import List, Optional, Sequence, Tuple
 
-from .pipeline import ENGINE_TEXT_LAYER, FORMAT_GL42, FORMATS, LAYOUT_AUTO, convert_pdf
+from .pipeline import ENGINE_TEXT_LAYER, FORMAT_VICH_HL7, FORMATS, LAYOUT_AUTO, convert_pdf
 
 LOGGER = logging.getLogger("cvm_aer.service")
 
@@ -107,7 +109,7 @@ class ServiceConfig:
     outbound: str
     processed: str
     error: str
-    output_format: str = FORMAT_GL42
+    output_format: str = FORMAT_VICH_HL7
     layout: str = LAYOUT_AUTO
     engine: str = ENGINE_TEXT_LAYER
     dpi: int = 200
@@ -148,7 +150,7 @@ def load_config(path: str) -> ServiceConfig:
         outbound=os.path.expanduser(folders["outbound"]),
         processed=os.path.expanduser(folders["processed"]),
         error=os.path.expanduser(folders["error"]),
-        output_format=wanted or FORMAT_GL42,
+        output_format=wanted or FORMAT_VICH_HL7,
         layout=conversion.get("layout") or LAYOUT_AUTO,
         engine=conversion.get("engine") or ENGINE_TEXT_LAYER,
         dpi=int(conversion.get("dpi", 200) or 200),
@@ -416,7 +418,7 @@ def process_zip(archive: str, config: ServiceConfig) -> Processed:
         return Processed(archive=archive, moved_to=moved, error=f"{type(exc).__name__}: {exc}")
 
     moved = _move(archive, config.processed)
-    LOGGER.info("%s -> %s (%s)", os.path.basename(archive), xml_path, result.output_format)
+    LOGGER.info("%s -> %s (%s, schema-validated)", os.path.basename(archive), xml_path, result.output_format)
     return Processed(archive=archive, xml_path=xml_path, output_format=result.output_format, moved_to=moved)
 
 

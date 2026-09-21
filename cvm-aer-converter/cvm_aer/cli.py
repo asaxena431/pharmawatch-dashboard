@@ -1,15 +1,16 @@
-"""Command line interface: Form FDA 1932 / 1932a PDF -> VICH GL42 XML.
+"""Command line interface: Form FDA 1932 / 1932a PDF -> CVM's VICH HL7 message (vich-hl7).
+
+Every message is validated against FDA's VICH schemas before it is written.
 
 Examples::
 
     # fill the genuine FDA Form 1932 with the sample case
     python -m cvm_aer samples --output-dir samples
 
-    # one veterinary report -> GL42 AER XML
-    python -m cvm_aer convert samples/FDA-1932_cvm_veterinary.pdf -o out/cvm_veterinary_gl42.xml
+    # one veterinary report -> vich-hl7, the case's supporting documents embedded
+    python -m cvm_aer convert case.pdf --attach att1.pdf --attach att2.pdf -o out.xml
 
-    # CVM's HL7 v3 submission message, the case's supporting documents embedded
-    python -m cvm_aer convert case.pdf --format vich-hl7 --attach att1.pdf --attach att2.pdf -o out.xml
+    # re-check a message that is already on disk
     python -m cvm_aer validate out.xml
 
     # see what was read off the form
@@ -32,12 +33,11 @@ from .ocr import OcrError, ocr_pdf
 from .pipeline import (
     ENGINE_TEXT_LAYER,
     ENGINES,
-    FORMAT_GL42,
-    FORMATS,
     LAYOUT_AUTO,
     LAYOUTS,
     convert_pdf,
 )
+from .validate import SchemaError
 
 PROG = "cvm-aer"
 COMMANDS = ("samples", "ocr", "convert", "validate", "service")
@@ -55,7 +55,8 @@ def _add_common_ocr_args(parser: argparse.ArgumentParser) -> None:
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog=PROG,
-        description="Read Form FDA 1932 / 1932a veterinary adverse event reports and write VICH GL42 XML. "
+        description="Read Form FDA 1932 / 1932a veterinary adverse event reports and write CVM's VICH HL7 "
+                    "message (vich-hl7), schema-validated. "
                     f"Without a command, '{DEFAULT_COMMAND}' is run.",
     )
     sub = parser.add_subparsers(dest="command", required=True)
@@ -68,11 +69,11 @@ def build_parser() -> argparse.ArgumentParser:
     ocr.add_argument("--output", "-o", help="write the text to this file instead of stdout")
     _add_common_ocr_args(ocr)
 
-    convert = sub.add_parser("convert", help="read a 1932 / 1932a PDF and convert it to GL42 or VICH HL7 XML")
+    convert = sub.add_parser("convert", help="read a 1932 / 1932a PDF and convert it to the vich-hl7 message "
+                                             "(validated against FDA's VICH schemas)")
     convert.add_argument("pdf")
-    convert.add_argument("--format", "-f", dest="output_format", choices=list(FORMATS), default=FORMAT_GL42,
-                         help="gl42: compact GL42 XML for review; vich-hl7: CVM's HL7 v3 submission message "
-                              "with the documents embedded (default: gl42)")
+    convert.add_argument("--no-validate", dest="validate", action="store_false",
+                         help="write the message even if it fails schema validation (diagnostics only)")
     convert.add_argument("--layout", choices=list(LAYOUTS), default=LAYOUT_AUTO,
                          help="form revision: 1932 (static), 1932a (dynamic XFA) or auto (default)")
     convert.add_argument("--attach", action="append", default=[], metavar="FILE",
@@ -84,19 +85,18 @@ def build_parser() -> argparse.ArgumentParser:
 
     validate = sub.add_parser("validate", help="check a vich-hl7 message against FDA CVM's published schemas")
     validate.add_argument("xml", nargs="+", help="the message(s) to validate")
-    validate.add_argument("--schema-dir", help="where the schemas are (default: the bundled vich-schemas/, "
-                                                 "else ~/.cache/cvm_aer/vich-schemas, fetched once)")
+    validate.add_argument("--schema-dir", help="where the schemas are (default: $CVM_AER_SCHEMA_DIR, a vich-schemas/ "
+                                                 "folder next to the package, else ~/.cache/cvm_aer/vich-schemas, "
+                                                 "fetched from FDA once)")
 
     service = sub.add_parser(
         "service",
-        help="watch an inbound folder for case ZIPs and write GL42 XML to an outbound folder",
+        help="watch an inbound folder for case ZIPs and write validated vich-hl7 messages to an outbound folder",
     )
     service.add_argument("--config", "-c", default="cvm-aer-service.ini",
                          help="the configuration file (default: cvm-aer-service.ini)")
     service.add_argument("--once", action="store_true",
                          help="process what is in the inbound folder now and exit instead of running forever")
-    service.add_argument("--format", "-f", dest="output_format", choices=list(FORMATS),
-                         help="override [conversion] format")
     for folder in ("inbound", "outbound", "processed", "error"):
         service.add_argument(f"--{folder}", help=f"override [folders] {folder}")
     return parser
@@ -115,12 +115,12 @@ def _write(path: Optional[str], content: str) -> None:
 def _run_convert(args: argparse.Namespace) -> int:
     result = convert_pdf(
         args.pdf,
-        output_format=args.output_format,
         engine=args.engine,
         dpi=args.dpi,
         lang=args.lang,
         layout=args.layout,
         attachments=args.attach,
+        validate=args.validate,
     )
     _write(args.output, result.xml)
     if args.json_path:
@@ -128,19 +128,15 @@ def _run_convert(args: argparse.Namespace) -> int:
     if not args.quiet:
         print(json.dumps(result.summary, indent=2), file=sys.stderr)
     if args.output:
-        print(f"wrote {result.output_format} XML -> {args.output}", file=sys.stderr)
+        checked = "validated against FDA's VICH schemas" if result.validated else "NOT validated"
+        print(f"wrote {result.output_format} -> {args.output} ({checked})", file=sys.stderr)
     return 0
 
 
 def _run_validate(args: argparse.Namespace) -> int:
-    from .validate import ENTRY, fetch, validate
+    from .validate import ENTRY, validate_files
 
-    schema = fetch(args.schema_dir)
-    complaints = validate(args.xml, schema)
-    if complaints is None:
-        print(f"schemas under {os.path.dirname(os.path.dirname(schema))}", file=sys.stderr)
-        print("no validator found: install libxml2-utils (xmllint) or lxml", file=sys.stderr)
-        return 2
+    complaints = validate_files(args.xml, args.schema_dir)
     for line in complaints:
         print(line)
     if not complaints:
@@ -166,8 +162,6 @@ def _run_service(args: argparse.Namespace) -> int:
         value = getattr(args, folder, None)
         if value:
             setattr(config, folder, os.path.expanduser(value))
-    if args.output_format:
-        config.output_format = args.output_format
     if not args.once:
         try:
             return run_forever(config)
@@ -214,6 +208,14 @@ def main(argv: Optional[List[str]] = None) -> int:
         print(f"file not found: {exc}", file=sys.stderr)
         return 2
     except ValueError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 2
+    except SchemaError as exc:
+        print("the message does not validate against FDA's VICH schemas:", file=sys.stderr)
+        for line in exc.complaints:
+            print(f"  {line}", file=sys.stderr)
+        return 3
+    except OSError as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 2
     return 1

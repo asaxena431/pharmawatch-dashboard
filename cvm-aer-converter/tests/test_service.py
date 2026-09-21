@@ -11,7 +11,7 @@ import pytest
 from test_xfa_1932a import _xfa_pdf
 
 from cvm_aer import service
-from cvm_aer.pipeline import FORMAT_GL42
+from cvm_aer.pipeline import FORMAT_VICH_HL7
 
 
 def _config(tmp_path, **overrides) -> service.ServiceConfig:
@@ -64,14 +64,14 @@ def test_the_ini_file_states_every_folder_and_the_mail_server(tmp_path):
     path.write_text(
         "[folders]\ninbound = /srv/cvm-aer/inbound\noutbound = /srv/cvm-aer/outbound\n"
         "processed = /srv/cvm-aer/processed\nerror = /srv/cvm-aer/error\n"
-        "[conversion]\nformat = gl42\n"
+        "[conversion]\nformat = vich-hl7\n"
         "[service]\npoll_seconds = 5\nsettle_seconds = 1\n"
         "[email]\nhost = smtp.example.org\nsender = a@example.org\nrecipients = b@example.org; c@example.org\n",
         encoding="utf-8",
     )
     config = service.load_config(str(path))
     assert config.folders == ("/srv/cvm-aer/inbound", "/srv/cvm-aer/outbound", "/srv/cvm-aer/processed", "/srv/cvm-aer/error")
-    assert config.output_format == FORMAT_GL42
+    assert config.output_format == FORMAT_VICH_HL7
     assert (config.poll_seconds, config.settle_seconds) == (5, 1)
     assert config.email.recipients == ["b@example.org", "c@example.org"]
     assert config.email.configured
@@ -105,7 +105,7 @@ def test_a_zip_without_a_pdf_cannot_be_a_case(tmp_path):
 
 
 def test_a_case_zip_becomes_one_xml_and_the_zip_moves_to_processed(tmp_path, form_pdf):
-    config = _config(tmp_path, output_format=FORMAT_GL42)
+    config = _config(tmp_path, output_format=FORMAT_VICH_HL7)
     archive = _zip(
         os.path.join(config.inbound, "case-1.zip"),
         [("case.pdf", form_pdf), ("attachment_1.pdf", b"%PDF-1.4 attachment")],
@@ -115,11 +115,29 @@ def test_a_case_zip_becomes_one_xml_and_the_zip_moves_to_processed(tmp_path, for
 
     assert len(done) == 1 and done[0].ok, done
     xml = open(done[0].xml_path, encoding="utf-8").read()
-    assert done[0].output_format == FORMAT_GL42
-    assert "<vichAdverseEventReport" in xml and "Librela" in xml
+    assert done[0].output_format == FORMAT_VICH_HL7
+    assert "MCCI_IN200100UV01" in xml and "Librela" in xml
+    assert "attachment_1.pdf" in xml  # embedded
     assert not os.path.exists(archive)
     assert os.listdir(config.processed) == ["case-1.zip"]
     assert os.listdir(config.error) == []
+
+
+def test_a_message_the_schemas_reject_goes_to_error_not_outbound(tmp_path, form_pdf, monkeypatch):
+    from cvm_aer import vich_hl7
+
+    config = _config(tmp_path, output_format=FORMAT_VICH_HL7)
+    _zip(os.path.join(config.inbound, "case-9.zip"), [("case.pdf", form_pdf)])
+    genuine = vich_hl7.to_xml_string
+    monkeypatch.setattr(vich_hl7, "to_xml_string", lambda *a, **k: genuine(*a, **k).replace("<creationTime", "<creationTyme", 1))
+    monkeypatch.setattr(service, "send_failure_email", lambda *a, **k: None)
+
+    done = service.run_once(config)
+
+    assert len(done) == 1 and not done[0].ok
+    assert done[0].error.startswith("SchemaError")
+    assert os.listdir(config.outbound) == []
+    assert os.listdir(config.error) == ["case-9.zip"]
 
 
 def test_the_command_line_overrides_the_folders_in_the_file(tmp_path):
@@ -144,7 +162,7 @@ def test_the_command_line_overrides_the_folders_in_the_file(tmp_path):
 
 
 def test_a_zip_that_cannot_be_read_moves_to_error_and_is_mailed(tmp_path, monkeypatch):
-    config = _config(tmp_path, output_format=FORMAT_GL42)
+    config = _config(tmp_path, output_format=FORMAT_VICH_HL7)
     _zip(os.path.join(config.inbound, "broken.zip"), [("note.txt", "no form here")])
     sent = []
     monkeypatch.setattr(
@@ -165,7 +183,7 @@ def test_a_zip_that_cannot_be_read_moves_to_error_and_is_mailed(tmp_path, monkey
 
 
 def test_a_second_zip_of_the_same_name_does_not_overwrite_the_first(tmp_path, form_pdf):
-    config = _config(tmp_path, output_format=FORMAT_GL42)
+    config = _config(tmp_path, output_format=FORMAT_VICH_HL7)
     for _ in range(2):
         _zip(os.path.join(config.inbound, "case.zip"), [("case.pdf", form_pdf)])
         service.run_once(config)
@@ -308,7 +326,7 @@ def test_the_service_is_the_default_command():
 def test_running_with_no_command_sweeps_the_inbound_folder(tmp_path, monkeypatch):
     from cvm_aer.cli import main
 
-    config = _config(tmp_path, output_format=FORMAT_GL42)
+    config = _config(tmp_path, output_format=FORMAT_VICH_HL7)
     monkeypatch.chdir(tmp_path)
     (tmp_path / "cvm-aer-service.ini").write_text(
         "[folders]\n" + "\n".join(f"{name} = {path}" for name, path in

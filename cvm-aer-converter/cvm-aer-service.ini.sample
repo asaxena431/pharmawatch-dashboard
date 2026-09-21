@@ -2,9 +2,10 @@
 ;   python -m cvm_aer                    (reads cvm-aer-service.ini from the current folder;
 ;                                        use --config <path> for another file, --once for one sweep)
 ; One ZIP in [folders] inbound is one case - the Form FDA 1932 / 1932a PDF inside
-; it becomes the GL42 message and every other file in it is a supporting document.  The XML
-; is written to outbound, and the ZIP is moved to processed, or to error with an
-; e-mail when the case cannot be converted.
+; it becomes CVM's VICH HL7 message (vich-hl7) and every other file in it is a supporting
+; document, embedded.  The message is validated against FDA's VICH schemas, written to
+; outbound, and the ZIP is moved to processed - or to error with an e-mail when the
+; case cannot be converted or its message does not validate.
 
 [folders]
 ; Linux; on Windows use local paths instead, e.g. C:\cvm-aer\inbound
@@ -14,10 +15,9 @@ processed = /srv/cvm-aer/processed
 error = /srv/cvm-aer/error
 
 [conversion]
-; gl42     - compact VICH GL42 XML, one element per data element, for review
-; vich-hl7 - CVM's HL7 v3 submission message (GL42 in MCCI_IN200100UV01) with the
-;            form and every attachment embedded; validate with: python -m cvm_aer validate
-format = gl42
+; vich-hl7 is the only output: CVM's HL7 v3 submission message (VICH GL42 data in
+; MCCI_IN200100UV01) with the form and every attachment embedded, schema-validated.
+format = vich-hl7
 ; auto | 1932 (static form) | 1932a (dynamic XFA form)
 layout = auto
 ; text-layer (default, exact and instant on fillable PDFs) | auto | paddleocr

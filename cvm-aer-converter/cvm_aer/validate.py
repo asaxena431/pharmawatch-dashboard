@@ -1,26 +1,22 @@
-"""Validate a ``vich-hl7`` message against FDA CVM's published VICH schemas.
+"""Validate the vich-hl7 message against FDA CVM's published VICH schemas.
 
-The schema set is FDA's, published at
-``accessdata.fda.gov/icsr/schema/cvm/schemas/vich/``.  It is looked for in a
-``vich-schemas`` folder next to the package (shipped in the distribution),
-then in ``~/.cache/cvm_aer/vich-schemas``, and is downloaded there once when
-neither has it.
+Every message the converter writes is validated before it is handed over; a
+message the schemas reject is an error, not an output.  The schema set is
+FDA's, published at ``accessdata.fda.gov/icsr/schema/cvm/schemas/vich/``.  It
+is looked for in a ``vich-schemas`` folder next to the package, then in
+``~/.cache/cvm_aer/vich-schemas``, and is downloaded there once when neither
+has it (``CVM_AER_SCHEMA_DIR`` names another folder).
 
-    python -m cvm_aer validate out.xml
-    python -m cvm_aer validate out.xml --schema-dir /path/to/vich-schemas
-
-Validation runs through ``xmllint`` (``apt install libxml2-utils``) or ``lxml``
-(``pip install lxml``); without either the schemas are still fetched and the
-command says so.
+    python -m cvm_aer validate out.xml          # re-check a message by hand
 """
 
 import os
 import posixpath
 import re
-import shutil
-import subprocess
 import urllib.request
-from typing import List, Optional, Set
+from typing import List, Optional, Sequence, Set
+
+from lxml import etree
 
 BASE = "https://www.accessdata.fda.gov/icsr/schema/cvm/schemas/vich/"
 ENTRY = "multicacheschemas/MCCI_IN200100UV01.xsd"
@@ -28,14 +24,27 @@ AGENT = "Mozilla/5.0 (compatible; cvm_aer schema fetch)"
 BUNDLED = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "vich-schemas")
 CACHE = os.path.join(os.path.expanduser("~"), ".cache", "cvm_aer", "vich-schemas")
 
+_SCHEMAS: dict = {}
+
+
+class SchemaError(Exception):
+    """The message does not validate; ``complaints`` lists what the schemas said."""
+
+    def __init__(self, complaints: Sequence[str]):
+        super().__init__("; ".join(complaints))
+        self.complaints = list(complaints)
+
 
 def default_schema_dir() -> str:
-    """The bundled folder when the distribution ships it, else the user cache."""
+    """``CVM_AER_SCHEMA_DIR``, else the bundled folder when present, else the user cache."""
+    configured = os.environ.get("CVM_AER_SCHEMA_DIR")
+    if configured:
+        return configured
     return BUNDLED if os.path.exists(os.path.join(BUNDLED, ENTRY)) else CACHE
 
 
 def fetch(directory: Optional[str] = None, entry: str = ENTRY) -> str:
-    """Make sure the schema set is in ``directory`` and return the entry schema."""
+    """Make sure the schema set is in ``directory`` and return the entry schema's path."""
     directory = directory or default_schema_dir()
     seen: Set[str] = set()
 
@@ -61,22 +70,34 @@ def fetch(directory: Optional[str] = None, entry: str = ENTRY) -> str:
     return os.path.join(directory, entry)
 
 
-def validate(paths: List[str], schema: str) -> Optional[List[str]]:
-    """The validator's complaints, an empty list when valid, ``None`` without a validator."""
-    if shutil.which("xmllint"):
-        result = subprocess.run(
-            ["xmllint", "--noout", "--schema", schema, *paths],
-            capture_output=True,
-            text=True,
-        )
-        return [line for line in result.stderr.splitlines() if line.strip()] if result.returncode else []
-    try:
-        from lxml import etree
-    except ImportError:
-        return None
-    validator = etree.XMLSchema(etree.parse(schema))
-    complaints: List[str] = []
+def schema(directory: Optional[str] = None) -> etree.XMLSchema:
+    """The compiled entry schema, fetched if need be and kept for the process."""
+    path = fetch(directory)
+    if path not in _SCHEMAS:
+        _SCHEMAS[path] = etree.XMLSchema(etree.parse(path))
+    return _SCHEMAS[path]
+
+
+def complaints(xml: str, directory: Optional[str] = None) -> List[str]:
+    """What the schemas object to in ``xml``; empty when it validates."""
+    validator = schema(directory)
+    document = etree.fromstring(xml.encode("utf-8") if isinstance(xml, str) else xml)
+    if validator.validate(document):
+        return []
+    return [f"line {error.line}: {error.message}" for error in validator.error_log]
+
+
+def validate_xml(xml: str, directory: Optional[str] = None) -> None:
+    """Raise ``SchemaError`` unless ``xml`` validates."""
+    found = complaints(xml, directory)
+    if found:
+        raise SchemaError(found)
+
+
+def validate_files(paths: Sequence[str], directory: Optional[str] = None) -> List[str]:
+    """Complaints for each file, prefixed with its name."""
+    found: List[str] = []
     for path in paths:
-        if not validator.validate(etree.parse(path)):
-            complaints += [f"{path}: {error.line}: {error.message}" for error in validator.error_log]
-    return complaints
+        with open(path, "rb") as handle:
+            found += [f"{path}: {line}" for line in complaints(handle.read(), directory)]
+    return found
