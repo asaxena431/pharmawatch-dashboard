@@ -2,10 +2,10 @@
 
 Every message the converter writes is validated before it is handed over; a
 message the schemas reject is an error, not an output.  The schema set is
-FDA's, published at ``accessdata.fda.gov/icsr/schema/cvm/schemas/vich/``.  It
-is looked for in a ``vich-schemas`` folder next to the package, then in
-``~/.cache/cvm_aer/vich-schemas``, and is downloaded there once when neither
-has it (``CVM_AER_SCHEMA_DIR`` names another folder).
+FDA's, published at ``accessdata.fda.gov/icsr/schema/cvm/schemas/vich/`` and
+shipped in the ``vich-schemas`` folder next to the package, so validation needs
+no network.  ``CVM_AER_SCHEMA_DIR`` names another folder; when the bundled one is
+missing the set is downloaded once into ``~/.cache/cvm_aer/vich-schemas``.
 
     python -m cvm_aer validate out.xml          # re-check a message by hand
 """

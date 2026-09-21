@@ -85,9 +85,8 @@ def build_parser() -> argparse.ArgumentParser:
 
     validate = sub.add_parser("validate", help="check a vich-hl7 message against FDA CVM's published schemas")
     validate.add_argument("xml", nargs="+", help="the message(s) to validate")
-    validate.add_argument("--schema-dir", help="where the schemas are (default: $CVM_AER_SCHEMA_DIR, a vich-schemas/ "
-                                                 "folder next to the package, else ~/.cache/cvm_aer/vich-schemas, "
-                                                 "fetched from FDA once)")
+    validate.add_argument("--schema-dir", help="where the schemas are (default: $CVM_AER_SCHEMA_DIR, else the bundled "
+                                                 "vich-schemas/ folder)")
 
     service = sub.add_parser(
         "service",

@@ -30,6 +30,7 @@ cvm-aer-converter/
     templates/fda_1932_2023.json
   tests/
   cvm-aer-service.ini.sample
+  vich-schemas/             FDA's VICH HL7 schema set (63 XSDs) the messages are validated against
   requirements.txt          core dependencies (pypdf, pypdfium2, Pillow, numpy, lxml)
   requirements-ocr.txt      PaddleOCR, only for image-only scans
 ```
@@ -90,12 +91,11 @@ FDA's VICH schema set (entry `multicacheschemas/MCCI_IN200100UV01.xsd`) with
 `lxml`; `python -m cvm_aer validate out.xml [more.xml ...]` re-checks messages
 already on disk (exit `0` valid, `1` complaints listed).
 
-The schemas are HL7-licensed and not shipped in this folder: on first use they
-are downloaded from `accessdata.fda.gov/icsr/schema/cvm/schemas/vich/` into
-`~/.cache/cvm_aer/vich-schemas` (63 files, ~1.3 MB) — so the first run needs
-internet access, or give the box a copy: a `vich-schemas/` folder next to
-`cvm_aer/`, the `CVM_AER_SCHEMA_DIR` environment variable, or `--schema-dir`
-on `validate`.
+The schema set (63 XSDs, 1.3 MB, from
+`accessdata.fda.gov/icsr/schema/cvm/schemas/vich/`) ships in `vich-schemas/`,
+so validation works offline. `CVM_AER_SCHEMA_DIR` or `--schema-dir` on
+`validate` point at another copy; if `vich-schemas/` is deleted the set is
+downloaded once into `~/.cache/cvm_aer/vich-schemas`.
 
 ## Sample form
 
