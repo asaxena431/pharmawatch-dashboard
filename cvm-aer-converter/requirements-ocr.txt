@@ -1,0 +1,4 @@
+# Only needed for printed or scanned (image-only) copies of Form FDA 1932.
+# Fillable PDFs and the dynamic 1932a are read without OCR.
+paddleocr==3.7.0
+paddlepaddle==3.3.1
