@@ -13,6 +13,7 @@ import re
 from dataclasses import dataclass, field
 
 from . import rules as R
+from .ner import find_person_names
 
 SECTION_POLICY = {
     "B5": {"b6": True, "b4": True, "trade_secret_paragraphs": False},
@@ -98,6 +99,17 @@ def _redact_trade_secret_paragraphs(text: str, section: str, findings: list) -> 
     return "".join(out)
 
 
+# ---------------------------------------------------------------- names ------
+def _redact_person_names(text: str, section: str, findings: list) -> str:
+    spans = find_person_names(text)
+    for start, end, name in reversed(spans):
+        if R.B6 in name:
+            continue
+        findings.append(Finding(section, "person_name", R.B6, name, R.B6))
+        text = text[:start] + R.B6 + text[end:]
+    return text
+
+
 # ---------------------------------------------------------------- main -------
 def redact_section(section: str, text: str) -> SectionResult:
     section = section.upper()
@@ -130,6 +142,7 @@ def redact_section(section: str, text: str) -> SectionResult:
         for name, pat, repl in R.B6_RULES:
             if name != "dob":
                 t = _apply(pat, repl, t, section, name, R.B6, findings)
+        t = _redact_person_names(t, section, findings)
 
     for pat in R.BOILERPLATE:
         t = _apply(pat, "", t, section, "boilerplate", "delete", findings)
