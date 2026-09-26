@@ -177,8 +177,10 @@ def report(num: str):
         + "</p>"
         f"<form method='post' action='{url_for('save', num=num)}'>"
         + "".join(sections_html)
-        + f"<h3>Automatic redactions ({len(r['findings'])})</h3>{findings_html}"
-        f"<div class='grid'><div class='box'><h3>Reportables</h3><ul>{rep_html}</ul></div>"
+        + f"<h3>Automatic redactions ({len(r['findings'])})</h3>"
+        "<p><small>Unchecking a finding records it as rejected for the audit trail; restore the wording in the "
+        "editable text above.</small></p>" + findings_html
+        + f"<div class='grid'><div class='box'><h3>Reportables</h3><ul>{rep_html}</ul></div>"
         f"<div class='box'><h3>Link candidates</h3><ul>{link_html}</ul></div></div>"
         f"<p><label>Reviewer note <input name='note' value='{note}' style='width:60%'></label></p>"
         "<p><button class='ok' name='action' value='COMPLETE'>Complete</button> "
