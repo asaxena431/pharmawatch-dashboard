@@ -5,7 +5,7 @@ Requirements: Python 3.10+ (no third-party packages for the CLI; the review UI n
 ```bash
 unzip mdr_redaction.zip && cd mdr_redaction_bundle      # folder containing mdr_redaction/
 python -m venv .venv && source .venv/bin/activate        # Windows: .venv\Scripts\activate
-pip install flask                                        # only for the review UI
+pip install -r requirements.txt   # flask (review UI) + openpyxl (Excel compare)
 
 # 1. batch run on the sample data (redaction + triage + reportables + linking)
 python -m mdr_redaction.cli mdr_redaction/sample_reports.json -o out
