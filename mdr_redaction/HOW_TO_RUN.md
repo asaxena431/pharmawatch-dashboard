@@ -25,3 +25,12 @@ for cross-report linking).
 
 Optional: `HUGGINGFACE_API_KEY=...` enables model-based name detection; `MDR_NER_BACKEND=heuristic|spacy|hf` forces a backend.
 See `mdr_redaction/README.md` for the SOP-to-code mapping and known gaps.
+
+## Browse the comparison in a web page
+
+```bash
+python -m mdr_redaction.compare_app data/redacted_narratives.xlsx      # -> http://127.0.0.1:5052
+```
+Shows every narrative (filter by status), and per record the original / editor / automation text side by side with
+the differing words highlighted, the reason for each difference, the SOP reference, and a reviewer verdict
+(editor right / automation right / both acceptable / both wrong) saved to `<input>.verdicts.json`.

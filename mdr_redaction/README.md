@@ -74,6 +74,11 @@ SOP section/appendix (and quotes its example) for every difference; a `sop_refer
 On the first 198-row FDA export: 95% agree (`MATCH`+`FORMAT_ONLY`); the remaining rows are mostly
 dates the editor left un-redacted in one place but redacted elsewhere.
 
+Browse the same comparison in a browser (side-by-side diff, SOP reference, reviewer verdict):
+```bash
+python -m mdr_redaction.compare_app redacted_narratives.xlsx   # http://127.0.0.1:5052
+```
+
 ## Known gaps (information not in the SOP)
 - No eMDR / ESG connector — the SOP screenshots show a legacy web grid; input is file-based here.
 - Code Blue criteria live in FDA Doc 06254 (not provided); `CODE_BLUE_TERMS` is a placeholder.
