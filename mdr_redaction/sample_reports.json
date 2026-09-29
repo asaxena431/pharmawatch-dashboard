@@ -1,0 +1,111 @@
+[
+  {
+    "report_number": "1219913-2022-00282",
+    "manufacturer": "SIEMENS HEALTHINEERS",
+    "report_type": "MFR",
+    "outcome": "IN",
+    "days_in_inbox": 12,
+    "sections": {
+      "B5": "SIEMENS HEALTHINEERS RECEIVED AN EMAIL ON AUGUST 18, 2022 FROM FDA NOTIFYING SIEMENS HEALTHINEERS THAT THE CUSTOMER UNIVERSITY OF NORTH CAROLINA HOSPITALS (UNC) FILED MEDWATCH FORM 3400610000-2022-8004 REPORTING: BETWEEN JULY 13, 2021 TO MARCH 4, 2022, THE USER FACILITY INVALIDATED APPROXIMATELY 1,007 ESTRADIOL RESULTS. 45 PATIENTS HAD WRONG TREATMENT DECISIONS MADE AS A RESULT OF THE FALSELY HIGH ESTRADIOL LEVELS. See attached.",
+      "D11": "Concomitant analyzer SN 4471209, therapy dates 07/13/2021 - 03/04/2022.",
+      "H11": "Complaint # CMP-2022-88123 opened. Device Evaluated by Mfr: failure analysis and product analysis performed; root cause analysis determined reagent lot issue. Lot # 55871A. Approximately 42,766,831 units have been released for distribution from July 2015 to July 2017, resulting in a complaint occurrence rate of approximately 0.00007%."
+    }
+  },
+  {
+    "report_number": "3006948883-2019-00962",
+    "manufacturer": "MEDTRONIC",
+    "report_type": "MFR",
+    "outcome": "D",
+    "days_in_inbox": 3,
+    "sections": {
+      "B5": "The following information was provided by the initial reporter: On October 29, 2019, the patient, male, 92 years old, DOB 05/04/1927, was diagnosed with atrial fibrillation at Shady Grove Hospital by Dr. Smith. Implant date June 07, 2015. MRN 00412233. Patient expired on 11/02/2019. The damn device failed.",
+      "H11": "With regard on the tubing strain relief, which was never located, it is noted that the strain relief material was identified as silicone, MED-4854. MED-4854 is certified by the manufacturer to be suitable for use in implant devices. This silicone is referenced in an FDA master file: MAF# 1281. To mitigate the strain relief migration from the locking connector, a design enhancement has been implemented with the approval of the FDA.\n\nNo further information available at this time."
+    }
+  },
+  {
+    "report_number": "3012307300-2022-05431",
+    "manufacturer": "UNITED THERAPEUTICS",
+    "report_type": "MFR",
+    "outcome": "M",
+    "days_in_inbox": 40,
+    "sections": {
+      "B5": "Per MW, spontaneous call patient reporting that she dropped pump Sn 322537 and now its alarming no disposable pump won't run. Had patient attempt to reattach cassette and pump still wouldn't run. Advised patient she would need to switch to back up pump. Refer to additional documents in I2K.",
+      "D11": "Remodulin, Serial Number 322537"
+    }
+  },
+  {
+    "report_number": "3005248192-2024-00149",
+    "manufacturer": "ETHICON",
+    "report_type": "MFR",
+    "outcome": "M",
+    "days_in_inbox": 2,
+    "sections": {
+      "B5": "It was reported that an animal underwent an unknown procedure 03/23/2022 and suture was used. During the procedure, the suture broke. No adverse patient consequences were reported. Additional information was requested."
+    }
+  },
+  {
+    "report_number": "3005085999-2024-00011",
+    "manufacturer": "ACME DEVICES",
+    "report_type": "MFR",
+    "outcome": "IN",
+    "days_in_inbox": 1,
+    "sections": {
+      "B5": "The oxygen concentrator caught fire in the patient's bedroom at 123 Main Street, Springfield. Patient (J.D.), 71 years old, sustained burns and was treated at Germantown Medical Center by Nurse Jackie. Sales representative John Carter visited the site. BSC ID #A00632691/ TW #4452120."
+    }
+  },
+  {
+    "report_number": "MW5112852",
+    "manufacturer": "",
+    "report_type": "PRP",
+    "outcome": "IN",
+    "days_in_inbox": 5,
+    "sections": {
+      "B5": "Consumer reports insulin pump over-delivered on 2024-01-15. Contacted Dr. Alvarez. Insurance ID BCBS-44812. Cost of ER visit $2,400.",
+      "F11": "Insulin pump S/N 99881122; glucose sensor transmitter # TX-5521"
+    }
+  },
+  {
+    "report_number": "2246315-2018-00316-1",
+    "manufacturer": "GENZYME CORPORATION",
+    "report_type": "MFR",
+    "outcome": "M",
+    "days_in_inbox": 1733,
+    "sections": {
+      "B5": "Follow-up 1: device returned and evaluated; no anomaly found.",
+      "H11": "Device met all material, assembly and performance specifications."
+    }
+  },
+  {
+    "report_number": "0504240000-2024-8102",
+    "manufacturer": "ABBOTT VASCULAR",
+    "report_type": "UF",
+    "outcome": "IN",
+    "days_in_inbox": 40,
+    "brand_name": "XIENCE Sierra",
+    "model": "1145350-28",
+    "lot": "9K33021",
+    "serial": "",
+    "event_date": "2024-03-11",
+    "sections": {
+      "B5": "Risk manager Angela Ruiz reported that during a PCI procedure the stent delivery balloon ruptured on inflation at St. Luke Medical Center. The patient, a 67 year old female, required an additional stent to cover the dissection. Lot 9K33021.",
+      "D11": "None."
+    }
+  },
+  {
+    "report_number": "2024168-2024-04411",
+    "manufacturer": "ABBOTT VASCULAR",
+    "report_type": "MFR",
+    "outcome": "IN",
+    "days_in_inbox": 9,
+    "brand_name": "Xience Sierra",
+    "model": "1145350-28",
+    "lot": "9K33021",
+    "serial": "",
+    "event_date": "03/12/2024",
+    "sections": {
+      "B5": "It was reported that during a PCI procedure the delivery balloon ruptured during inflation. An additional stent was required to treat a dissection. No further patient information was provided. Contact person is Mark Feldman, field representative.",
+      "D11": "N/A",
+      "H11": "Complaint 24-1180045 opened. Lot 9K33021. Investigation: returned product analysis pending. Field representative Mark Feldman was notified."
+    }
+  }
+]
