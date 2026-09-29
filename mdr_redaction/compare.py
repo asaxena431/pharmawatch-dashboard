@@ -258,9 +258,16 @@ def load_rows(path: Path, orig_col: str, red_col: str, id_col: str) -> list[dict
     else:
         with open(path, newline="", encoding="utf-8") as fh:
             rows = list(csv.DictReader(fh))
-    for c in (orig_col, red_col):
-        if rows and c not in rows[0]:
-            sys.exit(f"column {c!r} not found; have {list(rows[0])}")
+    if rows:
+        # tolerate header variants (REDACTED_NARRATIVES, lower case, spaces)
+        norm = {re.sub(r"[^a-z0-9]", "", k.lower()).rstrip("s"): k for k in rows[0]}
+        for c in (orig_col, red_col, id_col):
+            if c not in rows[0]:
+                actual = norm.get(re.sub(r"[^a-z0-9]", "", c.lower()).rstrip("s"))
+                if actual is None:
+                    sys.exit(f"column {c!r} not found; have {list(rows[0])}")
+                for r in rows:
+                    r[c] = r.pop(actual)
     return [r for r in rows if r.get(orig_col)]
 
 
