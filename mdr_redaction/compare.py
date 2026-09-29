@@ -136,6 +136,7 @@ def _redacted_spans(original: str, redacted: str) -> tuple[list[tuple[str, str]]
     return redactions, edits
 
 
+_FILLER_ONLY = re.compile(r"[\s,.;:()-]*(?:(?:on|in|at|the|of|and|dated|since|from|to|by)[\s,.;:()-]*)*", re.I)
 _FACILITY_WORD = re.compile(r"\b(hospital|medical|center|clinic|dental|health|surgery|surgical|nursing|university|office)\b", re.I)
 
 
@@ -170,6 +171,17 @@ def _explain(original: str, human: str, auto: str, findings) -> tuple[str, str, 
 
     reasons: list[str] = []
     refs: list[str] = []
+
+    # Same redaction, but one side swallowed a filler word ("On 6/15/26" vs "6/15/26"),
+    # usually because the editor typed "On(b)(6) 2026" without a space. Not a real difference.
+    for h_span in list(human_only):
+        for a_span in list(auto_only):
+            short, long_ = sorted((h_span, a_span), key=len)
+            if short and short in long_ and _FILLER_ONLY.fullmatch(long_.replace(short, " ")):
+                human_only.remove(h_span)
+                auto_only.remove(a_span)
+                h_edits.append(f"'{h_span}' vs '{a_span}' (spacing around the (b)(6) token)")
+                break
 
     def _core(d: str) -> tuple:  # only the tokens and years matter, not filler words like "on"
         return tuple(re.findall(r"\(b\)\(\d\)|(?:19|20)\d{2}", d))
