@@ -28,7 +28,7 @@ _ROLE_CUE = re.compile(
     rf"(?:the\s+)?(?:patient|pt|nurse|physician|surgeon|clinician|technician|technologist|"
     rf"biomed|risk\s+manager|sales\s+rep(?:resentative)?|field\s+rep(?:resentative)?|"
     rf"representative|engineer|caregiver|spouse|wife|husband|mother|father|daughter|son))"
-    rf"\s*,?\s+(?i:named\s+|is\s+|was\s+)?({_FULL_NAME})\b"
+    rf"[ \t]*,?[ \t]+(?i:named\s+|is\s+|was\s+)?({_FULL_NAME})\b"
 )
 _CREDENTIALED = re.compile(
     rf"\b({_FULL_NAME}),?\s+(?:RN|MD|DO|PA|NP|LPN|CRNA|PharmD|RT|BSN|MSN|CNM|DDS|DVM|PhD)\b"
@@ -44,6 +44,8 @@ _STOP = {
     "January", "February", "March", "April", "May", "June", "July", "August", "September",
     "October", "November", "December", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday",
     "Saturday", "Sunday", "Food", "Drug", "Administration", "User", "Facility", "Risk", "Manager",
+    "Care", "Line", "Service", "Services", "Support", "Technical", "Quality", "Complaint", "Safety",
+    "It", "The", "On", "In", "At", "No", "Was", "Is", "Per", "Via",
 }
 
 

@@ -82,6 +82,8 @@ def _redact_dates(text: str, section: str, findings: list, keep_year: bool) -> s
         return new
     for p in R.DATE_PATTERNS:
         text = p.sub(_sub, text)
+    for p, repl in R.PARTIAL_DATE_PATTERNS:
+        text = _apply(p, repl, text, section, "partial_date", R.B6, findings)
     return text
 
 

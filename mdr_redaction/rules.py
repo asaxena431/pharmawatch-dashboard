@@ -22,9 +22,18 @@ _MONTHS = (r"(?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|"
 DATE_PATTERNS = [
     re.compile(rf"\b{_MONTHS}\.?\s+\d{{1,2}}(?:st|nd|rd|th)?,?\s+(\d{{4}})\b", re.I),      # June 07, 2015
     re.compile(rf"\b\d{{1,2}}(?:st|nd|rd|th)?\s+{_MONTHS}\.?,?\s+(\d{{4}})\b", re.I),      # 07 June 2015
+    re.compile(rf"\b\d{{1,2}}-{_MONTHS}-(\d{{4}})\b", re.I),                              # 05-Nov-2025
+    re.compile(rf"\b\d{{1,2}}-{_MONTHS}-(\d{{2}})\b", re.I),                              # 05-Nov-25
+    re.compile(rf"\b\d{{1,2}}/{_MONTHS}/(\d{{4}})\b", re.I),                              # 05/DEC/2025
     re.compile(r"\b(\d{4})-\d{1,2}-\d{1,2}\b"),                                          # 2015-06-25
     re.compile(r"\b\d{1,2}[/.-]\d{1,2}[/.-](\d{4})\b"),                                  # 06/25/2015
     re.compile(r"\b\d{1,2}[/.-]\d{1,2}[/.-](\d{2})\b"),                                  # 06/25/15
+]
+
+# Partial dates (no year, or month + year only): the month/day part is (B)(6).
+PARTIAL_DATE_PATTERNS = [
+    (re.compile(rf"\b{_MONTHS}\.?\s+\d{{1,2}}(?:st|nd|rd|th)?\b(?!\s*,?\s*\d{{4}})(?![\w/.-])", re.I), B6),   # March 25
+    (re.compile(rf"\b{_MONTHS}\.?(\s+of\s+)(\d{{4}})\b", re.I), rf"{B6}\1\2"),                              # August of 2019
 ]
 
 AGE_CUTOFF = 89   # HHS Safe Harbor: ages > 89 and any date element indicating it
@@ -42,14 +51,17 @@ B6_RULES = [
     ("clinician_name",
      re.compile(r"\b(Dr|Doctor|Nurse|RN|MD|PA|NP|Prof|Physician)(\.?)\s+[A-Z][a-zA-Z'-]+(?:\s+[A-Z][a-zA-Z'-]+)?"),
      rf"\1\2 {B6}"),
-    ("titled_name", re.compile(r"\b(Mr|Mrs|Ms|Miss|Mx)\.?\s+[A-Z][a-zA-Z'-]+(?:\s+[A-Z][a-zA-Z'-]+)?"), B6),
-    ("patient_initials", re.compile(r"\b(patient|pt)\s+(?:initials?\s+)?\(?[A-Z]\.?\s?[A-Z]\.?\)?(?=[\s,.;)])", re.I), rf"\1 {B6}"),
+    ("titled_name", re.compile(r"\b(?i:Mr|Mrs|Ms|Miss|Mx)\.?\s+[A-Z][a-zA-Z'-]+(?:\s+[A-Z][a-zA-Z'-]+)?"), B6),
+    ("patient_initials",
+     re.compile(r"\b((?i:patient|pt))\s+(?:(?i:initials?)\s+)?(?:\([A-Z]\.?\s?[A-Z]\.?\)|[A-Z]\.\s?[A-Z]\.|(?i:initials?)\s+[A-Z]{2})(?=[\s,.;)]|$)"),
+     rf"\1 {B6}"),
     ("facility",
      re.compile(r"\b(?:[A-Z][\w'&.-]+\s+){1,4}(Hospital|Medical\s+Center|Health\s+System|Clinic|Surgery\s+Center|Surgical\s+Center|"
-                r"Nursing\s+Home|Rehabilitation\s+Center|Cancer\s+Center|Infirmary|University\s+Hospitals?)\b"),
+                r"Nursing\s+Home|Rehabilitation\s+Center|Cancer\s+Center|Infirmary|University\s+Hospitals?|Dental(?:\s+Office)?|"
+                r"Medical\s+Group|Family\s+Practice)\b"),
      rf"{B6} \1"),
     ("address",
-     re.compile(r"\b\d{1,5}\s+[A-Z][a-zA-Z\s]{2,30}(?:Street|St|Avenue|Ave|Road|Rd|Blvd|Drive|Dr|Lane|Ln|Court|Ct|Way)\b\.?", re.I),
+     re.compile(r"\b\d{1,5}\s+[A-Z][a-zA-Z]+(?:\s+[A-Z][a-zA-Z]+){0,3}\s+(?:Street|St|Avenue|Ave|Road|Rd|Blvd|Drive|Dr|Lane|Ln|Court|Ct|Way)\b\.?"),
      B6),
     ("zip", re.compile(r"\b(?:zip(?:\s*code)?\s*[:#]?\s*)\d{5}(?:-\d{4})?\b", re.I), B6),
     ("insurance",
@@ -59,7 +71,7 @@ B6_RULES = [
     ("workers_comp", re.compile(r"\bworker'?s?\s+comp(?:ensation)?\b[^.;]*", re.I), B6),
     ("serial",
      re.compile(r"\b(S/?N|Serial\s*(?:No\.?|Number|#)?|Transmitter\s*(?:No\.?|Number|#)?|Analyzer\s*(?:No\.?|Number|#)?)"
-                r"\s*[:#]?\s*[A-Z0-9-]{4,}", re.I),
+                r"(?:\s*[:#]|\s)\s*[A-Z0-9-]{4,}\b", re.I),
      rf"\1 {B6}"),
 ]
 

@@ -51,6 +51,28 @@ Output: `redacted_reports.json` (redacted sections + per-finding audit trail),
 `link_candidates.json`. The review UI writes `<input>.decisions.json`
 (approved text, rejected findings, status, reviewer note per report).
 
+## Benchmark against editor-redacted narratives
+
+```bash
+pip install openpyxl
+python -m mdr_redaction.compare redacted_narratives.xlsx -o compare_out.xlsx \
+    [--orig-col COMPANY_NARRATIVE --redacted-col REDACTED_NARRATIVE --id-col RECORD_ID]
+```
+Redacts every original narrative, aligns it with the editor's version and writes one row per
+narrative with a `status` and a plain-language `reason`:
+
+| status | meaning |
+|---|---|
+| `MATCH` | byte-identical |
+| `FORMAT_ONLY` | same things redacted; differs only in `(b)(6)` casing/spacing/punctuation or editor wording edits |
+| `AUTO_MISSED` | editor redacted something the automation kept (reason says: unknown date format / name / identifier) |
+| `AUTO_EXTRA` | automation redacted something the editor kept (reason names the rule that fired) |
+| `BOTH` | both of the above |
+| `HUMAN_INCONSISTENT` | same span redacted, different replacement (e.g. year dropped) |
+
+On the first 198-row FDA export: 94% agree (`MATCH`+`FORMAT_ONLY`); the remaining rows are mostly
+dates the editor left un-redacted in one place but redacted elsewhere.
+
 ## Known gaps (information not in the SOP)
 - No eMDR / ESG connector — the SOP screenshots show a legacy web grid; input is file-based here.
 - Code Blue criteria live in FDA Doc 06254 (not provided); `CODE_BLUE_TERMS` is a placeholder.
