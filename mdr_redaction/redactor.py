@@ -75,6 +75,8 @@ def _patient_over_89(text: str) -> bool:
 def _redact_dates(text: str, section: str, findings: list, keep_year: bool) -> str:
     def _sub(m: re.Match) -> str:
         year = m.group(1)
+        if len(year) == 3 and year.startswith("0"):   # typo like "021"
+            year = year[1:]
         if len(year) == 2:
             year = ("19" if int(year) > 30 else "20") + year
         new = f"{R.B6} {year}" if keep_year else R.B6

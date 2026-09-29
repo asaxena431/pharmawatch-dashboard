@@ -177,10 +177,21 @@ def _explain(original: str, human: str, auto: str, findings) -> tuple[str, str, 
     for h_span in list(human_only):
         for a_span in list(auto_only):
             short, long_ = sorted((h_span, a_span), key=len)
-            if short and short in long_ and _FILLER_ONLY.fullmatch(long_.replace(short, " ")):
+            if not short or short not in long_:
+                continue
+            rest = long_.replace(short, " ").strip(" ,.;:()-")
+            if _FILLER_ONLY.fullmatch(rest):
                 human_only.remove(h_span)
                 auto_only.remove(a_span)
                 h_edits.append(f"'{h_span}' vs '{a_span}' (spacing around the (b)(6) token)")
+                break
+            # editor redacted only part of a date ("MARCH 25" -> "(b)(6) 25": month hidden, day kept)
+            if short == h_span and re.fullmatch(rf"{R._MONTHS}\.?", h_span, re.I) and re.fullmatch(r"\d{1,2}(?:st|nd|rd|th)?", rest):
+                human_only.remove(h_span)
+                auto_only.remove(a_span)
+                reasons.append(f"editor redacted only the month of '{a_span}' and left the day '{rest}' visible; "
+                               "SOP says redact day AND month, keep only the year")
+                refs.append("date")
                 break
 
     def _core(d: str) -> tuple:  # only the tokens and years matter, not filler words like "on"

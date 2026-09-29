@@ -24,6 +24,7 @@ DATE_PATTERNS = [
     re.compile(rf"\b\d{{1,2}}(?:st|nd|rd|th)?\s+{_MONTHS}\.?,?\s+(\d{{4}})\b", re.I),      # 07 June 2015
     re.compile(rf"\b\d{{1,2}}-{_MONTHS}-(\d{{4}})\b", re.I),                              # 05-Nov-2025
     re.compile(rf"\b\d{{1,2}}-{_MONTHS}-(\d{{2}})\b", re.I),                              # 05-Nov-25
+    re.compile(rf"\b\d{{1,2}}-{_MONTHS}-(0\d{{2}})(?!\d)", re.I),                          # 14-DEC-021 (typo year)
     re.compile(rf"\b\d{{1,2}}/{_MONTHS}/(\d{{4}})\b", re.I),                              # 05/DEC/2025
     re.compile(r"\b(\d{4})-\d{1,2}-\d{1,2}\b"),                                          # 2015-06-25
     re.compile(r"\b\d{1,2}[/.-]\d{1,2}[/.-](\d{4})\b"),                                  # 06/25/2015

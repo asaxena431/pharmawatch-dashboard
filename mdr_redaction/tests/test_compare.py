@@ -8,6 +8,10 @@ class DateFormatsFromRealExport(unittest.TestCase):
     def test_dd_mon_yyyy(self):
         self.assertEqual(redact_section("B5", "low glucose by 05-Nov-2025.").redacted, "low glucose by (B)(6) 2025.")
 
+    def test_typo_three_digit_year(self):
+        self.assertEqual(redact_section("B5", "ON 04-DEC-2018 AND/OR 14-DEC-021(COULD BE ERROR)").redacted,
+                         "ON (B)(6) 2018 AND/OR (B)(6) 2021(COULD BE ERROR)")
+
     def test_dd_slash_mon_slash_yyyy(self):
         self.assertEqual(redact_section("B5", "ON 05/DEC/2025, THE PATIENT").redacted, "ON (B)(6) 2025, THE PATIENT")
 
