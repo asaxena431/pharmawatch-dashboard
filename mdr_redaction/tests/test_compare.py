@@ -110,6 +110,21 @@ class SecondExport1000Rows(unittest.TestCase):
             self.assertEqual(redact_section("B5", text).redacted, text, text)
 
     def test_month_year_and_emergency_center(self):
-        self.assertEqual(redact_section("B5", "In September 2025, the patient").redacted, "In September 2025, the patient")
+        self.assertEqual(redact_section("B5", "In September 2025, the patient").redacted, "In (B)(6) 2025, the patient")
         self.assertEqual(redact_section("B5", "transported to Tidal Health Emergency Center in Berlin, MD and released").redacted,
                          "transported to (B)(6) Emergency Center and released")
+
+    def test_bare_month_and_month_year(self):
+        self.assertEqual(redact_section("B5", "chair received back in March has broken").redacted,
+                         "chair received back in (B)(6) has broken")
+        self.assertEqual(redact_section("B5", "In September 2025, the patient").redacted, "In (B)(6) 2025, the patient")
+        self.assertEqual(redact_section("B5", "it may be in place").redacted, "it may be in place")
+
+    def test_editor_over_redaction_is_not_auto_missed(self):
+        from mdr_redaction.compare import _explain
+        orig = "Drive Medical was notified. Results of 50 mg/dL were seen."
+        human = "(b)(6) was notified. Results of (b)(6) were seen."
+        status, reason, ref, *_ = _explain(orig, human, orig, [])
+        self.assertEqual(status, "HUMAN_INCONSISTENT")
+        self.assertIn("over-redaction", reason)
+        self.assertIn("[not_pii]", ref)

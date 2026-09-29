@@ -47,6 +47,9 @@ SOP_REFS: dict[str, str] = {
     "facility": ("SOP Appendix 6 (B)(6) 'Hospital / facility names': redact the name, keep the facility type "
                  "- example 'Shady Grove Hospital' -> '(B)(6) Hospital'."),
     "location": "SOP Appendix 6 (B)(6) 'Location information' (addresses, city/state of patient or facility).",
+    "not_pii": ("Not in the SOP: Appendix 6 (B)(6) covers patient/reporter identity, dates, facilities, IDs; Appendix 7 (B)(4) "
+                "covers trade secrets, complaint/lot/UDI numbers and supplier/distributor names. Manufacturer names and clinical "
+                "values (lab results, doses) are not listed, so automation leaves them."),
     "identifier_b6": ("SOP Appendix 6 (B)(6) 'Patient ID / MRN / account numbers' and 'Serial, transmitter, analyzer "
                       "numbers'; Procedure step 5.4 / 6.1.2: D11/F11 tabs use (B)(6) for serial numbers."),
     "identifier_b4": ("SOP Appendix 7 (B)(4) code sheet: complaint/tracking/internal reference numbers, NCR/CFN/RAE, "
@@ -147,8 +150,15 @@ def _classify_missed(span: str) -> tuple[str, str]:
         return f"partial date (month/day without full date) redacted by editor: '{span}'", "date"
     if re.fullmatch(r"(19|20)\d{2}", span):
         return f"editor removed the year '{span}' (SOP keeps the year unless patient >89)", "year"
+    if re.fullmatch(r"\d[\d.,]*\s*(?:mg|mcg|g|kg|ml|dl|mmol|mmhg|units?|iu|%|bpm|cm|mm|lbs?|kg)(?:/(?:dl|l|kg|ml|min|hr))?", span, re.I):
+        return (f"editor redacted a clinical measurement '{span}'; lab values/doses are not in the SOP's (B)(6) list "
+                "(Appendix 6) - probable editor over-redaction", "not_pii")
     if re.search(r"\d", span):
         return f"editor redacted identifier/number not covered by a rule: '{span}'", "identifier_b6"
+    if re.search(r"\b(medical|scientific|healthcare|inc|llc|corp|ltd|gmbh|technologies|devices|diabetes care)\b", span, re.I) \
+            and not _FACILITY_WORD.search(span.replace("medical", "")):
+        return (f"editor redacted the company/manufacturer name '{span}'; manufacturer names are not in the SOP's (B)(6) or "
+                "(B)(4) lists (only supplier/distributor names are (B)(4), Appendix 7) - probable editor over-redaction", "not_pii")
     if _FACILITY_WORD.search(span):
         return f"editor redacted a facility name that no rule detects: '{span}'", "facility"
     return f"editor redacted free text (name/location?) that no rule detects: '{span}'", "name"
@@ -220,10 +230,14 @@ def _explain(original: str, human: str, auto: str, findings) -> tuple[str, str, 
                 reasons.append(f"'{src}': editor wrote {sorted(h_rep)}, automation wrote {sorted(a_rep)}")
                 refs.append("date" if _DATE_LIKE.search(src) else "token_format")
 
-    for span in human_only:
+    not_pii = False
+    for span in list(human_only):
         text, key = _classify_missed(span)
         reasons.append(text)
         refs.append(key)
+        if key == "not_pii":          # editor went beyond the SOP; not an automation miss
+            human_only.remove(span)
+            not_pii = True
     for span in auto_only:
         kinds = sorted({f.rule for f in findings if _norm(f.original) and (_norm(f.original) in span or span in _norm(f.original))})
         if _DATE_LIKE.search(span) or kinds == ["date"] or kinds == ["partial_date"]:
@@ -237,7 +251,9 @@ def _explain(original: str, human: str, auto: str, findings) -> tuple[str, str, 
             reasons.append(f"automation redacted '{span}' but editor kept it")
             refs.append("none")
 
-    if human_only and auto_only:
+    if not human_only and not auto_only and not_pii:
+        status = "HUMAN_INCONSISTENT"
+    elif human_only and auto_only:
         status = "BOTH"
     elif human_only:
         status = "AUTO_MISSED"
@@ -339,7 +355,7 @@ def write_xlsx(results: list[RowResult], path: Path) -> None:
         "AUTO_MISSED": "editor redacted something the automation kept - see reason + sop_reference",
         "AUTO_EXTRA": "automation redacted something the editor kept - see reason + sop_reference",
         "BOTH": "both of the above in one narrative",
-        "HUMAN_INCONSISTENT": "same span redacted, different replacement (e.g. year dropped)",
+        "HUMAN_INCONSISTENT": "same span redacted, different replacement (e.g. year dropped), or editor redacted text outside the SOP",
     }.items():
         ws2.append([k, v])
     ws2.column_dimensions["A"].width = 22

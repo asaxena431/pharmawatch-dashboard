@@ -36,6 +36,9 @@ DATE_PATTERNS = [
 PARTIAL_DATE_PATTERNS = [
     (re.compile(rf"\b{_MONTHS}\.?\s+\d{{1,2}}(?:st|nd|rd|th)?\b(?!\s*,?\s*\d{{4}})(?![\w/.-])", re.I), B6),   # March 25
     (re.compile(rf"\b{_MONTHS}\.?(\s+of\s+)(\d{{4}})\b", re.I), rf"{B6}\1\2"),                              # August of 2019
+    (re.compile(rf"\b{_MONTHS}\.?,?(\s+)((?:19|20)\d{{2}})\b", re.I), rf"{B6}\1\2"),                         # September 2025
+    (re.compile(rf"\b((?i:(?:back\s+)?(?:in|since|until|during|before|after))\s+)(?:{_MONTHS}|{_MONTHS.upper()})\b(?![\s,]*(?:\d|(?i:of)\b))"),
+     rf"\1{B6}"),                                                                                           # back in March
 ]
 
 AGE_CUTOFF = 89   # HHS Safe Harbor: ages > 89 and any date element indicating it
