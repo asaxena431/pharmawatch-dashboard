@@ -48,24 +48,26 @@ class Comparison(unittest.TestCase):
         orig = "implant inserted 2026-02-09 in FDI 46."
         human = "implant inserted on (b)(6)2026 in FDI 46."
         auto = redact_section("B5", orig).redacted
-        status, reason, _, _ = _explain(orig, human, auto, [])
+        status, reason, _, _, _ = _explain(orig, human, auto, [])
         self.assertEqual(status, "FORMAT_ONLY")
 
     def test_auto_missed_free_text(self):
         orig = "seen at MIRAMAR FAMILY DENTAL OFFICE on 05/05/2026"
         human = "seen at (b)(6) OFFICE on (b)(6) 2026"
         res = redact_section("B5", orig)
-        status, reason, auto_only, human_only = _explain(orig, human, res.redacted, res.findings)
+        status, reason, ref, auto_only, human_only = _explain(orig, human, res.redacted, res.findings)
         self.assertEqual(status, "AUTO_MISSED")
         self.assertIn("miramar family dental", human_only)
+        self.assertIn("Shady Grove Hospital", ref)
 
     def test_auto_extra_reports_rule(self):
         orig = "event on 2026-06-10 verified"
         human = "event on 2026-06-10 verified"      # editor left the date
         res = redact_section("B5", orig)
-        status, reason, auto_only, _ = _explain(orig, human, res.redacted, res.findings)
+        status, reason, ref, auto_only, _ = _explain(orig, human, res.redacted, res.findings)
         self.assertEqual(status, "AUTO_EXTRA")
         self.assertIn("editor inconsistency", reason)
+        self.assertIn("Appendix 6", ref)
 
     def test_compare_rows(self):
         rows = [{"RECORD_ID": "1", "COMPANY_NARRATIVE": "on 06/25/2015 pt fell", "REDACTED_NARRATIVE": "on (b)(6) 2015 pt fell"}]

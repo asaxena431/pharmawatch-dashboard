@@ -97,8 +97,8 @@ B4_RULES = [
      rf"\1 report {B4}"),
     ("lot", re.compile(rf"\b(Lot|Batch|Catalog|Cat|REF|Model|Part)\s*(?:No\.?|Number|#)?\s*{_NUM}", re.I), rf"\1 # {B4}"),
     ("mfr_rep",
-     re.compile(r"\b((?:sales|field|manufacturer|company|territory|clinical)\s+(?:representative|rep|specialist|engineer))"
-                r"\s+[A-Z][a-zA-Z'-]+(?:\s+[A-Z][a-zA-Z'-]+)?", re.I),
+     re.compile(r"\b((?i:(?:sales|field|manufacturer|company|territory|clinical)\s+(?:representative|rep|specialist|engineer)))"
+                r"\s+(?:(?i:named|is|was)\s+)?[A-Z][a-z'-]+(?:\s+[A-Z][a-z'-]+)?\b(?![a-z])"),
      rf"\1 {B4}"),
     ("supplier",
      re.compile(r"\b((?:supplier|distributor|contract\s+manufacturer|contractor|vendor|sub-?contractor)(?:\s+(?:is|was|named|,))?)"

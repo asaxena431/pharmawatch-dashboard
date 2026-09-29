@@ -59,7 +59,8 @@ python -m mdr_redaction.compare redacted_narratives.xlsx -o compare_out.xlsx \
     [--orig-col COMPANY_NARRATIVE --redacted-col REDACTED_NARRATIVE --id-col RECORD_ID]
 ```
 Redacts every original narrative, aligns it with the editor's version and writes one row per
-narrative with a `status` and a plain-language `reason`:
+narrative with a `status`, a plain-language `reason` and a `sop_reference` column that cites the
+SOP section/appendix (and quotes its example) for every difference; a `sop_references` sheet lists all citations:
 
 | status | meaning |
 |---|---|
@@ -70,7 +71,7 @@ narrative with a `status` and a plain-language `reason`:
 | `BOTH` | both of the above |
 | `HUMAN_INCONSISTENT` | same span redacted, different replacement (e.g. year dropped) |
 
-On the first 198-row FDA export: 94% agree (`MATCH`+`FORMAT_ONLY`); the remaining rows are mostly
+On the first 198-row FDA export: 95% agree (`MATCH`+`FORMAT_ONLY`); the remaining rows are mostly
 dates the editor left un-redacted in one place but redacted elsewhere.
 
 ## Known gaps (information not in the SOP)
