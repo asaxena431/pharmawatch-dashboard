@@ -81,3 +81,35 @@ class Comparison(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class SecondExport1000Rows(unittest.TestCase):
+    def test_compact_ddmonyyyy(self):
+        self.assertEqual(redact_section("B5", "seen on 22Jun2026 and 27AUG2026.").redacted, "seen on (B)(6) 2026 and (B)(6) 2026.")
+
+    def test_device_identifier_and_ref_numbers(self):
+        r = redact_section("H11", "Device Identifier: 00650862130287. Manufacturer's Ref. #: 1555899. "
+                                  "FILED UNDER MFR NUMBER (1822565). report 1 of 2 for PC-002241284").redacted
+        self.assertNotIn("00650862130287", r)
+        self.assertNotIn("1555899", r)
+        self.assertNotIn("1822565", r)
+        self.assertNotIn("002241284", r)
+
+    def test_false_positives_from_second_export(self):
+        for text in ("The distributor reported foreign matter inside the package.",
+                     "A US distributor contacted ZOLL to report that a patient developed a rash.",
+                     "the serial number associated with this complaint",
+                     "a transmitter battery issue occurred",
+                     "Account noticed the right front wheel",
+                     "PURSUANT TO 21 CFR PART 803",
+                     "Straight - Model Number 8028.",
+                     "Another Cardiology MD was called.",
+                     "the patient Insulin Doesn't Exit",
+                     "(Manufacturer Representative, Healthcare Provider) regarding",
+                     "Per Op Notes the incision"):
+            self.assertEqual(redact_section("B5", text).redacted, text, text)
+
+    def test_month_year_and_emergency_center(self):
+        self.assertEqual(redact_section("B5", "In September 2025, the patient").redacted, "In September 2025, the patient")
+        self.assertEqual(redact_section("B5", "transported to Tidal Health Emergency Center in Berlin, MD and released").redacted,
+                         "transported to (B)(6) Emergency Center and released")

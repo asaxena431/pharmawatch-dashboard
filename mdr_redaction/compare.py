@@ -180,10 +180,18 @@ def _explain(original: str, human: str, auto: str, findings) -> tuple[str, str, 
             if not short or short not in long_:
                 continue
             rest = long_.replace(short, " ").strip(" ,.;:()-")
-            if _FILLER_ONLY.fullmatch(rest):
+            if _FILLER_ONLY.fullmatch(rest) or re.fullmatch(r"[A-Za-z]+", rest):
                 human_only.remove(h_span)
                 auto_only.remove(a_span)
                 h_edits.append(f"'{h_span}' vs '{a_span}' (spacing around the (b)(6) token)")
+                break
+            # editor removed the whole facility incl. its type ("Kameda Medical Center" -> "(b)(6)")
+            if short == a_span and _FACILITY_WORD.search(rest) and any(f.rule == "facility" for f in findings):
+                human_only.remove(h_span)
+                auto_only.remove(a_span)
+                reasons.append(f"editor removed the facility type as well ('{h_span}'); SOP keeps it: "
+                               "'Shady Grove Hospital' -> '(B)(6) Hospital'")
+                refs.append("facility")
                 break
             # editor redacted only part of a date ("MARCH 25" -> "(b)(6) 25": month hidden, day kept)
             if short == h_span and re.fullmatch(rf"{R._MONTHS}\.?", h_span, re.I) and re.fullmatch(r"\d{1,2}(?:st|nd|rd|th)?", rest):

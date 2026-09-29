@@ -20,7 +20,7 @@ import urllib.request
 
 HF_NER_MODEL = os.environ.get("MDR_HF_NER_MODEL", "dslim/bert-base-NER")
 
-_NAME = r"[A-Z][a-z]+(?:[-'][A-Z][a-z]+)?"
+_NAME = r"[A-Z][a-z]+(?:[-'][A-Z][a-z]+)?(?!['\u2019])"
 _FULL_NAME = rf"{_NAME}(?:\s+{_NAME}){{1,2}}"
 
 _ROLE_CUE = re.compile(
@@ -46,6 +46,9 @@ _STOP = {
     "Saturday", "Sunday", "Food", "Drug", "Administration", "User", "Facility", "Risk", "Manager",
     "Care", "Line", "Service", "Services", "Support", "Technical", "Quality", "Complaint", "Safety",
     "It", "The", "On", "In", "At", "No", "Was", "Is", "Per", "Via",
+    "Another", "Cardiology", "Insulin", "Op", "Notes", "Healthcare", "Provider", "Representative",
+    "Manufacturer", "Patient", "Doctor", "Physician", "Nurse", "Distributor", "Customer", "Consumer",
+    "Surgeon", "Family", "Member", "Friend", "Office", "Staff", "Team",
 }
 
 

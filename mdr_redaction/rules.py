@@ -26,6 +26,7 @@ DATE_PATTERNS = [
     re.compile(rf"\b\d{{1,2}}-{_MONTHS}-(\d{{2}})\b", re.I),                              # 05-Nov-25
     re.compile(rf"\b\d{{1,2}}-{_MONTHS}-(0\d{{2}})(?!\d)", re.I),                          # 14-DEC-021 (typo year)
     re.compile(rf"\b\d{{1,2}}/{_MONTHS}/(\d{{4}})\b", re.I),                              # 05/DEC/2025
+    re.compile(rf"\b\d{{1,2}}{_MONTHS}(\d{{4}})(?!\d)", re.I),                             # 22JUN2026
     re.compile(r"\b(\d{4})-\d{1,2}-\d{1,2}\b"),                                          # 2015-06-25
     re.compile(r"\b\d{1,2}[/.-]\d{1,2}[/.-](\d{4})\b"),                                  # 06/25/2015
     re.compile(r"\b\d{1,2}[/.-]\d{1,2}[/.-](\d{2})\b"),                                  # 06/25/15
@@ -45,7 +46,7 @@ B6_RULES = [
     ("ssn", re.compile(r"\b\d{3}-\d{2}-\d{4}\b"), B6),
     ("mrn",
      re.compile(r"\b(MRN|Medical\s+Record\s+(?:Number|No\.?|#)|Patient\s+ID|Pt\s+ID|Chart\s*(?:No\.?|#)|Account\s*(?:No\.?|#))"
-                r"\s*[:#]?\s*[A-Z0-9-]{3,}", re.I),
+                r"\s*[:#]?\s*(?=[A-Z0-9-]*\d)[A-Z0-9-]{3,}", re.I),
      rf"\1 {B6}"),
     ("phone", re.compile(r"\b(?:\+?1[\s.-]?)?\(?\d{3}\)?[\s.-]\d{3}[\s.-]\d{4}\b"), B6),
     ("email", re.compile(r"\b[\w.+-]+@[\w.-]+\.[a-z]{2,}\b", re.I), B6),
@@ -59,7 +60,8 @@ B6_RULES = [
     ("facility",
      re.compile(r"\b(?:[A-Z][\w'&.-]+\s+){1,4}(Hospital|Medical\s+Center|Health\s+System|Clinic|Surgery\s+Center|Surgical\s+Center|"
                 r"Nursing\s+Home|Rehabilitation\s+Center|Cancer\s+Center|Infirmary|University\s+Hospitals?|Dental(?:\s+Office)?|"
-                r"Medical\s+Group|Family\s+Practice)\b"),
+                r"Medical\s+Group|Family\s+Practice|Emergency\s+(?:Center|Room|Department))\b"
+                r"(?:\s+in\s+[A-Z][a-z]+(?:\s+[A-Z][a-z]+)?,?\s+[A-Z]{2}\b)?"),
      rf"{B6} \1"),
     ("address",
      re.compile(r"\b\d{1,5}\s+[A-Z][a-zA-Z]+(?:\s+[A-Z][a-zA-Z]+){0,3}\s+(?:Street|St|Avenue|Ave|Road|Rd|Blvd|Drive|Dr|Lane|Ln|Court|Ct|Way)\b\.?"),
@@ -72,7 +74,7 @@ B6_RULES = [
     ("workers_comp", re.compile(r"\bworker'?s?\s+comp(?:ensation)?\b[^.;]*", re.I), B6),
     ("serial",
      re.compile(r"\b(S/?N|Serial\s*(?:No\.?|Number|#)?|Transmitter\s*(?:No\.?|Number|#)?|Analyzer\s*(?:No\.?|Number|#)?)"
-                r"(?:\s*[:#]|\s)\s*[A-Z0-9-]{4,}\b", re.I),
+                r"(?:\s*[:#]|\s)\s*(?=[A-Z0-9-]*\d)[A-Z0-9-]{4,}\b", re.I),
      rf"\1 {B6}"),
 ]
 
@@ -81,14 +83,16 @@ B6_RULES = [
 _NUM = r"(?:\s+|\s*[:#]\s*)(?=[A-Z0-9/-]*\d)[A-Z0-9][A-Z0-9/-]{2,}"
 B4_RULES = [
     ("complaint_no",
-     re.compile(rf"\b(Complaint|Tracking|Internal\s+Report|Reference|Ref|Case|Ticket|PR|CAPA|Investigation)"
-                rf"\s*(?:No\.?|Number|#|ID)?\s*{_NUM}", re.I),
+     re.compile(r"\b(Complaint|Tracking|Internal\s+Report|Reference|Ref\.?|Case|Ticket|PR|CAPA|Investigation|"
+                r"MFR\s+(?:Number|No\.?|#)|Manufacturer'?s?\s+Ref(?:erence)?\.?)"
+                r"\s*(?:No\.?|Number|#|ID)?\s*[:#]?\s*\(?(?=[A-Z0-9/-]*\d)[A-Z0-9][A-Z0-9/-]{2,}\)?", re.I),
      rf"\1 # {B4}"),
+    ("pc_no", re.compile(r"\b(PC)-\d{6,}\b"), rf"\1-{B4}"),
     ("ncr_cfn_rae", re.compile(rf"\b(NCR|CFN|RAE|MAF|DHR|DMR|SCAR)\s*(?:No\.?|Number|#)?\s*{_NUM}", re.I), rf"\1 # {B4}"),
     ("ide", re.compile(rf"\b(IDE)\s*(?:No\.?|Number|#)?\s*{_NUM}", re.I), rf"\1 {B4}"),
     ("eua", re.compile(rf"\b(EUA)\s*(?:No\.?|Number|#)?\s*{_NUM}", re.I), rf"\1 {B4}"),
     ("clinical_trial", re.compile(rf"\b(Clinical\s+Trial|Study|Protocol)\s*(?:No\.?|Number|#|ID)?\s*{_NUM}", re.I), rf"\1 # {B4}"),
-    ("udi", re.compile(r"\b(UDI|UDI-DI|DI|GTIN)\s*[:#]?\s*\(?\d{2}\)?\d{12,}\b", re.I), rf"\1 {B4}"),
+    ("udi", re.compile(r"\b(UDI|UDI-DI|DI|GTIN|Device\s+Identifier)\s*[:#]?\s*\(?\d{2}\)?\d{12,}\b", re.I), rf"\1 {B4}"),
     ("udi_word", re.compile(rf"\b(UDI|GTIN)\s*(?:No\.?|Number|#)?\s*{_NUM}", re.I), rf"\1 {B4}"),
     ("bsc_tw", re.compile(r"\b(BSC\s*ID|TW)\s*#?\s*[A-Z]?\d{5,}\b", re.I), rf"\1 # {B4}"),
     ("cms", re.compile(rf"\b(CMS)\s*(?:No\.?|Number|#)?\s*{_NUM}", re.I), rf"\1 # {B4}"),
@@ -96,14 +100,14 @@ B4_RULES = [
      re.compile(r"\b(MedWatch|MedSun|User\s+Facility|UF|Voluntary)\s+(?:form|report|#|number|no\.?)?\s*[:#]?\s*"
                 r"(\d{7,10}-\d{4}-\d{4,6}|MW\d{6,8})", re.I),
      rf"\1 report {B4}"),
-    ("lot", re.compile(rf"\b(Lot|Batch|Catalog|Cat|REF|Model|Part)\s*(?:No\.?|Number|#)?\s*{_NUM}", re.I), rf"\1 # {B4}"),
+    ("lot", re.compile(rf"\b(Lot|Batch)\s*(?:No\.?|Number|#)?\s*{_NUM}", re.I), rf"\1 # {B4}"),
     ("mfr_rep",
      re.compile(r"\b((?i:(?:sales|field|manufacturer|company|territory|clinical)\s+(?:representative|rep|specialist|engineer)))"
                 r"\s+(?:(?i:named|is|was)\s+)?[A-Z][a-z'-]+(?:\s+[A-Z][a-z'-]+)?\b(?![a-z])"),
      rf"\1 {B4}"),
     ("supplier",
-     re.compile(r"\b((?:supplier|distributor|contract\s+manufacturer|contractor|vendor|sub-?contractor)(?:\s+(?:is|was|named|,))?)"
-                r"\s+[A-Z][\w&.,'-]+(?:\s+[A-Z][\w&.,'-]+){0,3}", re.I),
+     re.compile(r"\b((?i:(?:supplier|distributor|contract\s+manufacturer|contractor|vendor|sub-?contractor))(?:\s+(?i:is|was|named|,))?)"
+                r"\s+[A-Z][\w&.'-]+(?:\s+[A-Z][\w&.'-]+){0,3}(?![a-z])"),
      rf"\1 {B4}"),
     ("production_stats",
      re.compile(r"\b\d[\d,]{3,}\s+(?:units|devices|pieces|lots?)\s+(?:were\s+|have\s+been\s+)?"
