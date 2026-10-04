@@ -166,7 +166,7 @@ def _classify_missed(span: str) -> tuple[str, str]:
 
 def _explain(original: str, human: str, auto: str, findings) -> tuple[str, str, str, str, str]:
     """Return (status, reason, sop_reference, auto_only, human_only)."""
-    if human.strip() == auto.strip():
+    if _WS.sub(" ", human).strip() == _WS.sub(" ", auto).strip():
         return "MATCH", "identical", "", "", ""
     if _norm(human) == _norm(auto):
         return ("FORMAT_ONLY", "same redactions; differs only in (b)(6) casing/spacing/punctuation",

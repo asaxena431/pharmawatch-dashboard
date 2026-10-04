@@ -128,3 +128,11 @@ class SecondExport1000Rows(unittest.TestCase):
         self.assertEqual(status, "HUMAN_INCONSISTENT")
         self.assertIn("over-redaction", reason)
         self.assertIn("[not_pii]", ref)
+
+
+class WhitespaceOnlyTests(unittest.TestCase):
+    def test_double_space_is_match(self):
+        from mdr_redaction.compare import _explain
+        orig = "Stent snapped.  Another stent was placed."
+        status, reason, *_ = _explain(orig, orig, "Stent snapped. Another stent was placed.", [])
+        self.assertEqual(status, "MATCH")
