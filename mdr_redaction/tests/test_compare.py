@@ -56,13 +56,13 @@ class Comparison(unittest.TestCase):
         self.assertEqual(status, "FORMAT_ONLY")
 
     def test_auto_missed_free_text(self):
-        orig = "seen at MIRAMAR FAMILY DENTAL OFFICE on 05/05/2026"
-        human = "seen at (b)(6) OFFICE on (b)(6) 2026"
+        orig = "seen at ZORBA WELLNESS STUDIO on 05/05/2026"
+        human = "seen at (b)(6) on (b)(6) 2026"
         res = redact_section("B5", orig)
         status, reason, ref, auto_only, human_only = _explain(orig, human, res.redacted, res.findings)
         self.assertEqual(status, "AUTO_MISSED")
-        self.assertIn("miramar family dental", human_only)
-        self.assertIn("Shady Grove Hospital", ref)
+        self.assertIn("zorba wellness studio", human_only)
+        self.assertIn("Appendix 6", ref)
 
     def test_auto_extra_reports_rule(self):
         orig = "event on 2026-06-10 verified"
@@ -136,3 +136,26 @@ class WhitespaceOnlyTests(unittest.TestCase):
         orig = "Stent snapped.  Another stent was placed."
         status, reason, *_ = _explain(orig, orig, "Stent snapped. Another stent was placed.", [])
         self.assertEqual(status, "MATCH")
+
+
+class LargeExportFormats(unittest.TestCase):
+    def test_new_date_and_id_formats(self):
+        out = redact_section("B5", "ON 2026-FEB-04 AND 21-APR2026 (APR-2026, 2026/06/03), SEEN ON 7/9. CRD_1032 REGISTRY, "
+                             "CLINICAL ID 000078-013, TRIAL (BPV18002). SUBMITTED UNDER 3007963827. "
+                             "AT MIRAMAR FAMILY DENTAL AND BARNES-JEWISH HOSPITAL.").redacted
+        for kept in ("2026-FEB", "APR2026", "APR-2026", "2026/06", "7/9", "CRD_1032", "000078", "BPV18002", "3007963827",
+                     "MIRAMAR", "BARNES"):
+            self.assertNotIn(kept, out, out)
+        self.assertIn("(B)(6) 2026", out)
+        self.assertEqual(redact_section("B5", "RATIO 7/10 OF PATIENTS, BP 120/80, TAKEN TO THE HOSPITAL.").redacted,
+                         "RATIO 7/10 OF PATIENTS, BP 120/80, TAKEN TO THE HOSPITAL.")
+
+    def test_caps_false_positives(self):
+        txt = ("A US DISTRIBUTOR RETURNED A MONITOR. A US DISTRIBUTOR REPORTED THAT A PATIENT (PT) HAD GRADE 4 MR. "
+               "MR WAS REDUCED TO GRADE 1. THE SUPPLIER IS Acme Plastics.")
+        out = redact_section("B5", txt).redacted
+        self.assertIn("DISTRIBUTOR RETURNED", out)
+        self.assertIn("DISTRIBUTOR REPORTED THAT", out)
+        self.assertIn("(PT)", out)
+        self.assertIn("MR WAS REDUCED", out)
+        self.assertIn("SUPPLIER IS (B)(4)", out)

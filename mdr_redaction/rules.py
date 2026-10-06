@@ -27,7 +27,9 @@ DATE_PATTERNS = [
     re.compile(rf"\b\d{{1,2}}-{_MONTHS}-(0\d{{2}})(?!\d)", re.I),                          # 14-DEC-021 (typo year)
     re.compile(rf"\b\d{{1,2}}/{_MONTHS}/(\d{{4}})\b", re.I),                              # 05/DEC/2025
     re.compile(rf"\b\d{{1,2}}{_MONTHS}(\d{{4}})(?!\d)", re.I),                             # 22JUN2026
-    re.compile(r"\b(\d{4})-\d{1,2}-\d{1,2}\b"),                                          # 2015-06-25
+    re.compile(rf"\b(\d{{4}})-{_MONTHS}-\d{{1,2}}\b", re.I),                              # 2026-FEB-04
+    re.compile(rf"\b\d{{1,2}}-{_MONTHS}(\d{{4}})(?!\d)", re.I),                             # 21-APR2026
+    re.compile(r"\b(\d{4})[/-]\d{1,2}[/-]\d{1,2}\b"),                                      # 2015-06-25, 2026/06/03
     re.compile(r"\b\d{1,2}[/.-]\d{1,2}[/.-](\d{4})\b"),                                  # 06/25/2015
     re.compile(r"\b\d{1,2}[/.-]\d{1,2}[/.-](\d{2})\b"),                                  # 06/25/15
 ]
@@ -37,6 +39,10 @@ PARTIAL_DATE_PATTERNS = [
     (re.compile(rf"\b{_MONTHS}\.?\s+\d{{1,2}}(?:st|nd|rd|th)?\b(?!\s*,?\s*\d{{4}})(?![\w/.-])", re.I), B6),   # March 25
     (re.compile(rf"\b{_MONTHS}\.?(\s+of\s+)(\d{{4}})\b", re.I), rf"{B6}\1\2"),                              # August of 2019
     (re.compile(rf"\b{_MONTHS}\.?,?(\s+)((?:19|20)\d{{2}})\b", re.I), rf"{B6}\1\2"),                         # September 2025
+    (re.compile(rf"\b{_MONTHS}\.?-((?:19|20)\d{{2}})\b", re.I), rf"{B6} \1"),                                     # APR-2026
+    (re.compile(r"\b((?i:on|from|to|through|thru|until|between|and|dated|since)\s+)"
+                r"(?:1[0-2]|0?[1-9])/(?:3[01]|[12]\d|0?[1-9])(?:\s*-\s*(?:3[01]|[12]\d|0?[1-9]))?(?![\d/%-])(?!\.\d)", re.I),
+     rf"\1{B6}"),                                                                                            # on 7/9, from 7/7-8
     (re.compile(rf"\b((?i:(?:back\s+)?(?:in|since|until|during|before|after))\s+)(?:{_MONTHS}|{_MONTHS.upper()})\b(?![\s,]*(?:\d|(?i:of)\b))"),
      rf"\1{B6}"),                                                                                           # back in March
 ]
@@ -48,17 +54,21 @@ B6_RULES = [
     ("dob", re.compile(r"\b(DOB|Date\s+of\s+Birth|Birth\s*date)\s*[:#-]?\s*[\w/.-]+(?:,?\s+\d{4})?", re.I), rf"\1: {B6}"),
     ("ssn", re.compile(r"\b\d{3}-\d{2}-\d{4}\b"), B6),
     ("mrn",
-     re.compile(r"\b(MRN|Medical\s+Record\s+(?:Number|No\.?|#)|Patient\s+ID|Pt\s+ID|Chart\s*(?:No\.?|#)|Account\s*(?:No\.?|#))"
-                r"\s*[:#]?\s*(?=[A-Z0-9-]*\d)[A-Z0-9-]{3,}", re.I),
+     re.compile(r"\b(MRN|Medical\s+Record\s+(?:Number|No\.?|#)|Patient\s+ID|Pt\s+ID|Chart\s*(?:No\.?|#)|Account\s*(?:No\.?|#)|"
+                r"(?:Patient\s+)?Site\s+ID|Subject\s+(?:ID|No\.?|Number|#)|Clinical\s+ID|Participant\s+(?:ID|No\.?|Number))"
+                r"\s*[:#-]?\s*(?:(?:Site\s+ID|Subject)\s*[:#-]?\s*)?(?=[A-Z0-9-]*\d)[A-Z0-9-]{3,}"
+                r"(?:\s*-\s*\d{2,})?(?:\s*\([A-Z0-9-]*\d[A-Z0-9-]*\))?", re.I),
      rf"\1 {B6}"),
     ("phone", re.compile(r"\b(?:\+?1[\s.-]?)?\(?\d{3}\)?[\s.-]\d{3}[\s.-]\d{4}\b"), B6),
     ("email", re.compile(r"\b[\w.+-]+@[\w.-]+\.[a-z]{2,}\b", re.I), B6),
     ("clinician_name",
      re.compile(r"\b(Dr|Doctor|Nurse|RN|MD|PA|NP|Prof|Physician)(\.?)\s+[A-Z][a-zA-Z'-]+(?:\s+[A-Z][a-zA-Z'-]+)?"),
      rf"\1\2 {B6}"),
-    ("titled_name", re.compile(r"\b(?i:Mr|Mrs|Ms|Miss|Mx)\.?\s+[A-Z][a-zA-Z'-]+(?:\s+[A-Z][a-zA-Z'-]+)?"), B6),
+    ("titled_name",
+     re.compile(r"\b(?i:Mr|Mrs|Ms|Miss|Mx)\.?\s+(?!(?i:mr|mrs|ms|was|were|is|are|to|and|or|of|with|grade|had|has|the|a|an|at|in|on|for|from|by|"
+                r"after|before|reduced|severity|imaging|jet|score|assessment)\b)[A-Z][a-zA-Z'-]+(?:\s+[A-Z][a-zA-Z'-]+)?"), B6),
     ("patient_initials",
-     re.compile(r"\b((?i:patient|pt))\s+(?:(?i:initials?)\s+)?(?:\([A-Z]\.?\s?[A-Z]\.?\)|[A-Z]\.\s?[A-Z]\.|(?i:initials?)\s+[A-Z]{2})(?=[\s,.;)]|$)"),
+     re.compile(r"\b((?i:patient|pt))\s+(?:(?i:initials?)\s+)?(?!\((?i:pt)\))(?:\([A-Z]\.?\s?[A-Z]\.?\)|[A-Z]\.\s?[A-Z]\.|(?i:initials?)\s+[A-Z]{2})(?=[\s,.;)]|$)"),
      rf"\1 {B6}"),
     ("facility",
      re.compile(r"\b(?:[A-Z][\w'&.-]+\s+){1,4}(Hospital|Medical\s+Center|Health\s+System|Clinic|Surgery\s+Center|Surgical\s+Center|"
@@ -66,6 +76,20 @@ B6_RULES = [
                 r"Medical\s+Group|Family\s+Practice|Emergency\s+(?:Center|Room|Department))\b"
                 r"(?:\s+in\s+[A-Z][a-z]+(?:\s+[A-Z][a-z]+)?,?\s+[A-Z]{2}\b)?"),
      rf"{B6} \1"),
+    ("facility_caps",
+     re.compile(r"\b(?:(?!(?:THE|A|AN|TO|AT|IN|TO|FROM|OF|AND|OR|LOCAL|ANOTHER|NEARBY|OUTSIDE|HIS|HER|THEIR|OUR|PATIENT|PATIENT'S|PT|PT'S|"
+                r"THIS|THAT|SAME|NEW|OTHER|PER|BY|VIA|WAS|WERE|IS|ARE|BE|BEEN|FOR|WITH|INTO|ON|NO|NOT|ANY|SEEN|ADMITTED|TAKEN|TRANSFERRED|"
+                r"REFERRED|CONTACTED|CALLED|VISITED|WENT|RETURNED|VISIT|TRIP|ER|ED|ICU|GENERAL|COMMUNITY|UNIVERSITY|CHILDREN'S|VETERANS|"
+                r"PRIVATE|PUBLIC|UNKNOWN|UNSPECIFIED|REPORTING|USER|FACILITY|INITIAL|TREATING|REPORTER|OUTPATIENT|INPATIENT|PRIMARY)\s)"
+                r"[A-Z0-9][A-Z0-9'&.-]{2,}\s+){1,3}"
+                r"(HOSPITAL|MEDICAL\s+CENTER|HEALTH\s+SYSTEM|SURGERY\s+CENTER|SURGICAL\s+CENTER|NURSING\s+HOME|REHABILITATION\s+CENTER|"
+                r"CANCER\s+CENTER|INFIRMARY|DENTAL(?:\s+OFFICE)?|MEDICAL\s+GROUP(?:\s+AT\s+[A-Z]+(?:\s+[A-Z]+){0,3}\s+BASE)?|FAMILY\s+PRACTICE|"
+                r"UNIVERSITY\s+HOSPITALS?|UNIVERSITY\s+MEDICAL\s+CENTER|CHILDREN'S\s+HOSPITAL)\b(?![a-z])"
+                r"(?:\s+IN\s+[A-Z]+(?:\s+[A-Z]+)?,?\s+(?:[A-Z]{2}\b|TEXAS|OHIO|FLORIDA|MISSOURI))?"),
+     rf"{B6} \1"),
+    ("facility_caps_university",
+     re.compile(r"\b(UNIVERSITY\s+(?:MEDICAL\s+CENTER|HOSPITALS?)(?:\s+(?:IN|OF|AT)\s+[A-Z]+(?:\s+[A-Z]+){0,2})?)\b(?![a-z])"),
+     rf"{B6} HOSPITAL"),
     ("address",
      re.compile(r"\b\d{1,5}\s+[A-Z][a-zA-Z]+(?:\s+[A-Z][a-zA-Z]+){0,3}\s+(?:Street|St|Avenue|Ave|Road|Rd|Blvd|Drive|Dr|Lane|Ln|Court|Ct|Way)\b\.?"),
      B6),
@@ -94,7 +118,15 @@ B4_RULES = [
     ("ncr_cfn_rae", re.compile(rf"\b(NCR|CFN|RAE|MAF|DHR|DMR|SCAR)\s*(?:No\.?|Number|#)?\s*{_NUM}", re.I), rf"\1 # {B4}"),
     ("ide", re.compile(rf"\b(IDE)\s*(?:No\.?|Number|#)?\s*{_NUM}", re.I), rf"\1 {B4}"),
     ("eua", re.compile(rf"\b(EUA)\s*(?:No\.?|Number|#)?\s*{_NUM}", re.I), rf"\1 {B4}"),
-    ("clinical_trial", re.compile(rf"\b(Clinical\s+Trial|Study|Protocol)\s*(?:No\.?|Number|#|ID)?\s*{_NUM}", re.I), rf"\1 # {B4}"),
+    ("clinical_trial",
+     re.compile(r"\b(Clinical\s+Trial|Trial|Study|Protocol|Registry)\s*(?:No\.?|Number|#|ID)?\s*(?:\(\s*)?"
+                r"(?=[A-Z0-9/_-]*\d)[A-Z0-9][A-Z0-9/_-]{2,}(?:\s*\))?", re.I),
+     rf"\1 # {B4}"),
+    ("study_record_id", re.compile(r"\b(CRD|CMP|CMPL|PRJ)[_-]\d{3,}\b", re.I), rf"\1 # {B4}"),
+    ("mfr_registration",
+     re.compile(r"\b((?:submitted|filed|reported|re-?filed)\s+under"
+                r"(?:\s+(?:the\s+)?(?:correct\s+)?(?:MFR|manufacturer)(?:\s+(?:number|no\.?|#|registration))?)?\s+)\d{7,10}\b", re.I),
+     rf"\1{B4}"),
     ("udi", re.compile(r"\b(UDI|UDI-DI|DI|GTIN|Device\s+Identifier)\s*[:#]?\s*\(?\d{2}\)?\d{12,}\b", re.I), rf"\1 {B4}"),
     ("udi_word", re.compile(rf"\b(UDI|GTIN)\s*(?:No\.?|Number|#)?\s*{_NUM}", re.I), rf"\1 {B4}"),
     ("bsc_tw", re.compile(r"\b(BSC\s*ID|TW)\s*#?\s*[A-Z]?\d{5,}\b", re.I), rf"\1 # {B4}"),
@@ -110,7 +142,9 @@ B4_RULES = [
      rf"\1 {B4}"),
     ("supplier",
      re.compile(r"\b((?i:(?:supplier|distributor|contract\s+manufacturer|contractor|vendor|sub-?contractor))(?:\s+(?i:is|was|named|,))?)"
-                r"\s+[A-Z][\w&.'-]+(?:\s+[A-Z][\w&.'-]+){0,3}(?![a-z])"),
+                r"\s+(?!(?i:reported|returned|contacted|stated|informed|notified|received|sent|indicated|advised|confirmed|called|"
+                r"submitted|provided|requested|who|that|which|in|of|for|to|and|or|the|a|an|has|had|did|also|then|later)\b)"
+                r"[A-Z][\w&.'-]+(?:\s+[A-Z][\w&.'-]+){0,3}(?![a-z])"),
      rf"\1 {B4}"),
     ("production_stats",
      re.compile(r"\b\d[\d,]{3,}\s+(?:units|devices|pieces|lots?)\s+(?:were\s+|have\s+been\s+)?"

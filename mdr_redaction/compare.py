@@ -272,13 +272,16 @@ def _explain(original: str, human: str, auto: str, findings) -> tuple[str, str, 
     return status, "; ".join(reasons), _cite(*refs), " | ".join(auto_only), " | ".join(human_only)
 
 
+_X000D = re.compile(r"_x000d_", re.I)   # Excel escape for a carriage return inside a cell
+
+
 def load_rows(path: Path, orig_col: str, red_col: str, id_col: str) -> list[dict]:
     if path.suffix.lower() in (".xlsx", ".xlsm"):
         import openpyxl
         ws = openpyxl.load_workbook(path, read_only=True).active
         it = ws.iter_rows(values_only=True)
         header = [str(h) for h in next(it)]
-        rows = [dict(zip(header, r)) for r in it]
+        rows = [dict(zip(header, (_X000D.sub("\n", v) if isinstance(v, str) else v for v in r))) for r in it]
     else:
         with open(path, newline="", encoding="utf-8") as fh:
             rows = list(csv.DictReader(fh))
