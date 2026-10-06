@@ -320,6 +320,50 @@ def summary(results: list[RowResult]) -> str:
     return "\n".join(lines)
 
 
+RED, BLUE, GREEN = "C00000", "0050C8", "2E7D32"
+_TOKEN_RE = re.compile(r"\(b\)\([46]\)|PROFANITY", re.I)
+
+
+def _rich(text: str, spans: list[tuple[str, str]], default_colour: str | None = None):
+    """CellRichText of `text` with every (span, colour) occurrence coloured and bold; plain cell value if nothing matches."""
+    from openpyxl.cell.rich_text import CellRichText, TextBlock
+    from openpyxl.cell.text import InlineFont
+    spans = [(sp, col) for sp, col in spans if sp.strip()]
+    if not spans or not text:
+        return text
+    pat = re.compile("|".join(re.escape(sp) for sp, _ in sorted(spans, key=lambda x: -len(x[0]))), re.I)
+    colour_of = {sp.lower(): col for sp, col in spans}
+    parts, pos = [], 0
+    for m in pat.finditer(text):
+        if m.start() > pos:
+            parts.append(text[pos:m.start()])
+        parts.append(TextBlock(InlineFont(b=True, color=colour_of.get(m.group(0).lower(), default_colour or RED)), m.group(0)))
+        pos = m.end()
+    if pos == 0:
+        return text
+    if pos < len(text):
+        parts.append(text[pos:])
+    return CellRichText(*parts)
+
+
+def _colour_diffs(ws, cols: list[str], results: list[RowResult]) -> None:
+    """Colour the differing words: red = editor-only redaction, blue = automation-only, green = redaction tokens."""
+    from openpyxl.styles import Font
+    ci = {c: cols.index(c) + 1 for c in cols}
+    for i, r in enumerate(results, 2):
+        if r.status == "MATCH":
+            continue
+        spans = [(sp, RED) for sp in r.human_only.split(" | ")] + [(sp, BLUE) for sp in r.auto_only.split(" | ")]
+        ws.cell(row=i, column=ci["original"]).value = _rich(r.original, spans)
+        if r.human_only:
+            ws.cell(row=i, column=ci["human_only"]).font = Font(bold=True, color=RED)
+        if r.auto_only:
+            ws.cell(row=i, column=ci["auto_only"]).font = Font(bold=True, color=BLUE)
+        tokens = [(t, GREEN) for t in set(_TOKEN_RE.findall(r.human_redacted + " " + r.auto_redacted))]
+        ws.cell(row=i, column=ci["human_redacted"]).value = _rich(r.human_redacted, tokens)
+        ws.cell(row=i, column=ci["auto_redacted"]).value = _rich(r.auto_redacted, tokens)
+
+
 def write_xlsx(results: list[RowResult], path: Path) -> None:
     import openpyxl
     wb = openpyxl.Workbook()
@@ -344,6 +388,7 @@ def write_xlsx(results: list[RowResult], path: Path) -> None:
             row[status_col - 1].fill = PatternFill("solid", fgColor=fill)
         for cell in row:
             cell.alignment = Alignment(wrap_text=True, vertical="top")
+    _colour_diffs(ws, cols, results)
     ws.freeze_panes = "C2"
     ws.auto_filter.ref = ws.dimensions
 
@@ -361,6 +406,14 @@ def write_xlsx(results: list[RowResult], path: Path) -> None:
         "HUMAN_INCONSISTENT": "same span redacted, different replacement (e.g. year dropped), or editor redacted text outside the SOP",
     }.items():
         ws2.append([k, v])
+    ws2.append([])
+    ws2.append(["colour", "meaning (in the original / human_only / auto_only columns)"])
+    ws2.append(["red", "text the editor redacted but the automation kept (AUTO_MISSED)"])
+    ws2.append(["blue", "text the automation redacted but the editor kept (AUTO_EXTRA)"])
+    ws2.append(["green", "text both redacted (shown as (b)(6)/(b)(4) tokens in the redacted columns)"])
+    ws2.cell(row=ws2.max_row - 2, column=1).font = Font(bold=True, color=RED)
+    ws2.cell(row=ws2.max_row - 1, column=1).font = Font(bold=True, color=BLUE)
+    ws2.cell(row=ws2.max_row, column=1).font = Font(bold=True, color=GREEN)
     ws2.column_dimensions["A"].width = 22
     ws2.column_dimensions["B"].width = 90
 

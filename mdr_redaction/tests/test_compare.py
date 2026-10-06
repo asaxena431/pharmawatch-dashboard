@@ -1,4 +1,5 @@
 import unittest
+from pathlib import Path
 
 from mdr_redaction.compare import _explain, compare
 from mdr_redaction.redactor import redact_section
@@ -159,3 +160,25 @@ class LargeExportFormats(unittest.TestCase):
         self.assertIn("(PT)", out)
         self.assertIn("MR WAS REDUCED", out)
         self.assertIn("SUPPLIER IS (B)(4)", out)
+
+
+class XlsxColouring(unittest.TestCase):
+    def test_rich_text_colours(self):
+        import tempfile
+        import openpyxl
+        from openpyxl.cell.rich_text import CellRichText
+        from mdr_redaction.compare import RowResult, write_xlsx, RED, BLUE
+        r = RowResult("1", "BOTH", "r", "ref", "Model 8028", "Acme Clinic",
+                      "Seen at Acme Clinic with Model 8028 on 1/2/2026", "Seen at (b)(6) with Model 8028 on (b)(6) 2026",
+                      "Seen at Acme Clinic with Model (B)(4) on (B)(6) 2026", "")
+        with tempfile.TemporaryDirectory() as d:
+            p = Path(d) / "o.xlsx"
+            write_xlsx([r], p)
+            ws = openpyxl.load_workbook(p, rich_text=True)["comparison"]
+            cols = [c.value for c in ws[1]]
+            orig = ws.cell(row=2, column=cols.index("original") + 1).value
+            self.assertIsInstance(orig, CellRichText)
+            colours = {str(b.text): b.font.color.rgb[-6:] for b in orig if hasattr(b, "font")}
+            self.assertEqual(colours["Acme Clinic"], RED)
+            self.assertEqual(colours["Model 8028"], BLUE)
+            self.assertEqual(str(orig), r.original)
