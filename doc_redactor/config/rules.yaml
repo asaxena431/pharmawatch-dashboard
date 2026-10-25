@@ -1,0 +1,57 @@
+# Redaction rules for doc_redactor.
+# Edit this file (or paste your own version in the web page) to change what gets redacted.
+#
+# Rule types:
+#   builtin  - a ready-made pattern. name: one of ssn, email, phone, date, credit_card,
+#              ip_address, zip_code, url
+#   keywords - exact words/phrases to remove (values: [...]); whole_word: true by default
+#   label    - removes the value that follows a label on the same line, e.g. "Patient Name: John Doe"
+#   regex    - your own regular expression (pattern: ...); group: N redacts only that capture group
+#
+# Common options on any rule:
+#   enabled: false          turn a rule off without deleting it
+#   replacement: "[SSN]"    text put in place of the match; {rule} = the rule name
+#   case_sensitive: true    default false
+
+settings:
+  replacement: "[REDACTED]"   # default replacement text
+  mask_char: ""               # e.g. "X" -> keeps length: 123-45-6789 becomes XXXXXXXXXXX
+  pdf_label: true             # print the replacement text inside the black box on PDFs
+  scrub_metadata: true        # clear author/title/etc. from the output file
+
+rules:
+  - name: ssn
+    type: builtin
+    replacement: "[SSN]"
+
+  - name: email
+    type: builtin
+    replacement: "[EMAIL]"
+
+  - name: phone
+    type: builtin
+    replacement: "[PHONE]"
+
+  - name: date
+    type: builtin
+    replacement: "[DATE]"
+
+  - name: credit_card
+    type: builtin
+    enabled: false
+
+  - name: patient_fields
+    type: label
+    labels: ["Patient Name", "Name", "Address", "MRN", "Medical Record Number", "Date of Birth", "DOB", "Reporter"]
+    replacement: "[PHI]"
+
+  - name: confidential_terms
+    type: keywords
+    values: ["Acme Pharma", "Project Falcon"]
+    replacement: "[CONFIDENTIAL]"
+
+  - name: lot_number
+    type: regex
+    pattern: '\bLOT[- ]?([A-Z0-9]{4,})\b'
+    group: 1
+    replacement: "[LOT]"

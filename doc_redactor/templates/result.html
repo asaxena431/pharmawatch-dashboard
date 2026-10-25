@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="card">
+  <h2>Redacted: {{ filename }}</h2>
+  <p>
+    <a class="btn" href="{{ url_for('download', token=token) }}">Download {{ out_name }}</a>
+    <a class="btn secondary" href="{{ url_for('report', token=token) }}">Download report (JSON)</a>
+    <a class="btn secondary" href="{{ url_for('index') }}">Redact another file</a>
+  </p>
+  <p><strong>{{ hits|length }}</strong> item(s) redacted.
+    {% for rule, n in counts %}<span class="pill">{{ rule }}: {{ n }}</span>{% endfor %}
+  </p>
+  {% for w in warnings %}<div class="warn">{{ w }}</div>{% endfor %}
+</div>
+<div class="grid">
+  <div class="card">
+    <h2>What was redacted</h2>
+    {% if hits %}
+    <table>
+      <tr><th>Rule</th><th>Original text</th><th>Where</th></tr>
+      {% for h in hits %}<tr><td>{{ h.rule }}</td><td>{{ h.text }}</td><td class="muted">{{ h.location }}</td></tr>{% endfor %}
+    </table>
+    {% else %}<p class="muted">No rule matched anything in this file.</p>{% endif %}
+  </div>
+  <div class="card preview">
+    <h2>Preview of redacted file</h2>
+    {% if preview_images %}
+      {% for img in preview_images %}<img src="data:image/png;base64,{{ img }}" alt="page {{ loop.index }}">{% endfor %}
+    {% else %}<pre>{{ preview_text }}</pre>{% endif %}
+  </div>
+</div>
+{% endblock %}

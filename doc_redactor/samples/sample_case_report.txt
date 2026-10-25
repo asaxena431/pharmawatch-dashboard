@@ -1,0 +1,9 @@
+ADVERSE EVENT CASE REPORT - CONFIDENTIAL
+Patient Name: John Q. Sample    MRN: 884213
+Date of Birth: 04/12/1961
+Address: 12 Oak Road, Rockville, MD 20850
+SSN 123-45-6789. Phone (301) 555-0199. Email john.sample@example.com
+Reporter: Dr. Maria Testa, reported on March 3, 2024.
+Product: Acme Pharma Zentrol 20 mg, LOT-AB1234 (Project Falcon).
+Narrative: patient developed a rash 2 days after the first dose on 2024-02-28.
+The event resolved after the drug was stopped. No other medications.
