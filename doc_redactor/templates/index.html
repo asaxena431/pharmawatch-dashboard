@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block content %}
+<form method="post" action="{{ url_for('redact') }}" enctype="multipart/form-data">
+<div class="grid">
+  <div>
+    <div class="card">
+      <h2>1. Document</h2>
+      <label for="document">Upload a file</label>
+      <input type="file" id="document" name="document">
+      <p class="muted">Supported: {{ exts }} &middot; max {{ max_mb }} MB. Old .doc/.xls files must be saved as .docx/.xlsx first.</p>
+      {% if samples %}
+      <label for="sample">&hellip;or try a sample (fake data)</label>
+      <select id="sample" name="sample">
+        <option value="">-- none --</option>
+        {% for s in samples %}<option value="{{ s }}">{{ s }}</option>{% endfor %}
+      </select>
+      <p class="muted">Download samples: {% for s in samples %}<a href="{{ url_for('sample_file', name=s) }}">{{ s }}</a>{% if not loop.last %} &middot; {% endif %}{% endfor %}</p>
+      {% endif %}
+    </div>
+    <div class="card">
+      <h2>3. Redact</h2>
+      <button type="submit">Redact document</button>
+      <p class="muted">Files are processed in memory; the redacted copy is kept for 30 minutes so you can download it, then deleted.</p>
+    </div>
+    <div class="card">
+      <h2>How rules work</h2>
+      <ul class="muted">
+        <li><code>builtin</code> &ndash; ready-made patterns: {{ builtins }}</li>
+        <li><code>keywords</code> &ndash; list of words/phrases to remove (e.g. company or product names)</li>
+        <li><code>label</code> &ndash; redact the value after a label, e.g. <code>Patient Name: John Doe</code></li>
+        <li><code>regex</code> &ndash; your own regular expression (use <code>group</code> to redact only part)</li>
+        <li>Set <code>enabled: false</code> to switch a rule off; <code>replacement</code> sets the text that replaces it.</li>
+      </ul>
+    </div>
+  </div>
+  <div class="card">
+    <h2>2. Redaction rules (YAML)</h2>
+    <p class="muted">Edit the rules below, or upload your own rules file. <a href="{{ url_for('default_rules') }}">Download default rules.yaml</a></p>
+    <textarea name="rules_text" spellcheck="false">{{ rules_text }}</textarea>
+    <label for="rules_file">Or upload a rules file (.yaml) &ndash; overrides the text above</label>
+    <input type="file" id="rules_file" name="rules_file" accept=".yaml,.yml,.txt">
+  </div>
+</div>
+</form>
+{% endblock %}
