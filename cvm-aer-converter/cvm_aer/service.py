@@ -96,11 +96,14 @@ class EmailSettings:
         Outlook knows the account itself and a dropped file needs no server, so
         only ``smtp`` asks for a host and a sender.
         """
-        if not self.recipients:
-            return False
+        return not self.missing()
+
+    def missing(self) -> List[str]:
+        """The [email] keys still empty for this transport to deliver the note."""
+        needed = ["recipients"] if not self.recipients else []
         if self.transport == TRANSPORT_SMTP:
-            return bool(self.host and self.sender)
-        return True
+            needed += [key for key in ("host", "sender") if not getattr(self, key)]
+        return needed
 
 
 @dataclass
@@ -344,7 +347,10 @@ def send_failure_email(config: ServiceConfig, archive: str, reason: str, attachm
     settings = config.email
     name = os.path.basename(archive)
     if not settings.configured:
-        LOGGER.warning("no [email] settings, so no note was sent about %s", name)
+        LOGGER.warning(
+            "no note was sent about %s: [email] transport = %s needs %s, which is empty in the ini",
+            name, settings.transport, " and ".join(settings.missing()),
+        )
         return False
     subject = f"{settings.subject_prefix} {name} could not be processed"
     body = (

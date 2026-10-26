@@ -314,6 +314,20 @@ def test_nothing_is_mailed_when_no_server_is_configured(tmp_path):
     assert not service.send_failure_email(_config(tmp_path), "/in/case.zip", "boom")
 
 
+def test_the_warning_names_the_email_setting_that_is_empty(tmp_path, caplog):
+    path = tmp_path / "service.ini"
+    path.write_text(
+        "[folders]\ninbound = in\noutbound = out\nprocessed = done\nerror = bad\n"
+        "[email]\ntransport = smtp\nhost =\nsender = a@b.gov\nrecipients = a@b.gov\n",
+        encoding="utf-8",
+    )
+    config = service.load_config(str(path))
+    assert config.email.missing() == ["host"]
+    with caplog.at_level("WARNING"):
+        assert not service.send_failure_email(config, "/in/case.zip", "boom")
+    assert "transport = smtp needs host" in caplog.text
+
+
 def test_the_service_is_the_default_command():
     from cvm_aer.cli import with_default_command
 
