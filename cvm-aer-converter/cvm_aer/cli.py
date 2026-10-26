@@ -19,6 +19,9 @@ Examples::
     # folder service: ZIPs in inbound/ -> XML in outbound/ (the default when no command is given)
     python -m cvm_aer                         # reads ./cvm-aer-service.ini, or --config <path>
     python -m cvm_aer --once                  # one sweep and exit
+
+    # read the case e-mails once ([intake] in the ini): each e-mail -> one ZIP in inbound/
+    python -m cvm_aer intake
 """
 
 import argparse
@@ -42,7 +45,7 @@ from .pipeline import (
 from .validate import SchemaError
 
 PROG = "cvm-aer"
-COMMANDS = ("samples", "ocr", "convert", "validate", "service")
+COMMANDS = ("samples", "ocr", "convert", "validate", "service", "intake")
 DEFAULT_COMMAND = "service"
 
 
@@ -108,6 +111,14 @@ def build_parser() -> argparse.ArgumentParser:
     for folder in ("inbound", "outbound", "processed", "error"):
         service.add_argument(f"--{folder}", help=f"override [folders] {folder}")
     _add_format_arg(service, None, "[conversion] format in the ini, else vich-hl7")
+
+    intake = sub.add_parser(
+        "intake",
+        help="read the case e-mails once ([intake] in the ini): each e-mail's attachments -> one ZIP in inbound",
+    )
+    intake.add_argument("--config", "-c", default="cvm-aer-service.ini",
+                        help="the configuration file (default: cvm-aer-service.ini)")
+    intake.add_argument("--inbound", help="override [folders] inbound")
     return parser
 
 
@@ -155,8 +166,8 @@ def _run_validate(args: argparse.Namespace) -> int:
     return 1 if complaints else 0
 
 
-def _run_service(args: argparse.Namespace) -> int:
-    from .service import ConfigError, load_config, run_forever, run_once
+def _load_service_config(args: argparse.Namespace):
+    from .service import ConfigError, load_config
 
     logging.basicConfig(
         level=logging.INFO,
@@ -164,9 +175,36 @@ def _run_service(args: argparse.Namespace) -> int:
         stream=sys.stderr,
     )
     try:
-        config = load_config(args.config)
+        return load_config(args.config)
     except ConfigError as exc:
         print(f"configuration error: {exc}", file=sys.stderr)
+        return None
+
+
+def _run_intake(args: argparse.Namespace) -> int:
+    config = _load_service_config(args)
+    if config is None:
+        return 2
+    if args.inbound:
+        config.inbound = os.path.expanduser(args.inbound)
+    if not config.intake.enabled:
+        print(f"configuration error: [intake] source is empty in {args.config}", file=sys.stderr)
+        return 2
+    from .mailin import collect
+
+    done = collect(config)
+    for entry in done:
+        print(f"{entry.subject!r}: {entry.archive}" if entry.ok else f"{entry.subject!r}: NOT TAKEN {entry.error}")
+    if not done:
+        print("no new case e-mails", file=sys.stderr)
+    return 1 if any(not entry.ok for entry in done) else 0
+
+
+def _run_service(args: argparse.Namespace) -> int:
+    from .service import run_forever, run_once
+
+    config = _load_service_config(args)
+    if config is None:
         return 2
     for folder in ("inbound", "outbound", "processed", "error"):
         value = getattr(args, folder, None)
@@ -213,6 +251,8 @@ def main(argv: Optional[List[str]] = None) -> int:
             return _run_validate(args)
         if args.command == "service":
             return _run_service(args)
+        if args.command == "intake":
+            return _run_intake(args)
     except OcrError as exc:
         print(f"OCR error: {exc}", file=sys.stderr)
         return 2

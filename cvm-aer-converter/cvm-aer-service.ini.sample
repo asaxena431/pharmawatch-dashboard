@@ -1,4 +1,4 @@
-; Configuration for the folder service:
+; Configuration for the folder service (and its e-mail intake, [intake] below):
 ;   python -m cvm_aer                    (reads cvm-aer-service.ini from the current folder;
 ;                                        use --config <path> for another file, --once for one sweep)
 ; One ZIP in [folders] inbound is one case - the Form FDA 1932 / 1932a PDF inside
@@ -34,6 +34,40 @@ poll_seconds = 30
 ; A ZIP is taken only once its size has been unchanged for this long, so a file
 ; still being copied in is left alone.
 settle_seconds = 5
+
+[intake]
+; Case e-mails.  One e-mail is one case: a single ZIP attachment is put in [folders]
+; inbound as it is; otherwise all the attachments (form + supporting documents) are
+; zipped into one ZIP.  The e-mail is then moved to processed_folder - or, when it has
+; nothing to take (no attachments, two ZIPs, a broken ZIP), to rejected_folder with the
+; [email] note.  Every e-mail taken is written to the ledger, so none is taken twice.
+; The service reads the mailbox on every sweep; "python -m cvm_aer intake" reads it once.
+;
+; Where the e-mails are read from - leave empty to switch e-mail intake off:
+;   outlook - the Outlook signed in on this PC (Windows; pip install pywin32)
+;   imap    - a mail server over IMAP: host, username, password below
+;   folder  - .eml files saved in eml_dir (for testing without a mailbox)
+source =
+; outlook only: the mailbox as Outlook lists it (e.g. a shared mailbox); empty = your own
+mailbox =
+; The folder that is watched, e.g. Inbox or Inbox/CVM-AER
+folder = Inbox
+; Where handled e-mails go: subfolders of the watched folder (outlook, folder),
+; top-level folders on the server (imap).  Created if missing.
+processed_folder = CVM-AER Processed
+rejected_folder = CVM-AER Rejected
+; imap only
+host =
+port = 993
+use_ssl = true
+username =
+password =
+; folder only
+eml_dir =
+; empty = cvm-aer-intake-ledger.txt next to the inbound folder
+ledger =
+; Attachments left out of the case: the signature / logo images Outlook adds.
+ignore = image0*.png, image0*.jpg, image0*.jpeg, image0*.gif
 
 [email]
 ; The note sent when a case is moved to the error folder, with the case ZIP

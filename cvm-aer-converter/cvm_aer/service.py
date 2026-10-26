@@ -5,8 +5,9 @@ file in it is the case's supporting documents, embedded.  The service watches
 the inbound folder, validates each generated message against FDA's VICH
 schemas, writes it to the outbound folder and moves the ZIP to the processed
 folder - or to the error folder with an e-mail when the case cannot be
-converted or its message does not validate.  Every folder, the poll interval
-and the mail server come from a configuration file - see
+converted or its message does not validate.  With ``[intake]`` set, case e-mails are
+read first and each one's attachments become one ZIP in inbound (``mailin``).
+Every folder, the poll interval and the mail server come from a configuration file - see
 ``cvm-aer-service.ini.sample``.
 
     python -m cvm_aer                     # same as: python -m cvm_aer service
@@ -39,6 +40,7 @@ SECTION_FOLDERS = "folders"
 SECTION_CONVERSION = "conversion"
 SECTION_SERVICE = "service"
 SECTION_EMAIL = "email"
+SECTION_INTAKE = "intake"
 
 # How the note leaves the machine.  A server that may not talk to a mail relay -
 # the usual case on a locked-down network - can hand the note to the Outlook the
@@ -47,6 +49,15 @@ TRANSPORT_SMTP = "smtp"
 TRANSPORT_OUTLOOK = "outlook"
 TRANSPORT_EML = "eml"
 TRANSPORTS = (TRANSPORT_SMTP, TRANSPORT_OUTLOOK, TRANSPORT_EML)
+
+# Where case e-mails are read from: the Outlook signed in on this PC, a mail
+# server over IMAP, or a folder of saved .eml files.
+SOURCE_OUTLOOK = "outlook"
+SOURCE_IMAP = "imap"
+SOURCE_FOLDER = "folder"
+SOURCES = (SOURCE_OUTLOOK, SOURCE_IMAP, SOURCE_FOLDER)
+# Outlook puts signature and logo images in as attachments named like these.
+IGNORED_ATTACHMENTS = ("image0*.png", "image0*.jpg", "image0*.jpeg", "image0*.gif")
 
 # A ZIP still being copied into the inbound folder must not be picked up, so its
 # size has to stay unchanged for this long before it is taken.
@@ -107,6 +118,31 @@ class EmailSettings:
 
 
 @dataclass
+class IntakeSettings:
+    """The mailbox case e-mails arrive in; switched off while ``source`` is empty."""
+
+    source: Optional[str] = None
+    # outlook: the mailbox as Outlook lists it (a shared mailbox, say); the default one if unset
+    mailbox: Optional[str] = None
+    folder: str = "Inbox"
+    processed_folder: str = "CVM-AER Processed"
+    rejected_folder: str = "CVM-AER Rejected"
+    host: Optional[str] = None
+    port: int = 993
+    use_ssl: bool = True
+    username: Optional[str] = None
+    password: Optional[str] = None
+    eml_dir: Optional[str] = None
+    # Every e-mail taken in is recorded here, so none is taken twice.
+    ledger: Optional[str] = None
+    ignore: List[str] = field(default_factory=lambda: list(IGNORED_ATTACHMENTS))
+
+    @property
+    def enabled(self) -> bool:
+        return bool(self.source)
+
+
+@dataclass
 class ServiceConfig:
     inbound: str
     outbound: str
@@ -120,6 +156,7 @@ class ServiceConfig:
     poll_seconds: float = POLL_SECONDS
     settle_seconds: float = SETTLE_SECONDS
     email: EmailSettings = field(default_factory=EmailSettings)
+    intake: IntakeSettings = field(default_factory=IntakeSettings)
 
     @property
     def folders(self) -> Tuple[str, str, str, str]:
@@ -148,6 +185,8 @@ def load_config(path: str) -> ServiceConfig:
     mail = parser[SECTION_EMAIL] if parser.has_section(SECTION_EMAIL) else {}
     recipients = [address.strip() for address in str(mail.get("recipients", "")).replace(";", ",").split(",") if address.strip()]
 
+    intake = _intake(parser[SECTION_INTAKE] if parser.has_section(SECTION_INTAKE) else {}, folders, path)
+
     return ServiceConfig(
         inbound=os.path.expanduser(folders["inbound"]),
         outbound=os.path.expanduser(folders["outbound"]),
@@ -174,7 +213,44 @@ def load_config(path: str) -> ServiceConfig:
             transport=_transport(mail.get("transport"), path),
             drop_dir=os.path.expanduser(mail.get("drop_dir", "") or "") or None,
         ),
+        intake=intake,
     )
+
+
+def _flag(value, default: bool) -> bool:
+    if value is None or str(value).strip() == "":
+        return default
+    return str(value).strip().lower() in ("1", "true", "yes", "on")
+
+
+def _intake(section, folders, path: str) -> IntakeSettings:
+    """The [intake] section: which mailbox case e-mails are read from."""
+    source = str(section.get("source", "") or "").strip().lower()
+    if source and source not in SOURCES:
+        raise ConfigError(f"[{SECTION_INTAKE}] source in {path} must be one of: {', '.join(SOURCES)}, or empty")
+    settings = IntakeSettings(
+        source=source or None,
+        mailbox=section.get("mailbox") or None,
+        folder=section.get("folder") or "Inbox",
+        processed_folder=section.get("processed_folder") or "CVM-AER Processed",
+        rejected_folder=section.get("rejected_folder") or "CVM-AER Rejected",
+        host=section.get("host") or None,
+        port=int(section.get("port", 993) or 993),
+        use_ssl=_flag(section.get("use_ssl"), True),
+        username=section.get("username") or None,
+        password=section.get("password") or None,
+        eml_dir=os.path.expanduser(section.get("eml_dir", "") or "") or None,
+        ledger=os.path.expanduser(section.get("ledger", "") or "") or os.path.join(
+            os.path.dirname(os.path.abspath(os.path.expanduser(folders["inbound"]))), "cvm-aer-intake-ledger.txt"
+        ),
+    )
+    if "ignore" in section:
+        settings.ignore = [item.strip() for item in str(section["ignore"]).split(",") if item.strip()]
+    needed = {SOURCE_IMAP: ("host", "username"), SOURCE_FOLDER: ("eml_dir",)}.get(source, ())
+    missing = [key for key in needed if not getattr(settings, key)]
+    if missing:
+        raise ConfigError(f"[{SECTION_INTAKE}] source = {source} in {path} needs: {', '.join(missing)}")
+    return settings
 
 
 def _transport(named: Optional[str], path: str) -> str:
@@ -326,40 +402,30 @@ def _send_outlook(settings: EmailSettings, subject: str, body: str, attachment: 
     item.Send()
 
 
-def _write_eml(config: ServiceConfig, message: EmailMessage, archive: str) -> str:
+def _write_eml(config: ServiceConfig, message: EmailMessage, label: str) -> str:
     """Leave the note, attachment and all, as a .eml file to be picked up."""
     directory = config.email.drop_dir or os.path.join(config.error, "notices")
     os.makedirs(directory, exist_ok=True)
-    path = os.path.join(directory, unique_name(archive, extension=".eml"))
+    path = os.path.join(directory, unique_name(label, extension=".eml"))
     with open(path, "wb") as handle:
         handle.write(bytes(message))
     return path
 
 
-def send_failure_email(config: ServiceConfig, archive: str, reason: str, attachment: Optional[str] = None) -> bool:
-    """Tell the addresses in the configuration about a case that failed.
+def send_note(config: ServiceConfig, subject: str, body: str, about: str, attachment: Optional[str] = None) -> bool:
+    """Send a note to the addresses in [email], by the transport it names.
 
-    ``attachment`` is the ZIP as it now sits in the error folder; it travels with
-    the note unless ``[email] attach_zip`` says otherwise.  ``[email] transport``
-    chooses how the note leaves: a mail server, the local Outlook, or a .eml file
-    written for something else to send.
+    ``about`` names what the note concerns, for the log and a .eml file's name;
+    ``attachment`` travels with it unless ``[email] attach_zip`` says otherwise.
     """
     settings = config.email
-    name = os.path.basename(archive)
     if not settings.configured:
         LOGGER.warning(
             "no note was sent about %s: [email] transport = %s needs %s, which is empty in the ini",
-            name, settings.transport, " and ".join(settings.missing()),
+            about, settings.transport, " and ".join(settings.missing()),
         )
         return False
-    subject = f"{settings.subject_prefix} {name} could not be processed"
-    body = (
-        f"{name} was moved to the error folder {config.error}.\n\n"
-        f"Inbound folder: {config.inbound}\n"
-        f"Time: {datetime.now().isoformat(timespec='seconds')}\n\n"
-        f"{reason}\n"
-    )
-    zip_path = _mailable(attachment or archive, settings.max_attachment_mb) if settings.attach_zip else None
+    zip_path = _mailable(attachment, settings.max_attachment_mb) if attachment and settings.attach_zip else None
     try:
         if settings.transport == TRANSPORT_OUTLOOK:
             _send_outlook(settings, subject, body, zip_path)
@@ -372,13 +438,29 @@ def send_failure_email(config: ServiceConfig, archive: str, reason: str, attachm
             if zip_path:
                 _attach_archive(message, zip_path)
             if settings.transport == TRANSPORT_EML:
-                LOGGER.info("the note about %s was written to %s", name, _write_eml(config, message, archive))
+                LOGGER.info("the note about %s was written to %s", about, _write_eml(config, message, about))
             else:
                 _send_smtp(settings, message)
     except Exception as exc:  # a mail failure must not lose the case
-        LOGGER.error("could not send the note about %s: %s: %s", name, type(exc).__name__, exc)
+        LOGGER.error("could not send the note about %s: %s: %s", about, type(exc).__name__, exc)
         return False
     return True
+
+
+def send_failure_email(config: ServiceConfig, archive: str, reason: str, attachment: Optional[str] = None) -> bool:
+    """Tell the addresses in the configuration about a case that failed.
+
+    ``attachment`` is the ZIP as it now sits in the error folder.
+    """
+    name = os.path.basename(archive)
+    subject = f"{config.email.subject_prefix} {name} could not be processed"
+    body = (
+        f"{name} was moved to the error folder {config.error}.\n\n"
+        f"Inbound folder: {config.inbound}\n"
+        f"Time: {datetime.now().isoformat(timespec='seconds')}\n\n"
+        f"{reason}\n"
+    )
+    return send_note(config, subject, body, name, attachment or archive)
 
 
 @dataclass
@@ -432,6 +514,13 @@ def run_once(config: ServiceConfig) -> List[Processed]:
     """Process everything settled in the inbound folder and return."""
     for folder in config.folders:
         os.makedirs(folder, exist_ok=True)
+    if config.intake.enabled:
+        from .mailin import collect
+
+        try:
+            collect(config)
+        except Exception as exc:  # a mailbox that is down must not stop the folder sweep
+            LOGGER.error("reading case e-mails (%s) failed: %s: %s", config.intake.source, type(exc).__name__, exc)
     done: List[Processed] = []
     for archive in pending_zips(config.inbound):
         if not _settled(archive, config.settle_seconds):

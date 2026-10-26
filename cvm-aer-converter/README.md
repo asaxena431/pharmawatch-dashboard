@@ -132,6 +132,29 @@ note is sent. `convert --format gl42` exits 2 with the same message.
 python -m cvm_aer --once --format gl42    # every ZIP -> error folder + e-mail note
 ```
 
+## Case e-mails
+
+With `[intake] source` set, the service reads a mailbox on every sweep, before
+inbound. One e-mail = one case: a single ZIP attachment goes to `inbound` as is;
+otherwise all the attachments are zipped into one ZIP, named
+`<received yyyymmdd-hhmmss>-<subject>.zip`. Outlook's signature images
+(`image001.png` ...) are left out (`ignore`).
+
+How an e-mail is known to be done:
+- it is moved to `processed_folder` (default `CVM-AER Processed`), or to
+  `rejected_folder` (`CVM-AER Rejected`) with the `[email]` note when it has no
+  attachments, more than one ZIP, or a broken ZIP;
+- its Message-ID is written to the ledger (`cvm-aer-intake-ledger.txt` next to
+  `inbound`), so it is never taken twice even if the move failed.
+
+Sources: `outlook` (the Outlook signed in on the PC; `pip install pywin32`),
+`imap` (host / username / password), `folder` (saved `.eml` files, for testing).
+
+```bash
+python -m cvm_aer intake                  # read the mailbox once, ZIPs -> inbound
+python -m cvm_aer --once                  # mailbox + inbound, one sweep
+```
+
 ## Tests
 
 ```bash
