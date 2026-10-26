@@ -57,6 +57,7 @@ def _config(tmp_path, **email) -> service.ServiceConfig:
             source=service.SOURCE_FOLDER,
             eml_dir=str(tmp_path / "mail"),
             ledger=str(tmp_path / "ledger.txt"),
+            subject_contains=[],
         ),
         email=service.EmailSettings(**email),
     )
@@ -137,6 +138,29 @@ def test_only_emails_with_a_wanted_subject_are_taken(tmp_path):
     assert entry.subject == "Fwd: cvm-aer N141562"
     assert os.path.exists(os.path.join(config.intake.eml_dir, "lunch.eml"))
     assert "lunch" not in open(config.intake.ledger, encoding="utf-8").read()
+
+
+def test_by_default_only_cvm_aer_emails_are_taken(tmp_path):
+    config = _config(tmp_path)
+    config.intake.subject_contains = service.IntakeSettings().subject_contains
+    _eml(config.intake.eml_dir, "case.eml", "RE: Cvm-Aer N141562", [("form.pdf", b"1")])
+    _eml(config.intake.eml_dir, "other.eml", "1932 question", [("form.pdf", b"1")])
+
+    assert [entry.subject for entry in mailin.collect(config)] == ["RE: Cvm-Aer N141562"]
+    assert os.path.exists(os.path.join(config.intake.eml_dir, "other.eml"))
+
+
+@pytest.mark.parametrize("line, words", [
+    ("", ["CVM-AER"]),
+    ("subject_contains =\n", ["CVM-AER"]),
+    ("subject_contains = CVM-AER, 1932\n", ["CVM-AER", "1932"]),
+    ("subject_contains = *\n", []),
+])
+def test_the_subject_filter_in_the_ini(tmp_path, line, words):
+    path = tmp_path / "service.ini"
+    path.write_text("[folders]\ninbound = i\noutbound = o\nprocessed = p\nerror = e\n"
+                    "[intake]\nsource = outlook\n" + line, encoding="utf-8")
+    assert service.load_config(str(path)).intake.subject_contains == words
 
 
 def test_an_email_is_never_taken_twice(tmp_path):
@@ -329,7 +353,7 @@ def test_imap_mail_is_taken_and_moved_on_the_server(monkeypatch, tmp_path):
     monkeypatch.setattr(mailin.imaplib, "IMAP4_SSL", lambda host, port: server)
     config = _config(tmp_path)
     config.intake = service.IntakeSettings(source=service.SOURCE_IMAP, host="imap.example.gov", username="u",
-                                           ledger=str(tmp_path / "ledger.txt"))
+                                           ledger=str(tmp_path / "ledger.txt"), subject_contains=[])
 
     (entry,) = mailin.collect(config)
 
@@ -340,7 +364,8 @@ def test_imap_mail_is_taken_and_moved_on_the_server(monkeypatch, tmp_path):
 def test_the_intake_command_reads_the_mailbox_once(tmp_path, monkeypatch):
     from cvm_aer.cli import main
 
-    _eml(tmp_path / "mail", "a.eml", "case", [("form.pdf", b"1")])
+    _eml(tmp_path / "mail", "a.eml", "CVM-AER case", [("form.pdf", b"1")])
+    _eml(tmp_path / "mail", "b.eml", "unrelated", [("form.pdf", b"1")])
     (tmp_path / "cvm-aer-service.ini").write_text(
         f"[folders]\ninbound = {tmp_path / 'inbound'}\noutbound = o\nprocessed = p\nerror = e\n"
         f"[intake]\nsource = folder\neml_dir = {tmp_path / 'mail'}\n",

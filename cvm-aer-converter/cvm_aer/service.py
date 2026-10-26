@@ -57,6 +57,8 @@ SOURCE_IMAP = "imap"
 SOURCE_FOLDER = "folder"
 SOURCES = (SOURCE_OUTLOOK, SOURCE_IMAP, SOURCE_FOLDER)
 # Outlook puts signature and logo images in as attachments named like these.
+# Only e-mails whose subject holds this are case e-mails, unless the ini says otherwise.
+CASE_SUBJECT = "CVM-AER"
 IGNORED_ATTACHMENTS = ("image0*.png", "image0*.jpg", "image0*.jpeg", "image0*.gif")
 
 # A ZIP still being copied into the inbound folder must not be picked up, so its
@@ -136,8 +138,8 @@ class IntakeSettings:
     # Every e-mail taken in is recorded here, so none is taken twice.
     ledger: Optional[str] = None
     ignore: List[str] = field(default_factory=lambda: list(IGNORED_ATTACHMENTS))
-    # Only e-mails whose subject holds one of these (any case) are cases; empty = every e-mail.
-    subject_contains: List[str] = field(default_factory=list)
+    # Only e-mails whose subject holds one of these (any case) are cases; [] = every e-mail.
+    subject_contains: List[str] = field(default_factory=lambda: [CASE_SUBJECT])
 
     def wants(self, subject: Optional[str]) -> bool:
         subject = (subject or "").lower()
@@ -252,9 +254,9 @@ def _intake(section, folders, path: str) -> IntakeSettings:
     )
     if "ignore" in section:
         settings.ignore = [item.strip() for item in str(section["ignore"]).split(",") if item.strip()]
-    settings.subject_contains = [
-        item.strip() for item in str(section.get("subject_contains", "") or "").split(",") if item.strip()
-    ]
+    words = [item.strip() for item in str(section.get("subject_contains", "") or "").split(",") if item.strip()]
+    # Left empty it stays CVM-AER, so a blank line never opens up a whole Inbox; * takes every e-mail.
+    settings.subject_contains = [] if words == ["*"] else (words or [CASE_SUBJECT])
     needed = {SOURCE_IMAP: ("host", "username"), SOURCE_FOLDER: ("eml_dir",)}.get(source, ())
     missing = [key for key in needed if not getattr(settings, key)]
     if missing:

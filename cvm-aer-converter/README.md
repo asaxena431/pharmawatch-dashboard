@@ -140,10 +140,10 @@ otherwise all the attachments are zipped into one ZIP, named
 `<received yyyymmdd-hhmmss>-<subject>.zip`. Outlook's signature images
 (`image001.png` ...) are left out (`ignore`).
 
-Which e-mails: every e-mail in `[intake] folder`, unless `subject_contains` is set
-(e.g. `subject_contains = CVM-AER, 1932`) - then only those whose subject holds one
-of the words; the rest are left untouched. Don't watch a personal Inbox without
-it; an Outlook rule moving case e-mails to e.g. `Inbox/CVM-AER` is cleaner still.
+Which e-mails: only those in `[intake] folder` whose subject contains `CVM-AER`
+(any case, e.g. `Fwd: cvm-aer N141562`); every other e-mail is left untouched.
+`subject_contains` takes other or more words (comma-separated); left empty it is
+still `CVM-AER`, and `*` reads every e-mail.
 
 How an e-mail is known to be done:
 - it is moved to `processed_folder` (default `CVM-AER Processed`), or to
