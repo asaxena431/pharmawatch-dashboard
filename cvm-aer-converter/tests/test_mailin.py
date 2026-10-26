@@ -126,6 +126,19 @@ def test_an_email_without_one_case_is_rejected_with_a_note(tmp_path, attachments
     assert "no case here" in text and "vet@example.com" in text
 
 
+def test_only_emails_with_a_wanted_subject_are_taken(tmp_path):
+    config = _config(tmp_path)
+    config.intake.subject_contains = ["CVM-AER", "1932"]
+    _eml(config.intake.eml_dir, "case.eml", "Fwd: cvm-aer N141562", [("form.pdf", b"1")])
+    _eml(config.intake.eml_dir, "lunch.eml", "lunch on friday?", [])
+
+    (entry,) = mailin.collect(config)
+
+    assert entry.subject == "Fwd: cvm-aer N141562"
+    assert os.path.exists(os.path.join(config.intake.eml_dir, "lunch.eml"))
+    assert "lunch" not in open(config.intake.ledger, encoding="utf-8").read()
+
+
 def test_an_email_is_never_taken_twice(tmp_path):
     config = _config(tmp_path)
     path = _eml(config.intake.eml_dir, "a.eml", "case", [("form.pdf", b"1")])
@@ -162,13 +175,15 @@ def test_intake_settings_are_read_from_the_ini(tmp_path):
     path = tmp_path / "service.ini"
     path.write_text(
         "[folders]\ninbound = /srv/x/inbound\noutbound = o\nprocessed = p\nerror = e\n"
-        "[intake]\nsource = outlook\nmailbox = CVM Shared\nfolder = Inbox/CVM\nignore = *.png\n",
+        "[intake]\nsource = outlook\nmailbox = CVM Shared\nfolder = Inbox/CVM\nignore = *.png\n"
+        "subject_contains = CVM-AER, 1932\n",
         encoding="utf-8",
     )
     intake = service.load_config(str(path)).intake
     assert (intake.source, intake.mailbox, intake.folder, intake.ignore) == ("outlook", "CVM Shared", "Inbox/CVM", ["*.png"])
     assert intake.ledger == os.path.join(os.path.abspath("/srv/x"), "cvm-aer-intake-ledger.txt")
     assert intake.processed_folder == "CVM-AER Processed"
+    assert intake.subject_contains == ["CVM-AER", "1932"]
 
 
 @pytest.mark.parametrize("section, complaint", [
@@ -260,16 +275,20 @@ def _fake_outlook(monkeypatch, inbox):
 def test_outlook_mail_is_taken_and_moved_to_the_processed_subfolder(monkeypatch, tmp_path):
     inbox = _Folder("Inbox")
     inbox.Items.items.append(_MailItem(inbox, "N141562 Jordan", [("form.pdf", b"1"), ("att.pdf", b"2")]))
+    other = _MailItem(inbox, "staff meeting", [])
+    other.Attachments = None  # never opened: its subject rules it out first
+    inbox.Items.items.append(other)
     _fake_outlook(monkeypatch, inbox)
     config = _config(tmp_path)
-    config.intake = service.IntakeSettings(source=service.SOURCE_OUTLOOK, ledger=str(tmp_path / "ledger.txt"))
+    config.intake = service.IntakeSettings(source=service.SOURCE_OUTLOOK, ledger=str(tmp_path / "ledger.txt"),
+                                           subject_contains=["N141562"])
 
     (entry,) = mailin.collect(config)
 
     assert os.path.basename(entry.archive) == "20261026-133143-N141562-Jordan.zip"
     assert _members(entry.archive) == ["att.pdf", "form.pdf"]
     processed = inbox.Folders.Item("CVM-AER Processed")
-    assert inbox.Items.Count == 0 and processed.Items.Count == 1
+    assert inbox.Items.items == [other] and processed.Items.Count == 1
     assert processed.Items.Item(1).UnRead is False
 
 

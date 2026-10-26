@@ -50,8 +50,14 @@ settle_seconds = 5
 source =
 ; outlook only: the mailbox as Outlook lists it (e.g. a shared mailbox); empty = your own
 mailbox =
-; The folder that is watched, e.g. Inbox or Inbox/CVM-AER
+; The folder that is watched, e.g. Inbox or Inbox/CVM-AER.  Every e-mail in it is
+; read as a case unless subject_contains is set - so do not watch your own Inbox
+; without it; better, let an Outlook rule move case e-mails to a subfolder.
 folder = Inbox
+; Only e-mails whose subject contains one of these words (comma-separated, any case)
+; are taken; all others are left where they are, untouched.  Empty = every e-mail.
+; e.g. subject_contains = CVM-AER, 1932
+subject_contains =
 ; Where handled e-mails go: subfolders of the watched folder (outlook, folder),
 ; top-level folders on the server (imap).  Created if missing.
 processed_folder = CVM-AER Processed

@@ -1,6 +1,7 @@
 """E-mail intake: each case e-mail becomes one ZIP in the inbound folder.
 
-One e-mail is one case.  A lone ZIP attachment is put in inbound as it is;
+One e-mail is one case.  With ``[intake] subject_contains`` set, only e-mails
+whose subject holds one of its words are read; every other e-mail is left alone.  A lone ZIP attachment is put in inbound as it is;
 otherwise every attachment (the form and its supporting documents) is zipped
 into one ZIP.  The e-mail is then moved to ``[intake] processed_folder`` - or,
 when it has nothing to take, to ``rejected_folder`` with the [email] note - and
@@ -281,6 +282,8 @@ class OutlookSource:
     def __init__(self, settings: IntakeSettings):
         import win32com.client  # pywin32, and Windows: only this source needs it
 
+        self.settings = settings
+
         namespace = win32com.client.Dispatch("Outlook.Application").GetNamespace("MAPI")
         parts = [part for part in re.split(r"[\\/]", settings.folder or "Inbox") if part]
         if settings.mailbox:
@@ -299,7 +302,8 @@ class OutlookSource:
         items = self.folder.Items
         # Taken up front: moving an item renumbers the collection.
         for item in [items.Item(index) for index in range(1, items.Count + 1)]:
-            if getattr(item, "Class", None) == OL_MAIL_ITEM:
+            # The subject is checked first so other e-mails' attachments are never opened.
+            if getattr(item, "Class", None) == OL_MAIL_ITEM and self.settings.wants(item.Subject):
                 yield self._mail(item), item
 
     @staticmethod
@@ -367,6 +371,8 @@ def collect(config: ServiceConfig, source=None) -> List[Collected]:
     done: List[Collected] = []
     try:
         for mail, handle in source.messages():
+            if not settings.wants(mail.subject):
+                continue  # not a case e-mail: left where it is, untouched
             seen = ledger.get(mail.key)
             if seen is not None:
                 LOGGER.info("e-mail %r was already taken in (%s); filing it again", mail.subject, seen or "done")

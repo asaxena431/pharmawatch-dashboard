@@ -136,6 +136,12 @@ class IntakeSettings:
     # Every e-mail taken in is recorded here, so none is taken twice.
     ledger: Optional[str] = None
     ignore: List[str] = field(default_factory=lambda: list(IGNORED_ATTACHMENTS))
+    # Only e-mails whose subject holds one of these (any case) are cases; empty = every e-mail.
+    subject_contains: List[str] = field(default_factory=list)
+
+    def wants(self, subject: Optional[str]) -> bool:
+        subject = (subject or "").lower()
+        return not self.subject_contains or any(word.lower() in subject for word in self.subject_contains)
 
     @property
     def enabled(self) -> bool:
@@ -246,6 +252,9 @@ def _intake(section, folders, path: str) -> IntakeSettings:
     )
     if "ignore" in section:
         settings.ignore = [item.strip() for item in str(section["ignore"]).split(",") if item.strip()]
+    settings.subject_contains = [
+        item.strip() for item in str(section.get("subject_contains", "") or "").split(",") if item.strip()
+    ]
     needed = {SOURCE_IMAP: ("host", "username"), SOURCE_FOLDER: ("eml_dir",)}.get(source, ())
     missing = [key for key in needed if not getattr(settings, key)]
     if missing:
