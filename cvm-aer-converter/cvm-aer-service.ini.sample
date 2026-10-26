@@ -17,6 +17,8 @@ error = /srv/cvm-aer/error
 [conversion]
 ; vich-hl7 is the only output: CVM's HL7 v3 submission message (VICH GL42 data in
 ; MCCI_IN200100UV01) with the form and every attachment embedded, schema-validated.
+; gl42 is accepted only to test the error path: nothing is converted, every ZIP goes
+; to the error folder and the e-mail note is sent.  (Also: --format gl42 on the command line.)
 format = vich-hl7
 ; auto | 1932 (static form) | 1932a (dynamic XFA form)
 layout = auto
@@ -53,9 +55,9 @@ host =
 port = 25
 ; true for a server that wants STARTTLS (port 587 as a rule)
 use_tls = false
-sender = cvm-aer@yourcompany.com
+sender = Anurag.Saxena@fda.hhs.gov
 ; one or more, separated by commas or semicolons
-recipients = safety-ops@yourcompany.com, oncall@yourcompany.com
+recipients = Anurag.Saxena@fda.hhs.gov
 ; only for a server that asks to authenticate
 username =
 password =

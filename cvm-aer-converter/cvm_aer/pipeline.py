@@ -22,7 +22,9 @@ from .validate import SchemaError, validate_xml  # noqa: F401  (SchemaError re-e
 # CVM's electronic submission message: VICH GL42 carried in HL7 v3 (MCCI_IN200100UV01),
 # supporting documents embedded; validates against FDA's published schemas.
 FORMAT_VICH_HL7 = "vich-hl7"
-FORMATS = (FORMAT_VICH_HL7,)
+# Accepted only to exercise the error path (error folder + e-mail note); never produced.
+FORMAT_GL42 = "gl42"
+FORMATS = (FORMAT_VICH_HL7, FORMAT_GL42)
 
 LAYOUT_AUTO = "auto"
 LAYOUT_1932 = "1932"
@@ -35,6 +37,22 @@ ENGINE_TEXT_LAYER = "text-layer"
 ENGINE_AUTO = "auto"
 ENGINE_PADDLEOCR = "paddleocr"
 ENGINES = (ENGINE_TEXT_LAYER, ENGINE_AUTO, ENGINE_PADDLEOCR)
+
+
+class UnsupportedFormatError(ValueError):
+    """A format that is accepted on the command line / in the ini but never converted to."""
+
+
+def check_format(output_format: Optional[str]) -> str:
+    """The format to write; ``gl42`` raises ``UnsupportedFormatError`` so the case fails on purpose."""
+    fmt = output_format or FORMAT_VICH_HL7
+    if fmt == FORMAT_GL42:
+        raise UnsupportedFormatError(
+            "gl42 is accepted only to test the error path and is not converted; use vich-hl7"
+        )
+    if fmt != FORMAT_VICH_HL7:
+        raise ValueError(f"unknown output format: {fmt} (choose from {', '.join(FORMATS)})")
+    return fmt
 
 
 @dataclass
@@ -70,9 +88,7 @@ def render_xml(
     validate: bool = True,
 ) -> str:
     """The report as the vich-hl7 message, schema-validated unless ``validate`` is off."""
-    fmt = output_format or FORMAT_VICH_HL7
-    if fmt != FORMAT_VICH_HL7:
-        raise ValueError(f"unknown output format: {fmt} (choose from {', '.join(FORMATS)})")
+    check_format(output_format)
     xml = vich_hl7.to_xml_string(report, documents=documents)
     if validate:
         validate_xml(xml)
@@ -103,10 +119,12 @@ def convert_pdf(
     and embedded with the form itself in the message.
 
     The message is validated against FDA's VICH schemas (``SchemaError`` when it
-    fails) unless ``validate`` is off.
+    fails) unless ``validate`` is off.  ``output_format`` ``gl42`` raises
+    ``UnsupportedFormatError`` before the PDF is read (error-path testing).
     """
     from .xfa_1932a import is_1932a_form
 
+    check_format(output_format)
     if layout not in LAYOUTS:
         raise ValueError(f"unknown layout: {layout}")
     if engine not in ENGINES:

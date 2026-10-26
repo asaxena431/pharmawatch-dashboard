@@ -11,7 +11,7 @@ import pytest
 from test_xfa_1932a import _xfa_pdf
 
 from cvm_aer import service
-from cvm_aer.pipeline import FORMAT_VICH_HL7
+from cvm_aer.pipeline import FORMAT_GL42, FORMAT_VICH_HL7
 
 
 def _config(tmp_path, **overrides) -> service.ServiceConfig:
@@ -334,3 +334,49 @@ def test_running_with_no_command_sweeps_the_inbound_folder(tmp_path, monkeypatch
         encoding="utf-8",
     )
     assert main(["--once"]) == 0
+
+
+def _ini(tmp_path, fmt) -> str:
+    path = tmp_path / "service.ini"
+    path.write_text(
+        f"[folders]\ninbound = {tmp_path / 'inbound'}\noutbound = {tmp_path / 'outbound'}\n"
+        f"processed = {tmp_path / 'processed'}\nerror = {tmp_path / 'error'}\n"
+        f"[conversion]\nformat = {fmt}\n[service]\nsettle_seconds = 0\n",
+        encoding="utf-8",
+    )
+    for name in ("inbound", "outbound", "processed", "error"):
+        os.makedirs(tmp_path / name, exist_ok=True)
+    return str(path)
+
+
+def test_gl42_in_the_ini_is_accepted_and_sends_every_zip_to_error_with_a_note(tmp_path, form_pdf, monkeypatch):
+    config = service.load_config(_ini(tmp_path, "gl42"))
+    assert config.output_format == FORMAT_GL42
+    _zip(os.path.join(config.inbound, "case-7.zip"), [("case.pdf", form_pdf)])
+    notes = []
+    monkeypatch.setattr(service, "send_failure_email", lambda *a, **k: notes.append(a))
+
+    done = service.run_once(config)
+
+    assert len(done) == 1 and not done[0].ok
+    assert done[0].error.startswith("UnsupportedFormatError") and "error path" in done[0].error
+    assert os.listdir(config.outbound) == []
+    assert os.listdir(config.error) == ["case-7.zip"]
+    assert len(notes) == 1
+
+
+def test_an_unknown_format_in_the_ini_is_a_configuration_error(tmp_path):
+    with pytest.raises(service.ConfigError, match="vich-hl7, gl42"):
+        service.load_config(_ini(tmp_path, "e2b-r2"))
+
+
+def test_format_on_the_command_line_overrides_the_ini(tmp_path, form_pdf, monkeypatch):
+    from cvm_aer.cli import main
+
+    path = _ini(tmp_path, "vich-hl7")
+    _zip(str(tmp_path / "inbound" / "case-8.zip"), [("case.pdf", form_pdf)])
+    monkeypatch.setattr(service, "send_failure_email", lambda *a, **k: None)
+
+    assert main(["--once", "--config", path, "--format", "gl42"]) == 1
+    assert os.listdir(tmp_path / "error") == ["case-8.zip"]
+    assert os.listdir(tmp_path / "outbound") == []

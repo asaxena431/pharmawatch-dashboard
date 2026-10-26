@@ -33,6 +33,8 @@ from .ocr import OcrError, ocr_pdf
 from .pipeline import (
     ENGINE_TEXT_LAYER,
     ENGINES,
+    FORMAT_VICH_HL7,
+    FORMATS,
     LAYOUT_AUTO,
     LAYOUTS,
     convert_pdf,
@@ -50,6 +52,12 @@ def _add_common_ocr_args(parser: argparse.ArgumentParser) -> None:
                              "'paddleocr' runs OCR, 'auto' runs OCR and falls back to the text layer)")
     parser.add_argument("--dpi", type=int, default=200, help="rasterisation DPI for PaddleOCR (default: 200)")
     parser.add_argument("--lang", default="en", help="PaddleOCR recognition language (default: en)")
+
+
+def _add_format_arg(parser: argparse.ArgumentParser, default: Optional[str], default_text: str) -> None:
+    parser.add_argument("--format", dest="output_format", choices=list(FORMATS), default=default,
+                        help=f"output format (default: {default_text}); gl42 is accepted only to test the "
+                             "error path - the case is not converted and fails")
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -81,6 +89,7 @@ def build_parser() -> argparse.ArgumentParser:
     convert.add_argument("--output", "-o", help="write the XML here instead of stdout")
     convert.add_argument("--json", dest="json_path", help="also write the parsed report as JSON")
     convert.add_argument("--quiet", "-q", action="store_true", help="suppress the extraction summary on stderr")
+    _add_format_arg(convert, FORMAT_VICH_HL7, FORMAT_VICH_HL7)
     _add_common_ocr_args(convert)
 
     validate = sub.add_parser("validate", help="check a vich-hl7 message against FDA CVM's published schemas")
@@ -98,6 +107,7 @@ def build_parser() -> argparse.ArgumentParser:
                          help="process what is in the inbound folder now and exit instead of running forever")
     for folder in ("inbound", "outbound", "processed", "error"):
         service.add_argument(f"--{folder}", help=f"override [folders] {folder}")
+    _add_format_arg(service, None, "[conversion] format in the ini, else vich-hl7")
     return parser
 
 
@@ -114,6 +124,7 @@ def _write(path: Optional[str], content: str) -> None:
 def _run_convert(args: argparse.Namespace) -> int:
     result = convert_pdf(
         args.pdf,
+        output_format=args.output_format,
         engine=args.engine,
         dpi=args.dpi,
         lang=args.lang,
@@ -161,6 +172,8 @@ def _run_service(args: argparse.Namespace) -> int:
         value = getattr(args, folder, None)
         if value:
             setattr(config, folder, os.path.expanduser(value))
+    if args.output_format:
+        config.output_format = args.output_format
     if not args.once:
         try:
             return run_forever(config)

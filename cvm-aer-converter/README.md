@@ -124,6 +124,14 @@ The service is the default command (`python -m cvm_aer service ...` also works).
 `cvm-aer-service.ini` in the current folder unless you pass `--config <path>`.
 `--inbound/--outbound/--processed/--error` override the folders in the ini.
 
+To test the error path, run with `--format gl42` (or `format = gl42` in the ini):
+gl42 is accepted but never converted, so every ZIP goes to `error` and the e-mail
+note is sent. `convert --format gl42` exits 2 with the same message.
+
+```bash
+python -m cvm_aer --once --format gl42    # every ZIP -> error folder + e-mail note
+```
+
 ## Tests
 
 ```bash
