@@ -136,8 +136,9 @@ python -m cvm_aer --once --format gl42    # every ZIP -> error folder + e-mail n
 
 With `[intake] source` set, the service reads a mailbox on every sweep, before
 inbound. One e-mail = one case: a single ZIP attachment goes to `inbound` as is;
-otherwise all the attachments are zipped into one ZIP, named
-`<received yyyymmdd-hhmmss>-<subject>.zip`. Outlook's signature images
+otherwise all the attachments are zipped into one ZIP named after the form PDF
+(`N141562.pdf` -> `N141562.zip`). The sender's file names are kept; `-2` is added
+only if that name is already in `inbound`. Outlook's signature images
 (`image001.png` ...) are left out (`ignore`).
 
 Which e-mails: only those in `[intake] folder` whose subject contains `CVM-AER`

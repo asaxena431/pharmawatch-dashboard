@@ -79,8 +79,7 @@ def test_several_attachments_are_zipped_into_one_case(tmp_path):
     done = mailin.collect(config)
 
     assert [entry.ok for entry in done] == [True]
-    # named by the received time in this machine's zone
-    assert os.path.basename(done[0].archive).endswith("-N141562-Jordan-Librela.zip")
+    assert os.path.basename(done[0].archive) == "form.zip"
     assert _members(done[0].archive) == ["form.pdf", "lab.pdf"]
     assert os.listdir(os.path.join(config.intake.eml_dir, "CVM-AER Processed")) == ["a.eml"]
     assert not [name for name in os.listdir(config.inbound) if name.endswith(".part")]
@@ -93,7 +92,25 @@ def test_a_single_zip_is_taken_as_it_is(tmp_path):
 
     (entry,) = mailin.collect(config)
 
+    assert os.path.basename(entry.archive) == "case.zip"
     assert open(entry.archive, "rb").read() == payload
+
+
+@pytest.mark.parametrize("attachments, name", [
+    ([("N141562-Jordan-Librela-attachment2.zip", _zip_bytes([("f.pdf", b"1")]))], "N141562-Jordan-Librela-attachment2.zip"),
+    ([("lab notes.txt", b"1"), ("N141562 Jordan.pdf", b"2")], "N141562 Jordan.zip"),
+    ([("photo.jpg", b"1")], "photo.zip"),
+])
+def test_the_zip_keeps_the_senders_file_name(tmp_path, attachments, name):
+    config = _config(tmp_path)
+    _eml(config.intake.eml_dir, "a.eml", "CVM-AER", attachments)
+    _eml(config.intake.eml_dir, "b.eml", "CVM-AER again", attachments)
+
+    first, second = mailin.collect(config)
+
+    assert os.path.basename(first.archive) == name
+    stem, extension = os.path.splitext(name)
+    assert os.path.basename(second.archive) == f"{stem}-2{extension}"
 
 
 def test_a_zip_with_loose_files_is_merged_into_one_case(tmp_path):
@@ -309,7 +326,7 @@ def test_outlook_mail_is_taken_and_moved_to_the_processed_subfolder(monkeypatch,
 
     (entry,) = mailin.collect(config)
 
-    assert os.path.basename(entry.archive) == "20261026-133143-N141562-Jordan.zip"
+    assert os.path.basename(entry.archive) == "form.zip"
     assert _members(entry.archive) == ["att.pdf", "form.pdf"]
     processed = inbox.Folders.Item("CVM-AER Processed")
     assert inbox.Items.items == [other] and processed.Items.Count == 1

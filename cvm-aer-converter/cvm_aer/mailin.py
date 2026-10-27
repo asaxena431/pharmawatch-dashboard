@@ -1,6 +1,7 @@
 """E-mail intake: each case e-mail becomes one ZIP in the inbound folder.
 
-One e-mail is one case.  With ``[intake] subject_contains`` set, only e-mails
+One e-mail is one case, and the ZIP keeps the sender's file name: an attached
+ZIP's own name, or the form PDF's (``N141562.pdf`` -> ``N141562.zip``).  With ``[intake] subject_contains`` set, only e-mails
 whose subject holds one of its words are read; every other e-mail is left alone.  A lone ZIP attachment is put in inbound as it is;
 otherwise every attachment (the form and its supporting documents) is zipped
 into one ZIP.  The e-mail is then moved to ``[intake] processed_folder`` - or,
@@ -101,6 +102,16 @@ def case_files(mail: Mail, ignore: Sequence[str]) -> List[Tuple[str, bytes]]:
     return kept
 
 
+def _case_name(files: Sequence[Tuple[str, bytes]]) -> str:
+    """The ZIP keeps the sender's file name: the attached ZIP's, else the form PDF's."""
+    names = [name for name, _ in files]
+    chosen = next((name for name in names if name.lower().endswith(".zip")), None) or \
+        next((name for name in names if name.lower().endswith(".pdf")), names[0])
+    # only what Windows cannot have in a file name is replaced
+    stem = re.sub(r'[<>:"/\\|?*\x00-\x1f]', "_", os.path.splitext(chosen)[0]).strip(" .")
+    return stem or "case"
+
+
 def build_zip(mail: Mail, inbound: str, ignore: Sequence[str] = ()) -> str:
     """Put the e-mail's case in inbound as one ZIP and return its path."""
     files = case_files(mail, ignore)
@@ -114,7 +125,7 @@ def build_zip(mail: Mail, inbound: str, ignore: Sequence[str] = ()) -> str:
             raise Rejected(f"{name} is not a readable ZIP")
 
     os.makedirs(inbound, exist_ok=True)
-    stem = f"{mail.received:%Y%m%d-%H%M%S}-{_slug(mail.subject) or 'case'}"
+    stem = _case_name(files)
     target, index = os.path.join(inbound, f"{stem}.zip"), 2
     while os.path.exists(target):
         target = os.path.join(inbound, f"{stem}-{index}.zip")
