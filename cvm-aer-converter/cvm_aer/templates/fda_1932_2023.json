@@ -1,0 +1,4381 @@
+{
+ "form": "FDA-1932",
+ "revision": "08/2023",
+ "source": "fda.gov/media/124792",
+ "pages": {
+  "0": {
+   "width": 612.0,
+   "height": 792.0
+  },
+  "1": {
+   "width": 612.0,
+   "height": 792.0
+  },
+  "2": {
+   "width": 612.0,
+   "height": 792.0
+  },
+  "3": {
+   "width": 612.0,
+   "height": 792.0
+  },
+  "4": {
+   "width": 612.0,
+   "height": 792.0
+  },
+  "5": {
+   "width": 612.0,
+   "height": 792.0
+  },
+  "6": {
+   "width": 612.0,
+   "height": 792.0
+  },
+  "7": {
+   "width": 612.0,
+   "height": 792.0
+  },
+  "8": {
+   "width": 612.0,
+   "height": 792.0
+  }
+ },
+ "fields": [
+  {
+   "page": 0,
+   "name": "RAname",
+   "field": "topmostSubform[0].Page1[0].RAname[0]",
+   "type": "Tx",
+   "rect": [
+    36.275,
+    508.731,
+    304.552,
+    526.008
+   ]
+  },
+  {
+   "page": 0,
+   "name": "RAadd",
+   "field": "topmostSubform[0].Page1[0].RAadd[0]",
+   "type": "Tx",
+   "rect": [
+    308.951,
+    508.731,
+    575.085,
+    526.008
+   ]
+  },
+  {
+   "page": 0,
+   "name": "RAcity",
+   "field": "topmostSubform[0].Page1[0].RAcity[0]",
+   "type": "Tx",
+   "rect": [
+    36.275,
+    469.018,
+    207.261,
+    493.92
+   ]
+  },
+  {
+   "page": 0,
+   "name": "RAstate",
+   "field": "topmostSubform[0].Page1[0].RAstate[0]",
+   "type": "Tx",
+   "rect": [
+    210.96,
+    469.018,
+    372.178,
+    493.92
+   ]
+  },
+  {
+   "page": 0,
+   "name": "RAzip",
+   "field": "topmostSubform[0].Page1[0].RAzip[0]",
+   "type": "Tx",
+   "rect": [
+    375.911,
+    469.018,
+    492.56,
+    493.92
+   ]
+  },
+  {
+   "page": 0,
+   "name": "RAcontry",
+   "field": "topmostSubform[0].Page1[0].RAcontry[0]",
+   "type": "Tx",
+   "rect": [
+    496.468,
+    469.018,
+    571.354,
+    482.511
+   ]
+  },
+  {
+   "page": 0,
+   "name": "MAHname",
+   "field": "topmostSubform[0].Page1[0].MAHname[0]",
+   "type": "Tx",
+   "rect": [
+    35.538,
+    405.153,
+    303.815,
+    422.43
+   ]
+  },
+  {
+   "page": 0,
+   "name": "MAHadd",
+   "field": "topmostSubform[0].Page1[0].MAHadd[0]",
+   "type": "Tx",
+   "rect": [
+    306.119,
+    405.153,
+    574.396,
+    422.43
+   ]
+  },
+  {
+   "page": 0,
+   "name": "MAHcity",
+   "field": "topmostSubform[0].Page1[0].MAHcity[0]",
+   "type": "Tx",
+   "rect": [
+    35.538,
+    366.177,
+    206.524,
+    391.079
+   ]
+  },
+  {
+   "page": 0,
+   "name": "MAHstate",
+   "field": "topmostSubform[0].Page1[0].MAHstate[0]",
+   "type": "Tx",
+   "rect": [
+    209.398,
+    366.177,
+    370.616,
+    391.079
+   ]
+  },
+  {
+   "page": 0,
+   "name": "MAHzip",
+   "field": "topmostSubform[0].Page1[0].MAHzip[0]",
+   "type": "Tx",
+   "rect": [
+    375.208,
+    366.177,
+    491.857,
+    391.079
+   ]
+  },
+  {
+   "page": 0,
+   "name": "MAHcountry",
+   "field": "topmostSubform[0].Page1[0].MAHcountry[0]",
+   "type": "Tx",
+   "rect": [
+    496.468,
+    365.44,
+    571.354,
+    378.933
+   ]
+  },
+  {
+   "page": 0,
+   "name": "title1",
+   "field": "topmostSubform[0].Page1[0].title1[0]",
+   "type": "Tx",
+   "rect": [
+    72.59,
+    318.745,
+    146.226,
+    335.458
+   ]
+  },
+  {
+   "page": 0,
+   "name": "firstname1",
+   "field": "topmostSubform[0].Page1[0].firstname1[0]",
+   "type": "Tx",
+   "rect": [
+    149.686,
+    318.745,
+    346.592,
+    335.458
+   ]
+  },
+  {
+   "page": 0,
+   "name": "lastname1",
+   "field": "topmostSubform[0].Page1[0].lastname1[0]",
+   "type": "Tx",
+   "rect": [
+    350.929,
+    318.745,
+    576.309,
+    335.458
+   ]
+  },
+  {
+   "page": 0,
+   "name": "Phone1",
+   "field": "topmostSubform[0].Page1[0].Phone1[0]",
+   "type": "Tx",
+   "rect": [
+    35.685,
+    286.231,
+    170.988,
+    302.941
+   ]
+  },
+  {
+   "page": 0,
+   "name": "faxNo1",
+   "field": "topmostSubform[0].Page1[0].faxNo1[0]",
+   "type": "Tx",
+   "rect": [
+    174.96,
+    286.231,
+    304.551,
+    302.941
+   ]
+  },
+  {
+   "page": 0,
+   "name": "email1",
+   "field": "topmostSubform[0].Page1[0].email1[0]",
+   "type": "Tx",
+   "rect": [
+    308.951,
+    286.228,
+    576.309,
+    302.941
+   ]
+  },
+  {
+   "page": 0,
+   "name": "Lrep.vet.veter",
+   "field": "topmostSubform[0].Page1[0].Lrep[0].vet[0].veter[0]",
+   "type": "Btn",
+   "rect": [
+    36.134,
+    218.24,
+    46.134,
+    228.24
+   ],
+   "on": "/1"
+  },
+  {
+   "page": 0,
+   "name": "Lrep.own.owner",
+   "field": "topmostSubform[0].Page1[0].Lrep[0].own[0].owner[0]",
+   "type": "Btn",
+   "rect": [
+    107.771,
+    218.24,
+    117.771,
+    228.24
+   ],
+   "on": "/1"
+  },
+  {
+   "page": 0,
+   "name": "Lrep.phys.phys",
+   "field": "topmostSubform[0].Page1[0].Lrep[0].phys[0].phys[0]",
+   "type": "Btn",
+   "rect": [
+    186.937,
+    218.24,
+    196.937,
+    228.24
+   ],
+   "on": "/1"
+  },
+  {
+   "page": 0,
+   "name": "Lrep.pat.patient",
+   "field": "topmostSubform[0].Page1[0].Lrep[0].pat[0].patient[0]",
+   "type": "Btn",
+   "rect": [
+    251.252,
+    218.24,
+    261.252,
+    228.24
+   ],
+   "on": "/1"
+  },
+  {
+   "page": 0,
+   "name": "Lrep.otherHC.prof",
+   "field": "topmostSubform[0].Page1[0].Lrep[0].otherHC[0].prof[0]",
+   "type": "Btn",
+   "rect": [
+    305.788,
+    218.24,
+    315.788,
+    228.24
+   ],
+   "on": "/1"
+  },
+  {
+   "page": 0,
+   "name": "Lrep.other.other",
+   "field": "topmostSubform[0].Page1[0].Lrep[0].other[0].other[0]",
+   "type": "Btn",
+   "rect": [
+    453.864,
+    218.24,
+    463.864,
+    228.24
+   ],
+   "on": "/1"
+  },
+  {
+   "page": 0,
+   "name": "Lrep.unk.unknown",
+   "field": "topmostSubform[0].Page1[0].Lrep[0].unk[0].unknown[0]",
+   "type": "Btn",
+   "rect": [
+    503.981,
+    218.24,
+    513.981,
+    228.24
+   ],
+   "on": "/1"
+  },
+  {
+   "page": 0,
+   "name": "lastname2",
+   "field": "topmostSubform[0].Page1[0].lastname2[0]",
+   "type": "Tx",
+   "rect": [
+    35.929,
+    180.527,
+    304.359,
+    197.24
+   ]
+  },
+  {
+   "page": 0,
+   "name": "firstname2",
+   "field": "topmostSubform[0].Page1[0].firstname2[0]",
+   "type": "Tx",
+   "rect": [
+    309.611,
+    180.527,
+    576.0,
+    197.24
+   ]
+  },
+  {
+   "page": 0,
+   "name": "Phone2",
+   "field": "topmostSubform[0].Page1[0].Phone2[0]",
+   "type": "Tx",
+   "rect": [
+    36.839,
+    148.408,
+    172.142,
+    165.118
+   ]
+  },
+  {
+   "page": 0,
+   "name": "faxNo2",
+   "field": "topmostSubform[0].Page1[0].faxNo2[0]",
+   "type": "Tx",
+   "rect": [
+    174.96,
+    148.408,
+    304.551,
+    165.118
+   ]
+  },
+  {
+   "page": 0,
+   "name": "email2",
+   "field": "topmostSubform[0].Page1[0].email2[0]",
+   "type": "Tx",
+   "rect": [
+    308.951,
+    148.405,
+    576.309,
+    165.118
+   ]
+  },
+  {
+   "page": 0,
+   "name": "PRname",
+   "field": "topmostSubform[0].Page1[0].PRname[0]",
+   "type": "Tx",
+   "rect": [
+    35.538,
+    116.586,
+    303.815,
+    133.863
+   ]
+  },
+  {
+   "page": 0,
+   "name": "PRadd",
+   "field": "topmostSubform[0].Page1[0].PRadd[0]",
+   "type": "Tx",
+   "rect": [
+    308.951,
+    116.586,
+    576.0,
+    133.863
+   ]
+  },
+  {
+   "page": 0,
+   "name": "PRcity",
+   "field": "topmostSubform[0].Page1[0].PRcity[0]",
+   "type": "Tx",
+   "rect": [
+    35.538,
+    77.61,
+    206.524,
+    102.512
+   ]
+  },
+  {
+   "page": 0,
+   "name": "PRstate",
+   "field": "topmostSubform[0].Page1[0].PRstate[0]",
+   "type": "Tx",
+   "rect": [
+    209.398,
+    77.61,
+    370.205,
+    102.512
+   ]
+  },
+  {
+   "page": 0,
+   "name": "PRzip",
+   "field": "topmostSubform[0].Page1[0].PRzip[0]",
+   "type": "Tx",
+   "rect": [
+    372.997,
+    77.61,
+    493.328,
+    102.512
+   ]
+  },
+  {
+   "page": 0,
+   "name": "PRcountry",
+   "field": "topmostSubform[0].Page1[0].PRcountry[0]",
+   "type": "Tx",
+   "rect": [
+    496.468,
+    77.61,
+    571.354,
+    91.103
+   ]
+  },
+  {
+   "page": 1,
+   "name": "Lcat2.vet.veter",
+   "field": "topmostSubform[0].Page2[0].Lcat2[0].vet[0].veter[0]",
+   "type": "Btn",
+   "rect": [
+    36.871,
+    679.536,
+    46.871,
+    689.536
+   ],
+   "on": "/1"
+  },
+  {
+   "page": 1,
+   "name": "Lcat2.own.owner",
+   "field": "topmostSubform[0].Page2[0].Lcat2[0].own[0].owner[0]",
+   "type": "Btn",
+   "rect": [
+    109.982,
+    679.536,
+    119.982,
+    689.536
+   ],
+   "on": "/1"
+  },
+  {
+   "page": 1,
+   "name": "Lcat2.phys.phys",
+   "field": "topmostSubform[0].Page2[0].Lcat2[0].phys[0].phys[0]",
+   "type": "Btn",
+   "rect": [
+    190.622,
+    679.536,
+    200.622,
+    689.536
+   ],
+   "on": "/1"
+  },
+  {
+   "page": 1,
+   "name": "Lcat2.pat.patient",
+   "field": "topmostSubform[0].Page2[0].Lcat2[0].pat[0].patient[0]",
+   "type": "Btn",
+   "rect": [
+    257.148,
+    679.536,
+    267.148,
+    689.536
+   ],
+   "on": "/1"
+  },
+  {
+   "page": 1,
+   "name": "Lcat2.otherHC.prof",
+   "field": "topmostSubform[0].Page2[0].Lcat2[0].otherHC[0].prof[0]",
+   "type": "Btn",
+   "rect": [
+    314.632,
+    679.536,
+    324.632,
+    689.536
+   ],
+   "on": "/1"
+  },
+  {
+   "page": 1,
+   "name": "Lcat2.other.other",
+   "field": "topmostSubform[0].Page2[0].Lcat2[0].other[0].other[0]",
+   "type": "Btn",
+   "rect": [
+    465.654,
+    679.536,
+    475.654,
+    689.536
+   ],
+   "on": "/1"
+  },
+  {
+   "page": 1,
+   "name": "Lcat2.unk.unknown",
+   "field": "topmostSubform[0].Page2[0].Lcat2[0].unk[0].unknown[0]",
+   "type": "Btn",
+   "rect": [
+    517.244,
+    679.536,
+    527.244,
+    689.536
+   ],
+   "on": "/1"
+  },
+  {
+   "page": 1,
+   "name": "lastname2",
+   "field": "topmostSubform[0].Page2[0].lastname2[0]",
+   "type": "Tx",
+   "rect": [
+    36.011,
+    646.39,
+    306.005,
+    663.103
+   ]
+  },
+  {
+   "page": 1,
+   "name": "firstname2",
+   "field": "topmostSubform[0].Page2[0].firstname2[0]",
+   "type": "Tx",
+   "rect": [
+    308.951,
+    646.39,
+    576.0,
+    663.103
+   ]
+  },
+  {
+   "page": 1,
+   "name": "Phone2",
+   "field": "topmostSubform[0].Page2[0].Phone2[0]",
+   "type": "Tx",
+   "rect": [
+    35.929,
+    613.375,
+    171.232,
+    630.085
+   ]
+  },
+  {
+   "page": 1,
+   "name": "faxNo2",
+   "field": "topmostSubform[0].Page2[0].faxNo2[0]",
+   "type": "Tx",
+   "rect": [
+    174.37,
+    613.375,
+    303.961,
+    630.085
+   ]
+  },
+  {
+   "page": 1,
+   "name": "email2",
+   "field": "topmostSubform[0].Page2[0].email2[0]",
+   "type": "Tx",
+   "rect": [
+    308.951,
+    613.372,
+    576.309,
+    630.085
+   ]
+  },
+  {
+   "page": 1,
+   "name": "PRname",
+   "field": "topmostSubform[0].Page2[0].PRname[0]",
+   "type": "Tx",
+   "rect": [
+    35.929,
+    581.553,
+    304.206,
+    598.83
+   ]
+  },
+  {
+   "page": 1,
+   "name": "PRadd",
+   "field": "topmostSubform[0].Page2[0].PRadd[0]",
+   "type": "Tx",
+   "rect": [
+    308.951,
+    581.553,
+    576.0,
+    598.83
+   ]
+  },
+  {
+   "page": 1,
+   "name": "PRcity",
+   "field": "topmostSubform[0].Page2[0].PRcity[0]",
+   "type": "Tx",
+   "rect": [
+    35.929,
+    542.577,
+    206.915,
+    567.479
+   ]
+  },
+  {
+   "page": 1,
+   "name": "PRstate",
+   "field": "topmostSubform[0].Page2[0].PRstate[0]",
+   "type": "Tx",
+   "rect": [
+    208.809,
+    542.577,
+    370.027,
+    567.479
+   ]
+  },
+  {
+   "page": 1,
+   "name": "PRzip",
+   "field": "topmostSubform[0].Page2[0].PRzip[0]",
+   "type": "Tx",
+   "rect": [
+    374.618,
+    542.577,
+    493.795,
+    567.479
+   ]
+  },
+  {
+   "page": 1,
+   "name": "PRcountry",
+   "field": "topmostSubform[0].Page2[0].PRcountry[0]",
+   "type": "Tx",
+   "rect": [
+    498.09,
+    542.577,
+    572.976,
+    556.07
+   ]
+  },
+  {
+   "page": 1,
+   "name": "AERID",
+   "field": "topmostSubform[0].Page2[0].AERID[0]",
+   "type": "Tx",
+   "rect": [
+    212.995,
+    507.997,
+    576.0,
+    522.255
+   ]
+  },
+  {
+   "page": 1,
+   "name": "dayA42",
+   "field": "topmostSubform[0].Page2[0].dayA42[0]",
+   "type": "Tx",
+   "rect": [
+    116.717,
+    471.719,
+    137.254,
+    489.229
+   ]
+  },
+  {
+   "page": 1,
+   "name": "monthA42",
+   "field": "topmostSubform[0].Page2[0].monthA42[0]",
+   "type": "Tx",
+   "rect": [
+    175.431,
+    471.719,
+    195.58,
+    489.229
+   ]
+  },
+  {
+   "page": 1,
+   "name": "yearA42",
+   "field": "topmostSubform[0].Page2[0].yearA42[0]",
+   "type": "Tx",
+   "rect": [
+    226.874,
+    471.719,
+    258.752,
+    489.229
+   ]
+  },
+  {
+   "page": 1,
+   "name": "dayA43",
+   "field": "topmostSubform[0].Page2[0].dayA43[0]",
+   "type": "Tx",
+   "rect": [
+    389.357,
+    471.152,
+    409.593,
+    488.662
+   ]
+  },
+  {
+   "page": 1,
+   "name": "monthA43",
+   "field": "topmostSubform[0].Page2[0].monthA43[0]",
+   "type": "Tx",
+   "rect": [
+    448.713,
+    471.152,
+    468.32,
+    488.662
+   ]
+  },
+  {
+   "page": 1,
+   "name": "yearA43",
+   "field": "topmostSubform[0].Page2[0].yearA43[0]",
+   "type": "Tx",
+   "rect": [
+    499.61,
+    471.152,
+    531.64,
+    488.662
+   ]
+  },
+  {
+   "page": 1,
+   "name": "LsubT.exp.exped",
+   "field": "topmostSubform[0].Page2[0].LsubT[0].exp[0].exped[0]",
+   "type": "Btn",
+   "rect": [
+    50.673,
+    421.237,
+    60.673,
+    431.237
+   ],
+   "on": "/1"
+  },
+  {
+   "page": 1,
+   "name": "LsubT.per.peri",
+   "field": "topmostSubform[0].Page2[0].LsubT[0].per[0].peri[0]",
+   "type": "Btn",
+   "rect": [
+    122.696,
+    421.005,
+    132.696,
+    431.005
+   ],
+   "on": "/1"
+  },
+  {
+   "page": 1,
+   "name": "LsubT.fup.follow",
+   "field": "topmostSubform[0].Page2[0].LsubT[0].fup[0].follow[0]",
+   "type": "Btn",
+   "rect": [
+    183.3,
+    421.402,
+    193.3,
+    431.402
+   ],
+   "on": "/1"
+  },
+  {
+   "page": 1,
+   "name": "LsubT.nul.nullif",
+   "field": "topmostSubform[0].Page2[0].LsubT[0].nul[0].nullif[0]",
+   "type": "Btn",
+   "rect": [
+    247.38,
+    421.062,
+    257.38,
+    431.062
+   ],
+   "on": "/1"
+  },
+  {
+   "page": 1,
+   "name": "LsubT.fie.three",
+   "field": "topmostSubform[0].Page2[0].LsubT[0].fie[0].three[0]",
+   "type": "Btn",
+   "rect": [
+    318.317,
+    421.237,
+    328.317,
+    431.237
+   ],
+   "on": "/1"
+  },
+  {
+   "page": 1,
+   "name": "LsubT.oth.othertype",
+   "field": "topmostSubform[0].Page2[0].LsubT[0].oth[0].othertype[0]",
+   "type": "Btn",
+   "rect": [
+    410.815,
+    421.07,
+    420.815,
+    431.07
+   ],
+   "on": "/1"
+  },
+  {
+   "page": 1,
+   "name": "reason",
+   "field": "topmostSubform[0].Page2[0].reason[0]",
+   "type": "Tx",
+   "rect": [
+    36.011,
+    361.916,
+    576.589,
+    404.969
+   ]
+  },
+  {
+   "page": 1,
+   "name": "typeinfo",
+   "field": "topmostSubform[0].Page2[0].typeinfo[0]",
+   "type": "Tx",
+   "rect": [
+    36.011,
+    316.925,
+    576.589,
+    346.462
+   ]
+  },
+  {
+   "page": 1,
+   "name": "animtreat",
+   "field": "topmostSubform[0].Page2[0].animtreat[0]",
+   "type": "Tx",
+   "rect": [
+    35.929,
+    234.255,
+    304.109,
+    251.728
+   ]
+  },
+  {
+   "page": 1,
+   "name": "animaffect",
+   "field": "topmostSubform[0].Page2[0].animaffect[0]",
+   "type": "Tx",
+   "rect": [
+    308.951,
+    234.255,
+    576.0,
+    251.728
+   ]
+  },
+  {
+   "page": 1,
+   "name": "assesment",
+   "field": "topmostSubform[0].Page2[0].assesment[0]",
+   "type": "Tx",
+   "rect": [
+    35.929,
+    165.124,
+    576.507,
+    217.916
+   ]
+  },
+  {
+   "page": 1,
+   "name": "species",
+   "field": "topmostSubform[0].Page2[0].species[0]",
+   "type": "Tx",
+   "rect": [
+    108.601,
+    147.722,
+    576.59,
+    160.6
+   ]
+  },
+  {
+   "page": 1,
+   "name": "purebreed1",
+   "field": "topmostSubform[0].Page2[0].purebreed1[0]",
+   "type": "Tx",
+   "rect": [
+    35.929,
+    82.454,
+    213.537,
+    99.87
+   ]
+  },
+  {
+   "page": 1,
+   "name": "purebreed2",
+   "field": "topmostSubform[0].Page2[0].purebreed2[0]",
+   "type": "Tx",
+   "rect": [
+    218.993,
+    82.454,
+    394.809,
+    99.87
+   ]
+  },
+  {
+   "page": 1,
+   "name": "purebreed3",
+   "field": "topmostSubform[0].Page2[0].purebreed3[0]",
+   "type": "Tx",
+   "rect": [
+    399.594,
+    82.454,
+    575.41,
+    99.87
+   ]
+  },
+  {
+   "page": 2,
+   "name": "crossbreed1",
+   "field": "topmostSubform[0].Page3[0].crossbreed1[0]",
+   "type": "Tx",
+   "rect": [
+    37.191,
+    679.175,
+    214.799,
+    696.591
+   ]
+  },
+  {
+   "page": 2,
+   "name": "crossbreed2",
+   "field": "topmostSubform[0].Page3[0].crossbreed2[0]",
+   "type": "Tx",
+   "rect": [
+    220.255,
+    679.175,
+    396.071,
+    696.591
+   ]
+  },
+  {
+   "page": 2,
+   "name": "crossbreed3",
+   "field": "topmostSubform[0].Page3[0].crossbreed3[0]",
+   "type": "Tx",
+   "rect": [
+    400.856,
+    679.175,
+    576.672,
+    696.591
+   ]
+  },
+  {
+   "page": 2,
+   "name": "Lb15.fem.female",
+   "field": "topmostSubform[0].Page3[0].Lb15[0].fem[0].female[0]",
+   "type": "Btn",
+   "rect": [
+    51.002,
+    651.714,
+    61.002,
+    661.714
+   ],
+   "on": "/1"
+  },
+  {
+   "page": 2,
+   "name": "Lb15.mal.male",
+   "field": "topmostSubform[0].Page3[0].Lb15[0].mal[0].male[0]",
+   "type": "Btn",
+   "rect": [
+    107.015,
+    652.054,
+    117.015,
+    662.054
+   ],
+   "on": "/1"
+  },
+  {
+   "page": 2,
+   "name": "Lb15.mix.mixed",
+   "field": "topmostSubform[0].Page3[0].Lb15[0].mix[0].mixed[0]",
+   "type": "Btn",
+   "rect": [
+    154.183,
+    651.657,
+    164.183,
+    661.657
+   ],
+   "on": "/1"
+  },
+  {
+   "page": 2,
+   "name": "Lb15.unk.unknown",
+   "field": "topmostSubform[0].Page3[0].Lb15[0].unk[0].unknown[0]",
+   "type": "Btn",
+   "rect": [
+    203.563,
+    651.997,
+    213.563,
+    661.997
+   ],
+   "on": "/1"
+  },
+  {
+   "page": 2,
+   "name": "Lb16.int.intact",
+   "field": "topmostSubform[0].Page3[0].Lb16[0].int[0].intact[0]",
+   "type": "Btn",
+   "rect": [
+    322.47,
+    651.861,
+    332.47,
+    661.861
+   ],
+   "on": "/1"
+  },
+  {
+   "page": 2,
+   "name": "Lb16.neu.neutered",
+   "field": "topmostSubform[0].Page3[0].Lb16[0].neu[0].neutered[0]",
+   "type": "Btn",
+   "rect": [
+    371.85,
+    652.201,
+    381.85,
+    662.201
+   ],
+   "on": "/1"
+  },
+  {
+   "page": 2,
+   "name": "Lb16.mix.mixedrep",
+   "field": "topmostSubform[0].Page3[0].Lb16[0].mix[0].mixedrep[0]",
+   "type": "Btn",
+   "rect": [
+    433.758,
+    651.805,
+    443.758,
+    661.805
+   ],
+   "on": "/1"
+  },
+  {
+   "page": 2,
+   "name": "Lb16.unk.unknownrep",
+   "field": "topmostSubform[0].Page3[0].Lb16[0].unk[0].unknownrep[0]",
+   "type": "Btn",
+   "rect": [
+    484.612,
+    652.145,
+    494.612,
+    662.145
+   ],
+   "on": "/1"
+  },
+  {
+   "page": 2,
+   "name": "Lb17.lact.lact",
+   "field": "topmostSubform[0].Page3[0].Lb17[0].lact[0].lact[0]",
+   "type": "Btn",
+   "rect": [
+    51.002,
+    618.889,
+    61.002,
+    628.889
+   ],
+   "on": "/1"
+  },
+  {
+   "page": 2,
+   "name": "Lb17.npl.nonlact",
+   "field": "topmostSubform[0].Page3[0].Lb17[0].npl[0].nonlact[0]",
+   "type": "Btn",
+   "rect": [
+    171.871,
+    618.492,
+    181.871,
+    628.492
+   ],
+   "on": "/1"
+  },
+  {
+   "page": 2,
+   "name": "Lb17.pl.preglact",
+   "field": "topmostSubform[0].Page3[0].Lb17[0].pl[0].preglact[0]",
+   "type": "Btn",
+   "rect": [
+    307.481,
+    618.833,
+    317.481,
+    628.833
+   ],
+   "on": "/1"
+  },
+  {
+   "page": 2,
+   "name": "Lb17.pnl.pregnonlact",
+   "field": "topmostSubform[0].Page3[0].Lb17[0].pnl[0].pregnonlact[0]",
+   "type": "Btn",
+   "rect": [
+    411.399,
+    618.835,
+    421.399,
+    628.835
+   ],
+   "on": "/1"
+  },
+  {
+   "page": 2,
+   "name": "Lb17.mix.mixedphy",
+   "field": "topmostSubform[0].Page3[0].Lb17[0].mix[0].mixedphy[0]",
+   "type": "Btn",
+   "rect": [
+    51.002,
+    600.804,
+    61.002,
+    610.804
+   ],
+   "on": "/1"
+  },
+  {
+   "page": 2,
+   "name": "Lb17.na.nonapp",
+   "field": "topmostSubform[0].Page3[0].Lb17[0].na[0].nonapp[0]",
+   "type": "Btn",
+   "rect": [
+    171.871,
+    601.144,
+    181.871,
+    611.144
+   ],
+   "on": "/1"
+  },
+  {
+   "page": 2,
+   "name": "Lb17.unk.unknownphy",
+   "field": "topmostSubform[0].Page3[0].Lb17[0].unk[0].unknownphy[0]",
+   "type": "Btn",
+   "rect": [
+    307.481,
+    600.747,
+    317.481,
+    610.747
+   ],
+   "on": "/1"
+  },
+  {
+   "page": 2,
+   "name": "Lb181.meas.meas",
+   "field": "topmostSubform[0].Page3[0].Lb181[0].meas[0].meas[0]",
+   "type": "Btn",
+   "rect": [
+    50.412,
+    541.797,
+    60.412,
+    551.797
+   ],
+   "on": "/1"
+  },
+  {
+   "page": 2,
+   "name": "Lb181.est.estimated",
+   "field": "topmostSubform[0].Page3[0].Lb181[0].est[0].estimated[0]",
+   "type": "Btn",
+   "rect": [
+    113.795,
+    540.664,
+    123.795,
+    550.664
+   ],
+   "on": "/1"
+  },
+  {
+   "page": 2,
+   "name": "Lb181.unk.unknownwei",
+   "field": "topmostSubform[0].Page3[0].Lb181[0].unk[0].unknownwei[0]",
+   "type": "Btn",
+   "rect": [
+    178.651,
+    541.741,
+    188.651,
+    551.741
+   ],
+   "on": "/1"
+  },
+  {
+   "page": 2,
+   "name": "minikilos",
+   "field": "topmostSubform[0].Page3[0].minikilos[0]",
+   "type": "Tx",
+   "rect": [
+    240.956,
+    539.649,
+    337.558,
+    552.847
+   ]
+  },
+  {
+   "page": 2,
+   "name": "maxikilos",
+   "field": "topmostSubform[0].Page3[0].maxikilos[0]",
+   "type": "Tx",
+   "rect": [
+    448.191,
+    539.649,
+    544.796,
+    552.847
+   ]
+  },
+  {
+   "page": 2,
+   "name": "Lb19.meas.measage",
+   "field": "topmostSubform[0].Page3[0].Lb19[0].meas[0].measage[0]",
+   "type": "Btn",
+   "rect": [
+    50.684,
+    493.359,
+    60.684,
+    503.359
+   ],
+   "on": "/1"
+  },
+  {
+   "page": 2,
+   "name": "Lb19.est.estimatedage",
+   "field": "topmostSubform[0].Page3[0].Lb19[0].est[0].estimatedage[0]",
+   "type": "Btn",
+   "rect": [
+    112.593,
+    493.36,
+    122.593,
+    503.36
+   ],
+   "on": "/1"
+  },
+  {
+   "page": 2,
+   "name": "Lb19.unk.unknownage",
+   "field": "topmostSubform[0].Page3[0].Lb19[0].unk[0].unknownage[0]",
+   "type": "Btn",
+   "rect": [
+    178.186,
+    493.303,
+    188.186,
+    503.303
+   ],
+   "on": "/1"
+  },
+  {
+   "page": 2,
+   "name": "miniage",
+   "field": "topmostSubform[0].Page3[0].miniage[0]",
+   "type": "Tx",
+   "rect": [
+    116.991,
+    464.871,
+    252.6,
+    476.867
+   ]
+  },
+  {
+   "page": 2,
+   "name": "Lb1921.sec.second",
+   "field": "topmostSubform[0].Page3[0].Lb1921[0].sec[0].second[0]",
+   "type": "Btn",
+   "rect": [
+    270.211,
+    464.639,
+    280.211,
+    474.639
+   ],
+   "on": "/1"
+  },
+  {
+   "page": 2,
+   "name": "Lb1921.min.minute",
+   "field": "topmostSubform[0].Page3[0].Lb1921[0].min[0].minute[0]",
+   "type": "Btn",
+   "rect": [
+    329.172,
+    464.979,
+    339.172,
+    474.979
+   ],
+   "on": "/1"
+  },
+  {
+   "page": 2,
+   "name": "Lb1921.hr.hour",
+   "field": "topmostSubform[0].Page3[0].Lb1921[0].hr[0].hour[0]",
+   "type": "Btn",
+   "rect": [
+    385.184,
+    464.583,
+    395.184,
+    474.583
+   ],
+   "on": "/1"
+  },
+  {
+   "page": 2,
+   "name": "Lb1921.day.day",
+   "field": "topmostSubform[0].Page3[0].Lb1921[0].day[0].day[0]",
+   "type": "Btn",
+   "rect": [
+    433.09,
+    464.922,
+    443.09,
+    474.922
+   ],
+   "on": "/1"
+  },
+  {
+   "page": 2,
+   "name": "Lb1921.mth.month",
+   "field": "topmostSubform[0].Page3[0].Lb1921[0].mth[0].month[0]",
+   "type": "Btn",
+   "rect": [
+    476.505,
+    464.639,
+    486.505,
+    474.639
+   ],
+   "on": "/1"
+  },
+  {
+   "page": 2,
+   "name": "Lb1921.yr.year",
+   "field": "topmostSubform[0].Page3[0].Lb1921[0].yr[0].year[0]",
+   "type": "Btn",
+   "rect": [
+    530.307,
+    464.979,
+    540.307,
+    474.979
+   ],
+   "on": "/1"
+  },
+  {
+   "page": 2,
+   "name": "maxiage1_9_3",
+   "field": "topmostSubform[0].Page3[0].maxiage1\\.9\\.3[0]",
+   "type": "Tx",
+   "rect": [
+    36.011,
+    434.188,
+    178.809,
+    446.774
+   ]
+  },
+  {
+   "page": 2,
+   "name": "Lb1931.sec.second2",
+   "field": "topmostSubform[0].Page3[0].Lb1931[0].sec[0].second2[0]",
+   "type": "Btn",
+   "rect": [
+    270.211,
+    435.498,
+    280.211,
+    445.498
+   ],
+   "on": "/1"
+  },
+  {
+   "page": 2,
+   "name": "Lb1931.min.minute2",
+   "field": "topmostSubform[0].Page3[0].Lb1931[0].min[0].minute2[0]",
+   "type": "Btn",
+   "rect": [
+    329.172,
+    435.838,
+    339.172,
+    445.838
+   ],
+   "on": "/1"
+  },
+  {
+   "page": 2,
+   "name": "Lb1931.hr.hour2",
+   "field": "topmostSubform[0].Page3[0].Lb1931[0].hr[0].hour2[0]",
+   "type": "Btn",
+   "rect": [
+    385.184,
+    435.442,
+    395.184,
+    445.442
+   ],
+   "on": "/1"
+  },
+  {
+   "page": 2,
+   "name": "Lb1931.day.day2",
+   "field": "topmostSubform[0].Page3[0].Lb1931[0].day[0].day2[0]",
+   "type": "Btn",
+   "rect": [
+    433.09,
+    435.781,
+    443.09,
+    445.781
+   ],
+   "on": "/1"
+  },
+  {
+   "page": 2,
+   "name": "Lb1931.mth.month2",
+   "field": "topmostSubform[0].Page3[0].Lb1931[0].mth[0].month2[0]",
+   "type": "Btn",
+   "rect": [
+    476.505,
+    435.498,
+    486.505,
+    445.498
+   ],
+   "on": "/1"
+  },
+  {
+   "page": 2,
+   "name": "Lb1931.yr.year2",
+   "field": "topmostSubform[0].Page3[0].Lb1931[0].yr[0].year2[0]",
+   "type": "Btn",
+   "rect": [
+    530.307,
+    435.838,
+    540.307,
+    445.838
+   ],
+   "on": "/1"
+  },
+  {
+   "page": 2,
+   "name": "brandname",
+   "field": "topmostSubform[0].Page3[0].brandname[0]",
+   "type": "Tx",
+   "rect": [
+    36.011,
+    370.034,
+    304.803,
+    388.04
+   ]
+  },
+  {
+   "page": 2,
+   "name": "prodcode",
+   "field": "topmostSubform[0].Page3[0].prodcode[0]",
+   "type": "Tx",
+   "rect": [
+    308.999,
+    370.034,
+    576.0,
+    388.04
+   ]
+  },
+  {
+   "page": 2,
+   "name": "regID",
+   "field": "topmostSubform[0].Page3[0].regID[0]",
+   "type": "Tx",
+   "rect": [
+    36.011,
+    338.683,
+    304.803,
+    356.689
+   ]
+  },
+  {
+   "page": 2,
+   "name": "ATCvet",
+   "field": "topmostSubform[0].Page3[0].ATCvet[0]",
+   "type": "Tx",
+   "rect": [
+    308.999,
+    338.683,
+    576.0,
+    356.689
+   ]
+  },
+  {
+   "page": 2,
+   "name": "compMAH",
+   "field": "topmostSubform[0].Page3[0].compMAH[0]",
+   "type": "Tx",
+   "rect": [
+    36.011,
+    305.858,
+    576.0,
+    323.864
+   ]
+  },
+  {
+   "page": 2,
+   "name": "MAHassessment",
+   "field": "topmostSubform[0].Page3[0].MAHassessment[0]",
+   "type": "Tx",
+   "rect": [
+    36.011,
+    247.034,
+    576.0,
+    277.036
+   ]
+  },
+  {
+   "page": 2,
+   "name": "RAassessment",
+   "field": "topmostSubform[0].Page3[0].RAassessment[0]",
+   "type": "Tx",
+   "rect": [
+    192.008,
+    209.203,
+    575.411,
+    230.99
+   ]
+  },
+  {
+   "page": 2,
+   "name": "Explanation",
+   "field": "topmostSubform[0].Page3[0].Explanation[0]",
+   "type": "Tx",
+   "rect": [
+    250.809,
+    183.66,
+    575.852,
+    205.444
+   ]
+  },
+  {
+   "page": 2,
+   "name": "route",
+   "field": "topmostSubform[0].Page3[0].route[0]",
+   "type": "Tx",
+   "rect": [
+    36.601,
+    151.313,
+    576.0,
+    169.319
+   ]
+  },
+  {
+   "page": 2,
+   "name": "dosenumvalue",
+   "field": "topmostSubform[0].Page3[0].dosenumvalue[0]",
+   "type": "Tx",
+   "rect": [
+    36.043,
+    102.654,
+    254.424,
+    120.677
+   ]
+  },
+  {
+   "page": 2,
+   "name": "dosenumunits",
+   "field": "topmostSubform[0].Page3[0].dosenumunits[0]",
+   "type": "Tx",
+   "rect": [
+    258.917,
+    102.654,
+    575.445,
+    120.677
+   ]
+  },
+  {
+   "page": 2,
+   "name": "dosedenomvalue",
+   "field": "topmostSubform[0].Page3[0].dosedenomvalue[0]",
+   "type": "Tx",
+   "rect": [
+    36.128,
+    70.041,
+    255.039,
+    88.064
+   ]
+  },
+  {
+   "page": 2,
+   "name": "dosedenomunits",
+   "field": "topmostSubform[0].Page3[0].dosedenomunits[0]",
+   "type": "Tx",
+   "rect": [
+    258.917,
+    70.041,
+    575.445,
+    88.064
+   ]
+  },
+  {
+   "page": 3,
+   "name": "intervalofadmin",
+   "field": "topmostSubform[0].Page4[0].intervalofadmin[0]",
+   "type": "Tx",
+   "rect": [
+    36.683,
+    668.999,
+    275.391,
+    685.644
+   ]
+  },
+  {
+   "page": 3,
+   "name": "Lb2171311.sec.second2",
+   "field": "topmostSubform[0].Page4[0].Lb2171311[0].sec[0].second2[0]",
+   "type": "Btn",
+   "rect": [
+    280.121,
+    669.216,
+    290.121,
+    679.216
+   ],
+   "on": "/1"
+  },
+  {
+   "page": 3,
+   "name": "Lb2171311.min.minute2",
+   "field": "topmostSubform[0].Page4[0].Lb2171311[0].min[0].minute2[0]",
+   "type": "Btn",
+   "rect": [
+    335.397,
+    669.216,
+    345.397,
+    679.216
+   ],
+   "on": "/1"
+  },
+  {
+   "page": 3,
+   "name": "Lb2171311.hr.hour2",
+   "field": "topmostSubform[0].Page4[0].Lb2171311[0].hr[0].hour2[0]",
+   "type": "Btn",
+   "rect": [
+    389.935,
+    669.216,
+    399.935,
+    679.216
+   ],
+   "on": "/1"
+  },
+  {
+   "page": 3,
+   "name": "Lb2171311.day.day2",
+   "field": "topmostSubform[0].Page4[0].Lb2171311[0].day[0].day2[0]",
+   "type": "Btn",
+   "rect": [
+    437.841,
+    669.215,
+    447.841,
+    679.215
+   ],
+   "on": "/1"
+  },
+  {
+   "page": 3,
+   "name": "Lb2171311.mth.month2",
+   "field": "topmostSubform[0].Page4[0].Lb2171311[0].mth[0].month2[0]",
+   "type": "Btn",
+   "rect": [
+    482.73,
+    669.216,
+    492.73,
+    679.216
+   ],
+   "on": "/1"
+  },
+  {
+   "page": 3,
+   "name": "Lb2171311.yr.year2",
+   "field": "topmostSubform[0].Page4[0].Lb2171311[0].yr[0].year2[0]",
+   "type": "Btn",
+   "rect": [
+    533.584,
+    669.216,
+    543.584,
+    679.216
+   ],
+   "on": "/1"
+  },
+  {
+   "page": 3,
+   "name": "dayfirstexp",
+   "field": "topmostSubform[0].Page4[0].dayfirstexp[0]",
+   "type": "Tx",
+   "rect": [
+    116.461,
+    632.588,
+    138.733,
+    650.098
+   ]
+  },
+  {
+   "page": 3,
+   "name": "monthfirstexp",
+   "field": "topmostSubform[0].Page4[0].monthfirstexp[0]",
+   "type": "Tx",
+   "rect": [
+    175.456,
+    632.588,
+    197.322,
+    650.098
+   ]
+  },
+  {
+   "page": 3,
+   "name": "yearfirstexp",
+   "field": "topmostSubform[0].Page4[0].yearfirstexp[0]",
+   "type": "Tx",
+   "rect": [
+    226.434,
+    632.588,
+    260.968,
+    650.098
+   ]
+  },
+  {
+   "page": 3,
+   "name": "daylastexp",
+   "field": "topmostSubform[0].Page4[0].daylastexp[0]",
+   "type": "Tx",
+   "rect": [
+    388.882,
+    632.588,
+    411.154,
+    650.098
+   ]
+  },
+  {
+   "page": 3,
+   "name": "monthlastexp",
+   "field": "topmostSubform[0].Page4[0].monthlastexp[0]",
+   "type": "Tx",
+   "rect": [
+    447.877,
+    632.588,
+    469.743,
+    650.098
+   ]
+  },
+  {
+   "page": 3,
+   "name": "yearlastexp",
+   "field": "topmostSubform[0].Page4[0].yearlastexp[0]",
+   "type": "Tx",
+   "rect": [
+    498.855,
+    632.588,
+    533.389,
+    650.098
+   ]
+  },
+  {
+   "page": 3,
+   "name": "activeingred1",
+   "field": "topmostSubform[0].Page4[0].activeingred1[0]",
+   "type": "Tx",
+   "rect": [
+    36.601,
+    530.475,
+    576.59,
+    584.912
+   ]
+  },
+  {
+   "page": 3,
+   "name": "strengthnumvalue1",
+   "field": "topmostSubform[0].Page4[0].strengthnumvalue1[0]",
+   "type": "Tx",
+   "rect": [
+    36.085,
+    500.621,
+    304.654,
+    515.611
+   ]
+  },
+  {
+   "page": 3,
+   "name": "strengthnumunits1",
+   "field": "topmostSubform[0].Page4[0].strengthnumunits1[0]",
+   "type": "Tx",
+   "rect": [
+    307.599,
+    500.621,
+    576.168,
+    515.611
+   ]
+  },
+  {
+   "page": 3,
+   "name": "strengthdenomvalue1",
+   "field": "topmostSubform[0].Page4[0].strengthdenomvalue1[0]",
+   "type": "Tx",
+   "rect": [
+    36.085,
+    470.744,
+    304.654,
+    485.734
+   ]
+  },
+  {
+   "page": 3,
+   "name": "strengthdenomunits1",
+   "field": "topmostSubform[0].Page4[0].strengthdenomunits1[0]",
+   "type": "Tx",
+   "rect": [
+    307.599,
+    470.744,
+    576.168,
+    485.734
+   ]
+  },
+  {
+   "page": 3,
+   "name": "activeingredcode1",
+   "field": "topmostSubform[0].Page4[0].activeingredcode1[0]",
+   "type": "Tx",
+   "rect": [
+    177.474,
+    451.25,
+    575.869,
+    463.629
+   ]
+  },
+  {
+   "page": 3,
+   "name": "activeingred2",
+   "field": "topmostSubform[0].Page4[0].activeingred2[0]",
+   "type": "Tx",
+   "rect": [
+    36.601,
+    365.684,
+    575.924,
+    420.163
+   ]
+  },
+  {
+   "page": 3,
+   "name": "strengthnumvalue2",
+   "field": "topmostSubform[0].Page4[0].strengthnumvalue2[0]",
+   "type": "Tx",
+   "rect": [
+    36.085,
+    335.134,
+    304.654,
+    350.124
+   ]
+  },
+  {
+   "page": 3,
+   "name": "strengthnumunits2",
+   "field": "topmostSubform[0].Page4[0].strengthnumunits2[0]",
+   "type": "Tx",
+   "rect": [
+    307.896,
+    335.134,
+    576.031,
+    350.124
+   ]
+  },
+  {
+   "page": 3,
+   "name": "strengthdenomvalue2",
+   "field": "topmostSubform[0].Page4[0].strengthdenomvalue2[0]",
+   "type": "Tx",
+   "rect": [
+    36.085,
+    305.257,
+    304.654,
+    320.247
+   ]
+  },
+  {
+   "page": 3,
+   "name": "strengthdenomunits2",
+   "field": "topmostSubform[0].Page4[0].strengthdenomunits2[0]",
+   "type": "Tx",
+   "rect": [
+    307.896,
+    305.257,
+    576.031,
+    320.247
+   ]
+  },
+  {
+   "page": 3,
+   "name": "activeingredcode2",
+   "field": "topmostSubform[0].Page4[0].activeingredcode2[0]",
+   "type": "Tx",
+   "rect": [
+    176.808,
+    286.274,
+    575.203,
+    298.653
+   ]
+  },
+  {
+   "page": 3,
+   "name": "activeingred3",
+   "field": "topmostSubform[0].Page4[0].activeingred3[0]",
+   "type": "Tx",
+   "rect": [
+    36.601,
+    199.684,
+    576.59,
+    253.882
+   ]
+  },
+  {
+   "page": 3,
+   "name": "strengthnumvalue3",
+   "field": "topmostSubform[0].Page4[0].strengthnumvalue3[0]",
+   "type": "Tx",
+   "rect": [
+    36.967,
+    170.384,
+    305.536,
+    185.374
+   ]
+  },
+  {
+   "page": 3,
+   "name": "strengthnumunits3",
+   "field": "topmostSubform[0].Page4[0].strengthnumunits3[0]",
+   "type": "Tx",
+   "rect": [
+    307.896,
+    170.384,
+    575.963,
+    185.374
+   ]
+  },
+  {
+   "page": 3,
+   "name": "strengthdenomvalue3",
+   "field": "topmostSubform[0].Page4[0].strengthdenomvalue3[0]",
+   "type": "Tx",
+   "rect": [
+    36.516,
+    139.77,
+    305.085,
+    154.76
+   ]
+  },
+  {
+   "page": 3,
+   "name": "strengthdenomunits3",
+   "field": "topmostSubform[0].Page4[0].strengthdenomunits3[0]",
+   "type": "Tx",
+   "rect": [
+    307.896,
+    139.77,
+    575.963,
+    154.76
+   ]
+  },
+  {
+   "page": 3,
+   "name": "activeingredcode3",
+   "field": "topmostSubform[0].Page4[0].activeingredcode3[0]",
+   "type": "Tx",
+   "rect": [
+    179.606,
+    124.677,
+    577.409,
+    138.195
+   ]
+  },
+  {
+   "page": 3,
+   "name": "dosageform",
+   "field": "topmostSubform[0].Page4[0].dosageform[0]",
+   "type": "Tx",
+   "rect": [
+    36.635,
+    93.204,
+    576.624,
+    110.597
+   ]
+  },
+  {
+   "page": 3,
+   "name": "lotnumb",
+   "field": "topmostSubform[0].Page4[0].lotnumb[0]",
+   "type": "Tx",
+   "rect": [
+    36.683,
+    51.339,
+    305.475,
+    76.533
+   ]
+  },
+  {
+   "page": 3,
+   "name": "day",
+   "field": "topmostSubform[0].Page4[0].day[0]",
+   "type": "Tx",
+   "rect": [
+    389.472,
+    56.154,
+    411.744,
+    73.664
+   ]
+  },
+  {
+   "page": 3,
+   "name": "month",
+   "field": "topmostSubform[0].Page4[0].month[0]",
+   "type": "Tx",
+   "rect": [
+    448.466,
+    56.154,
+    470.332,
+    73.664
+   ]
+  },
+  {
+   "page": 3,
+   "name": "year",
+   "field": "topmostSubform[0].Page4[0].year[0]",
+   "type": "Tx",
+   "rect": [
+    499.445,
+    56.154,
+    533.979,
+    73.664
+   ]
+  },
+  {
+   "page": 4,
+   "name": "Lb24.vet.veter",
+   "field": "topmostSubform[0].Page5[0].Lb24[0].vet[0].veter[0]",
+   "type": "Btn",
+   "rect": [
+    51.592,
+    683.955,
+    61.592,
+    693.955
+   ],
+   "on": "/1"
+  },
+  {
+   "page": 4,
+   "name": "Lb24.own.owner",
+   "field": "topmostSubform[0].Page5[0].Lb24[0].own[0].owner[0]",
+   "type": "Btn",
+   "rect": [
+    129.125,
+    683.955,
+    139.125,
+    693.955
+   ],
+   "on": "/1"
+  },
+  {
+   "page": 4,
+   "name": "Lb24.phys.phys",
+   "field": "topmostSubform[0].Page5[0].Lb24[0].phys[0].phys[0]",
+   "type": "Btn",
+   "rect": [
+    214.187,
+    683.955,
+    224.187,
+    693.955
+   ],
+   "on": "/1"
+  },
+  {
+   "page": 4,
+   "name": "Lb24.pat.patient",
+   "field": "topmostSubform[0].Page5[0].Lb24[0].pat[0].patient[0]",
+   "type": "Btn",
+   "rect": [
+    283.662,
+    683.955,
+    293.662,
+    693.955
+   ],
+   "on": "/1"
+  },
+  {
+   "page": 4,
+   "name": "Lb24.mult.multiple",
+   "field": "topmostSubform[0].Page5[0].Lb24[0].mult[0].multiple[0]",
+   "type": "Btn",
+   "rect": [
+    342.608,
+    683.955,
+    352.608,
+    693.955
+   ],
+   "on": "/1"
+  },
+  {
+   "page": 4,
+   "name": "Lb24.otherHC.otherpro",
+   "field": "topmostSubform[0].Page5[0].Lb24[0].otherHC[0].otherpro[0]",
+   "type": "Btn",
+   "rect": [
+    51.592,
+    662.73,
+    61.592,
+    672.73
+   ],
+   "on": "/1"
+  },
+  {
+   "page": 4,
+   "name": "Lb24.oth.other",
+   "field": "topmostSubform[0].Page5[0].Lb24[0].oth[0].other[0]",
+   "type": "Btn",
+   "rect": [
+    214.723,
+    662.73,
+    224.723,
+    672.73
+   ],
+   "on": "/1"
+  },
+  {
+   "page": 4,
+   "name": "Lb24.unk.unknown",
+   "field": "topmostSubform[0].Page5[0].Lb24[0].unk[0].unknown[0]",
+   "type": "Btn",
+   "rect": [
+    284.002,
+    662.73,
+    294.002,
+    672.73
+   ],
+   "on": "/1"
+  },
+  {
+   "page": 4,
+   "name": "Lb25.yes.yes1",
+   "field": "topmostSubform[0].Page5[0].Lb25[0].yes[0].yes1[0]",
+   "type": "Btn",
+   "rect": [
+    51.592,
+    627.12,
+    61.592,
+    637.12
+   ],
+   "on": "/1"
+  },
+  {
+   "page": 4,
+   "name": "Lb25.no.no1",
+   "field": "topmostSubform[0].Page5[0].Lb25[0].no[0].no1[0]",
+   "type": "Btn",
+   "rect": [
+    102.593,
+    627.12,
+    112.593,
+    637.12
+   ],
+   "on": "/1"
+  },
+  {
+   "page": 4,
+   "name": "Lb25.ni.noinfo1",
+   "field": "topmostSubform[0].Page5[0].Lb25[0].ni[0].noinfo1[0]",
+   "type": "Btn",
+   "rect": [
+    148.591,
+    627.12,
+    158.591,
+    637.12
+   ],
+   "on": "/1"
+  },
+  {
+   "page": 4,
+   "name": "Lb2511.yes.yes2",
+   "field": "topmostSubform[0].Page5[0].Lb2511[0].yes[0].yes2[0]",
+   "type": "Btn",
+   "rect": [
+    51.002,
+    582.061,
+    61.002,
+    592.061
+   ],
+   "on": "/1"
+  },
+  {
+   "page": 4,
+   "name": "Lb2511.no.no2",
+   "field": "topmostSubform[0].Page5[0].Lb2511[0].no[0].no2[0]",
+   "type": "Btn",
+   "rect": [
+    102.003,
+    582.061,
+    112.003,
+    592.061
+   ],
+   "on": "/1"
+  },
+  {
+   "page": 4,
+   "name": "Lb2511.ni.noinfo2",
+   "field": "topmostSubform[0].Page5[0].Lb2511[0].ni[0].noinfo2[0]",
+   "type": "Btn",
+   "rect": [
+    148.59,
+    581.766,
+    158.59,
+    591.766
+   ],
+   "on": "/1"
+  },
+  {
+   "page": 4,
+   "name": "Lb2512.yes.yes3",
+   "field": "topmostSubform[0].Page5[0].Lb2512[0].yes[0].yes3[0]",
+   "type": "Btn",
+   "rect": [
+    51.002,
+    552.183,
+    61.002,
+    562.183
+   ],
+   "on": "/1"
+  },
+  {
+   "page": 4,
+   "name": "Lb2512.no.no3",
+   "field": "topmostSubform[0].Page5[0].Lb2512[0].no[0].no3[0]",
+   "type": "Btn",
+   "rect": [
+    102.003,
+    552.183,
+    112.003,
+    562.183
+   ],
+   "on": "/1"
+  },
+  {
+   "page": 4,
+   "name": "Lb2512.ni.noinfo3",
+   "field": "topmostSubform[0].Page5[0].Lb2512[0].ni[0].noinfo3[0]",
+   "type": "Btn",
+   "rect": [
+    148.59,
+    552.626,
+    158.59,
+    562.626
+   ],
+   "on": "/1"
+  },
+  {
+   "page": 4,
+   "name": "Lb2513.yes.yes4",
+   "field": "topmostSubform[0].Page5[0].Lb2513[0].yes[0].yes4[0]",
+   "type": "Btn",
+   "rect": [
+    51.002,
+    523.043,
+    61.002,
+    533.043
+   ],
+   "on": "/1"
+  },
+  {
+   "page": 4,
+   "name": "Lb2513.no.no4",
+   "field": "topmostSubform[0].Page5[0].Lb2513[0].no[0].no4[0]",
+   "type": "Btn",
+   "rect": [
+    102.003,
+    523.043,
+    112.003,
+    533.043
+   ],
+   "on": "/1"
+  },
+  {
+   "page": 4,
+   "name": "Lb2513.ni.noinfo4",
+   "field": "topmostSubform[0].Page5[0].Lb2513[0].ni[0].noinfo4[0]",
+   "type": "Btn",
+   "rect": [
+    148.59,
+    523.486,
+    158.59,
+    533.486
+   ],
+   "on": "/1"
+  },
+  {
+   "page": 4,
+   "name": "Lb2514.yes.yes5",
+   "field": "topmostSubform[0].Page5[0].Lb2514[0].yes[0].yes5[0]",
+   "type": "Btn",
+   "rect": [
+    51.002,
+    494.64,
+    61.002,
+    504.64
+   ],
+   "on": "/1"
+  },
+  {
+   "page": 4,
+   "name": "Lb2514.no.no5",
+   "field": "topmostSubform[0].Page5[0].Lb2514[0].no[0].no5[0]",
+   "type": "Btn",
+   "rect": [
+    102.003,
+    494.64,
+    112.003,
+    504.64
+   ],
+   "on": "/1"
+  },
+  {
+   "page": 4,
+   "name": "Lb2514.ni.noinfo5",
+   "field": "topmostSubform[0].Page5[0].Lb2514[0].ni[0].noinfo5[0]",
+   "type": "Btn",
+   "rect": [
+    148.59,
+    495.083,
+    158.59,
+    505.083
+   ],
+   "on": "/1"
+  },
+  {
+   "page": 4,
+   "name": "Lb2515.yes.yes6",
+   "field": "topmostSubform[0].Page5[0].Lb2515[0].yes[0].yes6[0]",
+   "type": "Btn",
+   "rect": [
+    51.002,
+    466.237,
+    61.002,
+    476.237
+   ],
+   "on": "/1"
+  },
+  {
+   "page": 4,
+   "name": "Lb2515.no.no6",
+   "field": "topmostSubform[0].Page5[0].Lb2515[0].no[0].no6[0]",
+   "type": "Btn",
+   "rect": [
+    102.003,
+    466.237,
+    112.003,
+    476.237
+   ],
+   "on": "/1"
+  },
+  {
+   "page": 4,
+   "name": "Lb2515.ni.noinfo6",
+   "field": "topmostSubform[0].Page5[0].Lb2515[0].ni[0].noinfo6[0]",
+   "type": "Btn",
+   "rect": [
+    148.59,
+    466.68,
+    158.59,
+    476.68
+   ],
+   "on": "/1"
+  },
+  {
+   "page": 4,
+   "name": "Lb2516.yes.yes7",
+   "field": "topmostSubform[0].Page5[0].Lb2516[0].yes[0].yes7[0]",
+   "type": "Btn",
+   "rect": [
+    325.702,
+    581.613,
+    335.702,
+    591.613
+   ],
+   "on": "/1"
+  },
+  {
+   "page": 4,
+   "name": "Lb2516.no.no7",
+   "field": "topmostSubform[0].Page5[0].Lb2516[0].no[0].no7[0]",
+   "type": "Btn",
+   "rect": [
+    375.966,
+    581.613,
+    385.966,
+    591.613
+   ],
+   "on": "/1"
+  },
+  {
+   "page": 4,
+   "name": "Lb2516.ni.noinfo7",
+   "field": "topmostSubform[0].Page5[0].Lb2516[0].ni[0].noinfo7[0]",
+   "type": "Btn",
+   "rect": [
+    422.553,
+    582.056,
+    432.553,
+    592.056
+   ],
+   "on": "/1"
+  },
+  {
+   "page": 4,
+   "name": "Lb2517.yes.yes8",
+   "field": "topmostSubform[0].Page5[0].Lb2517[0].yes[0].yes8[0]",
+   "type": "Btn",
+   "rect": [
+    324.965,
+    551.735,
+    334.965,
+    561.735
+   ],
+   "on": "/1"
+  },
+  {
+   "page": 4,
+   "name": "Lb2517.no.no8",
+   "field": "topmostSubform[0].Page5[0].Lb2517[0].no[0].no8[0]",
+   "type": "Btn",
+   "rect": [
+    376.193,
+    551.463,
+    386.193,
+    561.463
+   ],
+   "on": "/1"
+  },
+  {
+   "page": 4,
+   "name": "Lb2517.ni.noinfo8",
+   "field": "topmostSubform[0].Page5[0].Lb2517[0].ni[0].noinfo8[0]",
+   "type": "Btn",
+   "rect": [
+    422.553,
+    552.178,
+    432.553,
+    562.178
+   ],
+   "on": "/1"
+  },
+  {
+   "page": 4,
+   "name": "Lbi2518.yes.yes9",
+   "field": "topmostSubform[0].Page5[0].Lbi2518[0].yes[0].yes9[0]",
+   "type": "Btn",
+   "rect": [
+    324.965,
+    522.595,
+    334.965,
+    532.595
+   ],
+   "on": "/1"
+  },
+  {
+   "page": 4,
+   "name": "Lbi2518.no.no9",
+   "field": "topmostSubform[0].Page5[0].Lbi2518[0].no[0].no9[0]",
+   "type": "Btn",
+   "rect": [
+    374.991,
+    522.663,
+    384.991,
+    532.663
+   ],
+   "on": "/1"
+  },
+  {
+   "page": 4,
+   "name": "Lbi2518.ni.noinfo9",
+   "field": "topmostSubform[0].Page5[0].Lbi2518[0].ni[0].noinfo9[0]",
+   "type": "Btn",
+   "rect": [
+    422.553,
+    523.038,
+    432.553,
+    533.038
+   ],
+   "on": "/1"
+  },
+  {
+   "page": 4,
+   "name": "Lb2519.yes.yes10",
+   "field": "topmostSubform[0].Page5[0].Lb2519[0].yes[0].yes10[0]",
+   "type": "Btn",
+   "rect": [
+    324.965,
+    494.929,
+    334.965,
+    504.929
+   ],
+   "on": "/1"
+  },
+  {
+   "page": 4,
+   "name": "Lb2519.no.no10",
+   "field": "topmostSubform[0].Page5[0].Lb2519[0].no[0].no10[0]",
+   "type": "Btn",
+   "rect": [
+    374.991,
+    494.997,
+    384.991,
+    504.997
+   ],
+   "on": "/1"
+  },
+  {
+   "page": 4,
+   "name": "Lb2519.ni.noinfo10",
+   "field": "topmostSubform[0].Page5[0].Lb2519[0].ni[0].noinfo10[0]",
+   "type": "Btn",
+   "rect": [
+    422.553,
+    495.372,
+    432.553,
+    505.372
+   ],
+   "on": "/1"
+  },
+  {
+   "page": 4,
+   "name": "manusite",
+   "field": "topmostSubform[0].Page5[0].manusite[0]",
+   "type": "Tx",
+   "rect": [
+    36.377,
+    399.571,
+    303.69,
+    415.74
+   ]
+  },
+  {
+   "page": 4,
+   "name": "Lb2611.fei.FEInumb",
+   "field": "topmostSubform[0].Page5[0].Lb2611[0].fei[0].FEInumb[0]",
+   "type": "Btn",
+   "rect": [
+    324.749,
+    403.342,
+    334.749,
+    413.342
+   ],
+   "on": "/1"
+  },
+  {
+   "page": 4,
+   "name": "Lb2611.duns.DUNSnumb",
+   "field": "topmostSubform[0].Page5[0].Lb2611[0].duns[0].DUNSnumb[0]",
+   "type": "Btn",
+   "rect": [
+    397.713,
+    403.682,
+    407.713,
+    413.682
+   ],
+   "on": "/1"
+  },
+  {
+   "page": 4,
+   "name": "day",
+   "field": "topmostSubform[0].Page5[0].day[0]",
+   "type": "Tx",
+   "rect": [
+    115.79,
+    363.999,
+    138.062,
+    381.509
+   ]
+  },
+  {
+   "page": 4,
+   "name": "month",
+   "field": "topmostSubform[0].Page5[0].month[0]",
+   "type": "Tx",
+   "rect": [
+    174.784,
+    363.999,
+    196.65,
+    381.509
+   ]
+  },
+  {
+   "page": 4,
+   "name": "year",
+   "field": "topmostSubform[0].Page5[0].year[0]",
+   "type": "Tx",
+   "rect": [
+    225.763,
+    363.999,
+    260.297,
+    381.509
+   ]
+  },
+  {
+   "page": 4,
+   "name": "defitems",
+   "field": "topmostSubform[0].Page5[0].defitems[0]",
+   "type": "Tx",
+   "rect": [
+    35.926,
+    329.131,
+    221.255,
+    347.026
+   ]
+  },
+  {
+   "page": 4,
+   "name": "defitemunits",
+   "field": "topmostSubform[0].Page5[0].defitemunits[0]",
+   "type": "Tx",
+   "rect": [
+    224.929,
+    329.131,
+    576.589,
+    347.026
+   ]
+  },
+  {
+   "page": 4,
+   "name": "retitems",
+   "field": "topmostSubform[0].Page5[0].retitems[0]",
+   "type": "Tx",
+   "rect": [
+    35.926,
+    297.78,
+    221.255,
+    315.675
+   ]
+  },
+  {
+   "page": 4,
+   "name": "retitemunits",
+   "field": "topmostSubform[0].Page5[0].retitemunits[0]",
+   "type": "Tx",
+   "rect": [
+    224.929,
+    297.78,
+    576.589,
+    315.675
+   ]
+  },
+  {
+   "page": 4,
+   "name": "ORAdist",
+   "field": "topmostSubform[0].Page5[0].ORAdist[0]",
+   "type": "Tx",
+   "rect": [
+    35.926,
+    264.954,
+    576.195,
+    282.849
+   ]
+  },
+  {
+   "page": 4,
+   "name": "narrative",
+   "field": "topmostSubform[0].Page5[0].narrative[0]",
+   "type": "Tx",
+   "rect": [
+    36.377,
+    48.316,
+    575.059,
+    233.858
+   ]
+  },
+  {
+   "page": 5,
+   "name": "narrativecont",
+   "field": "topmostSubform[0].Page6[0].narrativecont[0]",
+   "type": "Tx",
+   "rect": [
+    35.957,
+    311.244,
+    574.639,
+    713.214
+   ]
+  },
+  {
+   "page": 5,
+   "name": "Table1.Row1.adverse1",
+   "field": "topmostSubform[0].Page6[0].Table1[0].Row1[0].adverse1[0]",
+   "type": "Tx",
+   "rect": [
+    36.011,
+    236.41,
+    262.216,
+    273.827
+   ]
+  },
+  {
+   "page": 5,
+   "name": "Table1.Row1.number1",
+   "field": "topmostSubform[0].Page6[0].Table1[0].Row1[0].number1[0]",
+   "type": "Tx",
+   "rect": [
+    262.216,
+    236.41,
+    420.026,
+    273.827
+   ]
+  },
+  {
+   "page": 5,
+   "name": "Table1.Row1.acc1.act.actual1",
+   "field": "topmostSubform[0].Page6[0].Table1[0].Row1[0].acc1[0].act[0].actual1[0]",
+   "type": "Btn",
+   "rect": [
+    434.427,
+    252.318,
+    444.427,
+    262.318
+   ],
+   "on": "/1"
+  },
+  {
+   "page": 5,
+   "name": "Table1.Row1.acc1.est.estimated1",
+   "field": "topmostSubform[0].Page6[0].Table1[0].Row1[0].acc1[0].est[0].estimated1[0]",
+   "type": "Btn",
+   "rect": [
+    505.92,
+    252.658,
+    515.92,
+    262.658
+   ],
+   "on": "/1"
+  },
+  {
+   "page": 5,
+   "name": "Table1.Row2.adverse2",
+   "field": "topmostSubform[0].Page6[0].Table1[0].Row2[0].adverse2[0]",
+   "type": "Tx",
+   "rect": [
+    36.011,
+    198.993,
+    262.216,
+    236.41
+   ]
+  },
+  {
+   "page": 5,
+   "name": "Table1.Row2.number2",
+   "field": "topmostSubform[0].Page6[0].Table1[0].Row2[0].number2[0]",
+   "type": "Tx",
+   "rect": [
+    262.216,
+    198.993,
+    420.026,
+    236.41
+   ]
+  },
+  {
+   "page": 5,
+   "name": "Table1.Row2.acc2.act.actual2",
+   "field": "topmostSubform[0].Page6[0].Table1[0].Row2[0].acc2[0].act[0].actual2[0]",
+   "type": "Btn",
+   "rect": [
+    434.427,
+    215.241,
+    444.427,
+    225.241
+   ],
+   "on": "/1"
+  },
+  {
+   "page": 5,
+   "name": "Table1.Row2.acc2.est.estimated2",
+   "field": "topmostSubform[0].Page6[0].Table1[0].Row2[0].acc2[0].est[0].estimated2[0]",
+   "type": "Btn",
+   "rect": [
+    506.316,
+    214.504,
+    516.316,
+    224.504
+   ],
+   "on": "/1"
+  },
+  {
+   "page": 5,
+   "name": "Table1.Row3.adverse3",
+   "field": "topmostSubform[0].Page6[0].Table1[0].Row3[0].adverse3[0]",
+   "type": "Tx",
+   "rect": [
+    36.011,
+    161.576,
+    262.216,
+    198.993
+   ]
+  },
+  {
+   "page": 5,
+   "name": "Table1.Row3.number3",
+   "field": "topmostSubform[0].Page6[0].Table1[0].Row3[0].number3[0]",
+   "type": "Tx",
+   "rect": [
+    262.216,
+    161.576,
+    420.026,
+    198.993
+   ]
+  },
+  {
+   "page": 5,
+   "name": "Table1.Row3.acc3.act.actual3",
+   "field": "topmostSubform[0].Page6[0].Table1[0].Row3[0].acc3[0].act[0].actual3[0]",
+   "type": "Btn",
+   "rect": [
+    434.427,
+    177.824,
+    444.427,
+    187.824
+   ],
+   "on": "/1"
+  },
+  {
+   "page": 5,
+   "name": "Table1.Row3.acc3.est.estimated3",
+   "field": "topmostSubform[0].Page6[0].Table1[0].Row3[0].acc3[0].est[0].estimated3[0]",
+   "type": "Btn",
+   "rect": [
+    506.316,
+    177.087,
+    516.316,
+    187.087
+   ],
+   "on": "/1"
+  },
+  {
+   "page": 5,
+   "name": "Table1.Row4.adverse4",
+   "field": "topmostSubform[0].Page6[0].Table1[0].Row4[0].adverse4[0]",
+   "type": "Tx",
+   "rect": [
+    36.011,
+    124.159,
+    262.216,
+    161.576
+   ]
+  },
+  {
+   "page": 5,
+   "name": "Table1.Row4.number4",
+   "field": "topmostSubform[0].Page6[0].Table1[0].Row4[0].number4[0]",
+   "type": "Tx",
+   "rect": [
+    262.216,
+    124.159,
+    420.026,
+    161.576
+   ]
+  },
+  {
+   "page": 5,
+   "name": "Table1.Row4.acc4.act.actual4",
+   "field": "topmostSubform[0].Page6[0].Table1[0].Row4[0].acc4[0].act[0].actual4[0]",
+   "type": "Btn",
+   "rect": [
+    434.427,
+    140.407,
+    444.427,
+    150.407
+   ],
+   "on": "/1"
+  },
+  {
+   "page": 5,
+   "name": "Table1.Row4.acc4.est.estimated4",
+   "field": "topmostSubform[0].Page6[0].Table1[0].Row4[0].acc4[0].est[0].estimated4[0]",
+   "type": "Btn",
+   "rect": [
+    506.316,
+    139.67,
+    516.316,
+    149.67
+   ],
+   "on": "/1"
+  },
+  {
+   "page": 5,
+   "name": "Table1.Row5.adverse5",
+   "field": "topmostSubform[0].Page6[0].Table1[0].Row5[0].adverse5[0]",
+   "type": "Tx",
+   "rect": [
+    36.011,
+    86.742,
+    262.216,
+    124.159
+   ]
+  },
+  {
+   "page": 5,
+   "name": "Table1.Row5.number5",
+   "field": "topmostSubform[0].Page6[0].Table1[0].Row5[0].number5[0]",
+   "type": "Tx",
+   "rect": [
+    262.216,
+    86.742,
+    420.026,
+    124.159
+   ]
+  },
+  {
+   "page": 5,
+   "name": "Table1.Row5.acc5.act.actual5",
+   "field": "topmostSubform[0].Page6[0].Table1[0].Row5[0].acc5[0].act[0].actual5[0]",
+   "type": "Btn",
+   "rect": [
+    434.427,
+    102.99,
+    444.427,
+    112.99
+   ],
+   "on": "/1"
+  },
+  {
+   "page": 5,
+   "name": "Table1.Row5.acc5.est.estimated5",
+   "field": "topmostSubform[0].Page6[0].Table1[0].Row5[0].acc5[0].est[0].estimated5[0]",
+   "type": "Btn",
+   "rect": [
+    506.316,
+    102.253,
+    516.316,
+    112.253
+   ],
+   "on": "/1"
+  },
+  {
+   "page": 5,
+   "name": "Table1.Row6.adverse6",
+   "field": "topmostSubform[0].Page6[0].Table1[0].Row6[0].adverse6[0]",
+   "type": "Tx",
+   "rect": [
+    36.011,
+    49.325,
+    262.216,
+    86.742
+   ]
+  },
+  {
+   "page": 5,
+   "name": "Table1.Row6.number6",
+   "field": "topmostSubform[0].Page6[0].Table1[0].Row6[0].number6[0]",
+   "type": "Tx",
+   "rect": [
+    262.216,
+    49.325,
+    420.026,
+    86.742
+   ]
+  },
+  {
+   "page": 5,
+   "name": "Table1.Row6.acc6.act.actual6",
+   "field": "topmostSubform[0].Page6[0].Table1[0].Row6[0].acc6[0].act[0].actual6[0]",
+   "type": "Btn",
+   "rect": [
+    434.427,
+    65.573,
+    444.427,
+    75.573
+   ],
+   "on": "/1"
+  },
+  {
+   "page": 5,
+   "name": "Table1.Row6.acc6.est.estimated6",
+   "field": "topmostSubform[0].Page6[0].Table1[0].Row6[0].acc6[0].est[0].estimated6[0]",
+   "type": "Btn",
+   "rect": [
+    506.316,
+    64.836,
+    516.316,
+    74.836
+   ],
+   "on": "/1"
+  },
+  {
+   "page": 6,
+   "name": "day",
+   "field": "topmostSubform[0].Page7[0].day[0]",
+   "type": "Tx",
+   "rect": [
+    116.13,
+    691.642,
+    138.402,
+    709.152
+   ]
+  },
+  {
+   "page": 6,
+   "name": "month",
+   "field": "topmostSubform[0].Page7[0].month[0]",
+   "type": "Tx",
+   "rect": [
+    175.122,
+    691.642,
+    196.988,
+    709.152
+   ]
+  },
+  {
+   "page": 6,
+   "name": "year",
+   "field": "topmostSubform[0].Page7[0].year[0]",
+   "type": "Tx",
+   "rect": [
+    226.103,
+    691.642,
+    260.637,
+    709.152
+   ]
+  },
+  {
+   "page": 6,
+   "name": "Lb34.min.minute2",
+   "field": "topmostSubform[0].Page7[0].Lb34[0].min[0].minute2[0]",
+   "type": "Btn",
+   "rect": [
+    51.489,
+    641.951,
+    61.489,
+    651.951
+   ],
+   "on": "/1"
+  },
+  {
+   "page": 6,
+   "name": "Lb34.hr1.hour1",
+   "field": "topmostSubform[0].Page7[0].Lb34[0].hr1[0].hour1[0]",
+   "type": "Btn",
+   "rect": [
+    51.489,
+    623.866,
+    61.489,
+    633.866
+   ],
+   "on": "/1"
+  },
+  {
+   "page": 6,
+   "name": "Lb34.hr12.hour12",
+   "field": "topmostSubform[0].Page7[0].Lb34[0].hr12[0].hour12[0]",
+   "type": "Btn",
+   "rect": [
+    50.996,
+    606.121,
+    60.996,
+    616.121
+   ],
+   "on": "/1"
+  },
+  {
+   "page": 6,
+   "name": "Lb34.hr24.hour24",
+   "field": "topmostSubform[0].Page7[0].Lb34[0].hr24[0].hour24[0]",
+   "type": "Btn",
+   "rect": [
+    150.985,
+    641.894,
+    160.985,
+    651.894
+   ],
+   "on": "/1"
+  },
+  {
+   "page": 6,
+   "name": "Lb34.hr48.hour48",
+   "field": "topmostSubform[0].Page7[0].Lb34[0].hr48[0].hour48[0]",
+   "type": "Btn",
+   "rect": [
+    150.946,
+    623.872,
+    160.946,
+    633.872
+   ],
+   "on": "/1"
+  },
+  {
+   "page": 6,
+   "name": "Lb34.day3.day3",
+   "field": "topmostSubform[0].Page7[0].Lb34[0].day3[0].day3[0]",
+   "type": "Btn",
+   "rect": [
+    150.985,
+    605.384,
+    160.985,
+    615.384
+   ],
+   "on": "/1"
+  },
+  {
+   "page": 6,
+   "name": "Lb34.day7.day7",
+   "field": "topmostSubform[0].Page7[0].Lb34[0].day7[0].day7[0]",
+   "type": "Btn",
+   "rect": [
+    253.429,
+    642.234,
+    263.429,
+    652.234
+   ],
+   "on": "/1"
+  },
+  {
+   "page": 6,
+   "name": "Lb34.day14.day14",
+   "field": "topmostSubform[0].Page7[0].Lb34[0].day14[0].day14[0]",
+   "type": "Btn",
+   "rect": [
+    253.503,
+    624.025,
+    263.503,
+    634.025
+   ],
+   "on": "/1"
+  },
+  {
+   "page": 6,
+   "name": "Lb34.day30.day30",
+   "field": "topmostSubform[0].Page7[0].Lb34[0].day30[0].day30[0]",
+   "type": "Btn",
+   "rect": [
+    253.56,
+    605.656,
+    263.56,
+    615.656
+   ],
+   "on": "/1"
+  },
+  {
+   "page": 6,
+   "name": "Lb34.mth1t6.day30and",
+   "field": "topmostSubform[0].Page7[0].Lb34[0].mth1t6[0].day30and[0]",
+   "type": "Btn",
+   "rect": [
+    349.909,
+    642.291,
+    359.909,
+    652.291
+   ],
+   "on": "/1"
+  },
+  {
+   "page": 6,
+   "name": "Lb34.mth6t12.months6",
+   "field": "topmostSubform[0].Page7[0].Lb34[0].mth6t12[0].months6[0]",
+   "type": "Btn",
+   "rect": [
+    349.909,
+    624.206,
+    359.909,
+    634.206
+   ],
+   "on": "/1"
+  },
+  {
+   "page": 6,
+   "name": "Lb34.mth12.months12",
+   "field": "topmostSubform[0].Page7[0].Lb34[0].mth12[0].months12[0]",
+   "type": "Btn",
+   "rect": [
+    349.541,
+    604.919,
+    359.541,
+    614.919
+   ],
+   "on": "/1"
+  },
+  {
+   "page": 6,
+   "name": "Lb34.unk.timeunknow",
+   "field": "topmostSubform[0].Page7[0].Lb34[0].unk[0].timeunknow[0]",
+   "type": "Btn",
+   "rect": [
+    520.895,
+    641.628,
+    530.895,
+    651.628
+   ],
+   "on": "/1"
+  },
+  {
+   "page": 6,
+   "name": "duration1",
+   "field": "topmostSubform[0].Page7[0].duration1[0]",
+   "type": "Tx",
+   "rect": [
+    36.082,
+    556.219,
+    273.742,
+    572.717
+   ]
+  },
+  {
+   "page": 6,
+   "name": "Lb3511.sec.second2",
+   "field": "topmostSubform[0].Page7[0].Lb3511[0].sec[0].second2[0]",
+   "type": "Btn",
+   "rect": [
+    288.341,
+    559.775,
+    298.341,
+    569.775
+   ],
+   "on": "/1"
+  },
+  {
+   "page": 6,
+   "name": "Lb3511.min.minute",
+   "field": "topmostSubform[0].Page7[0].Lb3511[0].min[0].minute[0]",
+   "type": "Btn",
+   "rect": [
+    343.617,
+    560.115,
+    353.617,
+    570.115
+   ],
+   "on": "/1"
+  },
+  {
+   "page": 6,
+   "name": "Lb3511.hr.hour2",
+   "field": "topmostSubform[0].Page7[0].Lb3511[0].hr[0].hour2[0]",
+   "type": "Btn",
+   "rect": [
+    398.155,
+    559.719,
+    408.155,
+    569.719
+   ],
+   "on": "/1"
+  },
+  {
+   "page": 6,
+   "name": "Lb3511.day.day2",
+   "field": "topmostSubform[0].Page7[0].Lb3511[0].day[0].day2[0]",
+   "type": "Btn",
+   "rect": [
+    446.061,
+    560.058,
+    456.061,
+    570.058
+   ],
+   "on": "/1"
+  },
+  {
+   "page": 6,
+   "name": "Lb3511.mth.month2",
+   "field": "topmostSubform[0].Page7[0].Lb3511[0].mth[0].month2[0]",
+   "type": "Btn",
+   "rect": [
+    490.95,
+    559.775,
+    500.95,
+    569.775
+   ],
+   "on": "/1"
+  },
+  {
+   "page": 6,
+   "name": "Lb3511.yr.year2",
+   "field": "topmostSubform[0].Page7[0].Lb3511[0].yr[0].year2[0]",
+   "type": "Btn",
+   "rect": [
+    541.804,
+    560.115,
+    551.804,
+    570.115
+   ],
+   "on": "/1"
+  },
+  {
+   "page": 6,
+   "name": "Lb36.yes.yesserious",
+   "field": "topmostSubform[0].Page7[0].Lb36[0].yes[0].yesserious[0]",
+   "type": "Btn",
+   "rect": [
+    51.251,
+    527.732,
+    61.251,
+    537.732
+   ],
+   "on": "/1"
+  },
+  {
+   "page": 6,
+   "name": "Lb36.no.noserious",
+   "field": "topmostSubform[0].Page7[0].Lb36[0].no[0].noserious[0]",
+   "type": "Btn",
+   "rect": [
+    102.252,
+    527.732,
+    112.252,
+    537.732
+   ],
+   "on": "/1"
+  },
+  {
+   "page": 6,
+   "name": "Lb37.yes.yesAE",
+   "field": "topmostSubform[0].Page7[0].Lb37[0].yes[0].yesAE[0]",
+   "type": "Btn",
+   "rect": [
+    320.259,
+    527.392,
+    330.259,
+    537.392
+   ],
+   "on": "/1"
+  },
+  {
+   "page": 6,
+   "name": "Lb37.no.noAE",
+   "field": "topmostSubform[0].Page7[0].Lb37[0].no[0].noAE[0]",
+   "type": "Btn",
+   "rect": [
+    371.26,
+    527.392,
+    381.26,
+    537.392
+   ],
+   "on": "/1"
+  },
+  {
+   "page": 6,
+   "name": "Lb37.unk.unknownAE",
+   "field": "topmostSubform[0].Page7[0].Lb37[0].unk[0].unknownAE[0]",
+   "type": "Btn",
+   "rect": [
+    417.258,
+    527.392,
+    427.258,
+    537.392
+   ],
+   "on": "/1"
+  },
+  {
+   "page": 6,
+   "name": "Lb37.ni.noinfoAE",
+   "field": "topmostSubform[0].Page7[0].Lb37[0].ni[0].noinfoAE[0]",
+   "type": "Btn",
+   "rect": [
+    492.433,
+    527.732,
+    502.433,
+    537.732
+   ],
+   "on": "/1"
+  },
+  {
+   "page": 6,
+   "name": "ongoing",
+   "field": "topmostSubform[0].Page7[0].ongoing[0]",
+   "type": "Tx",
+   "rect": [
+    114.092,
+    484.781,
+    169.594,
+    498.736
+   ]
+  },
+  {
+   "page": 6,
+   "name": "recovnormal",
+   "field": "topmostSubform[0].Page7[0].recovnormal[0]",
+   "type": "Tx",
+   "rect": [
+    306.082,
+    484.781,
+    361.584,
+    498.736
+   ]
+  },
+  {
+   "page": 6,
+   "name": "recovwseq",
+   "field": "topmostSubform[0].Page7[0].recovwseq[0]",
+   "type": "Tx",
+   "rect": [
+    519.077,
+    484.781,
+    574.579,
+    498.736
+   ]
+  },
+  {
+   "page": 6,
+   "name": "died",
+   "field": "topmostSubform[0].Page7[0].died[0]",
+   "type": "Tx",
+   "rect": [
+    114.092,
+    462.75,
+    169.594,
+    476.705
+   ]
+  },
+  {
+   "page": 6,
+   "name": "euth",
+   "field": "topmostSubform[0].Page7[0].euth[0]",
+   "type": "Tx",
+   "rect": [
+    306.819,
+    462.75,
+    362.321,
+    476.705
+   ]
+  },
+  {
+   "page": 6,
+   "name": "unknown",
+   "field": "topmostSubform[0].Page7[0].unknown[0]",
+   "type": "Tx",
+   "rect": [
+    519.077,
+    462.75,
+    574.579,
+    476.705
+   ]
+  },
+  {
+   "page": 6,
+   "name": "Lb39.yes.yes1",
+   "field": "topmostSubform[0].Page7[0].Lb39[0].yes[0].yes1[0]",
+   "type": "Btn",
+   "rect": [
+    51.266,
+    421.345,
+    61.266,
+    431.345
+   ],
+   "on": "/1"
+  },
+  {
+   "page": 6,
+   "name": "Lb39.no.no1",
+   "field": "topmostSubform[0].Page7[0].Lb39[0].no[0].no1[0]",
+   "type": "Btn",
+   "rect": [
+    102.264,
+    421.345,
+    112.264,
+    431.345
+   ],
+   "on": "/1"
+  },
+  {
+   "page": 6,
+   "name": "Lb39.unk.unknown1",
+   "field": "topmostSubform[0].Page7[0].Lb39[0].unk[0].unknown1[0]",
+   "type": "Btn",
+   "rect": [
+    148.262,
+    421.345,
+    158.262,
+    431.345
+   ],
+   "on": "/1"
+  },
+  {
+   "page": 6,
+   "name": "Lb39.ni.nonapp1",
+   "field": "topmostSubform[0].Page7[0].Lb39[0].ni[0].nonapp1[0]",
+   "type": "Btn",
+   "rect": [
+    216.265,
+    421.345,
+    226.265,
+    431.345
+   ],
+   "on": "/1"
+  },
+  {
+   "page": 6,
+   "name": "Lb310.yes.yes3",
+   "field": "topmostSubform[0].Page7[0].Lb310[0].yes[0].yes3[0]",
+   "type": "Btn",
+   "rect": [
+    325.503,
+    421.711,
+    335.503,
+    431.711
+   ],
+   "on": "/1"
+  },
+  {
+   "page": 6,
+   "name": "Lb310.no.no3",
+   "field": "topmostSubform[0].Page7[0].Lb310[0].no[0].no3[0]",
+   "type": "Btn",
+   "rect": [
+    373.791,
+    421.711,
+    383.791,
+    431.711
+   ],
+   "on": "/1"
+  },
+  {
+   "page": 6,
+   "name": "Lb310.unk.unknown3",
+   "field": "topmostSubform[0].Page7[0].Lb310[0].unk[0].unknown3[0]",
+   "type": "Btn",
+   "rect": [
+    419.789,
+    421.711,
+    429.789,
+    431.711
+   ],
+   "on": "/1"
+  },
+  {
+   "page": 6,
+   "name": "Lb310.ni.nonapp3",
+   "field": "topmostSubform[0].Page7[0].Lb310[0].ni[0].nonapp3[0]",
+   "type": "Btn",
+   "rect": [
+    487.789,
+    421.711,
+    497.789,
+    431.711
+   ],
+   "on": "/1"
+  },
+  {
+   "page": 6,
+   "name": "Lb41.yes.yes2",
+   "field": "topmostSubform[0].Page7[0].Lb41[0].yes[0].yes2[0]",
+   "type": "Btn",
+   "rect": [
+    52.757,
+    364.53,
+    62.757,
+    374.53
+   ],
+   "on": "/1"
+  },
+  {
+   "page": 6,
+   "name": "Lb41.no.no2",
+   "field": "topmostSubform[0].Page7[0].Lb41[0].no[0].no2[0]",
+   "type": "Btn",
+   "rect": [
+    103.755,
+    364.53,
+    113.755,
+    374.53
+   ],
+   "on": "/1"
+  },
+  {
+   "page": 6,
+   "name": "Lb41.unk.unknown2",
+   "field": "topmostSubform[0].Page7[0].Lb41[0].unk[0].unknown2[0]",
+   "type": "Btn",
+   "rect": [
+    149.753,
+    364.53,
+    159.753,
+    374.53
+   ],
+   "on": "/1"
+  },
+  {
+   "page": 6,
+   "name": "Lb41.ni.noinfo2",
+   "field": "topmostSubform[0].Page7[0].Lb41[0].ni[0].noinfo2[0]",
+   "type": "Btn",
+   "rect": [
+    222.915,
+    364.944,
+    232.915,
+    374.944
+   ],
+   "on": "/1"
+  },
+  {
+   "page": 6,
+   "name": "Lb41.na.nonapp2",
+   "field": "topmostSubform[0].Page7[0].Lb41[0].na[0].nonapp2[0]",
+   "type": "Btn",
+   "rect": [
+    318.726,
+    364.53,
+    328.726,
+    374.53
+   ],
+   "on": "/1"
+  },
+  {
+   "page": 6,
+   "name": "Lb42.yes.yes4",
+   "field": "topmostSubform[0].Page7[0].Lb42[0].yes[0].yes4[0]",
+   "type": "Btn",
+   "rect": [
+    52.714,
+    325.947,
+    62.714,
+    335.947
+   ],
+   "on": "/1"
+  },
+  {
+   "page": 6,
+   "name": "Lb42.no.no4",
+   "field": "topmostSubform[0].Page7[0].Lb42[0].no[0].no4[0]",
+   "type": "Btn",
+   "rect": [
+    103.715,
+    325.947,
+    113.715,
+    335.947
+   ],
+   "on": "/1"
+  },
+  {
+   "page": 6,
+   "name": "Lb42.unk.unknown4",
+   "field": "topmostSubform[0].Page7[0].Lb42[0].unk[0].unknown4[0]",
+   "type": "Btn",
+   "rect": [
+    149.713,
+    325.947,
+    159.713,
+    335.947
+   ],
+   "on": "/1"
+  },
+  {
+   "page": 6,
+   "name": "Lb42.ni.noinfo4",
+   "field": "topmostSubform[0].Page7[0].Lb42[0].ni[0].noinfo4[0]",
+   "type": "Btn",
+   "rect": [
+    223.428,
+    326.174,
+    233.428,
+    336.174
+   ],
+   "on": "/1"
+  },
+  {
+   "page": 6,
+   "name": "Lb42.na.nonapp4",
+   "field": "topmostSubform[0].Page7[0].Lb42[0].na[0].nonapp4[0]",
+   "type": "Btn",
+   "rect": [
+    319.42,
+    325.947,
+    329.42,
+    335.947
+   ],
+   "on": "/1"
+  },
+  {
+   "page": 6,
+   "name": "Lb51.prob.prob",
+   "field": "topmostSubform[0].Page7[0].Lb51[0].prob[0].prob[0]",
+   "type": "Btn",
+   "rect": [
+    52.499,
+    274.581,
+    62.499,
+    284.581
+   ],
+   "on": "/1"
+  },
+  {
+   "page": 6,
+   "name": "Lb51.poss.poss",
+   "field": "topmostSubform[0].Page7[0].Lb51[0].poss[0].poss[0]",
+   "type": "Btn",
+   "rect": [
+    115.508,
+    274.697,
+    125.508,
+    284.697
+   ],
+   "on": "/1"
+  },
+  {
+   "page": 6,
+   "name": "Lb51.unl.unl",
+   "field": "topmostSubform[0].Page7[0].Lb51[0].unl[0].unl[0]",
+   "type": "Btn",
+   "rect": [
+    177.719,
+    274.697,
+    187.719,
+    284.697
+   ],
+   "on": "/1"
+  },
+  {
+   "page": 6,
+   "name": "Lb51.unk.unknownatt",
+   "field": "topmostSubform[0].Page7[0].Lb51[0].unk[0].unknownatt[0]",
+   "type": "Btn",
+   "rect": [
+    237.749,
+    274.717,
+    247.749,
+    284.717
+   ],
+   "on": "/1"
+  },
+  {
+   "page": 6,
+   "name": "Lb51.noassess.noassess",
+   "field": "topmostSubform[0].Page7[0].Lb51[0].noassess[0].noassess[0]",
+   "type": "Btn",
+   "rect": [
+    307.765,
+    275.057,
+    317.765,
+    285.057
+   ],
+   "on": "/1"
+  },
+  {
+   "page": 6,
+   "name": "Lb51.novet.noattend",
+   "field": "topmostSubform[0].Page7[0].Lb51[0].novet[0].noattend[0]",
+   "type": "Btn",
+   "rect": [
+    401.512,
+    274.445,
+    411.512,
+    284.445
+   ],
+   "on": "/1"
+  },
+  {
+   "page": 6,
+   "name": "unique",
+   "field": "topmostSubform[0].Page7[0].unique[0]",
+   "type": "Tx",
+   "rect": [
+    36.011,
+    220.195,
+    576.589,
+    241.194
+   ]
+  },
+  {
+   "page": 6,
+   "name": "Lb611.pch.parentoff",
+   "field": "topmostSubform[0].Page7[0].Lb611[0].pch[0].parentoff[0]",
+   "type": "Btn",
+   "rect": [
+    51.24,
+    186.937,
+    61.24,
+    196.937
+   ],
+   "on": "/1"
+  },
+  {
+   "page": 6,
+   "name": "Lb611.same.same",
+   "field": "topmostSubform[0].Page7[0].Lb611[0].same[0].same[0]",
+   "type": "Btn",
+   "rect": [
+    144.987,
+    186.937,
+    154.987,
+    196.937
+   ],
+   "on": "/1"
+  },
+  {
+   "page": 6,
+   "name": "Lb611.dup.duplic",
+   "field": "topmostSubform[0].Page7[0].Lb611[0].dup[0].duplic[0]",
+   "type": "Btn",
+   "rect": [
+    221.217,
+    186.427,
+    231.217,
+    196.427
+   ],
+   "on": "/1"
+  },
+  {
+   "page": 6,
+   "name": "Lb611.sim.similar",
+   "field": "topmostSubform[0].Page7[0].Lb611[0].sim[0].similar[0]",
+   "type": "Btn",
+   "rect": [
+    311.597,
+    186.685,
+    321.597,
+    196.685
+   ],
+   "on": "/1"
+  },
+  {
+   "page": 6,
+   "name": "Lb611.oth.linktype",
+   "field": "topmostSubform[0].Page7[0].Lb611[0].oth[0].linktype[0]",
+   "type": "Btn",
+   "rect": [
+    503.774,
+    186.526,
+    513.774,
+    196.526
+   ],
+   "on": "/1"
+  },
+  {
+   "page": 6,
+   "name": "Table2.Row1.attached1",
+   "field": "topmostSubform[0].Page7[0].Table2[0].Row1[0].attached1[0]",
+   "type": "Tx",
+   "rect": [
+    36.748,
+    113.585,
+    304.951,
+    147.799
+   ]
+  },
+  {
+   "page": 6,
+   "name": "Table2.Row1.types1",
+   "field": "topmostSubform[0].Page7[0].Table2[0].Row1[0].types1[0]",
+   "type": "Tx",
+   "rect": [
+    304.951,
+    113.585,
+    575.558,
+    147.799
+   ]
+  },
+  {
+   "page": 6,
+   "name": "Table2.Row2.attached2",
+   "field": "topmostSubform[0].Page7[0].Table2[0].Row2[0].attached2[0]",
+   "type": "Tx",
+   "rect": [
+    36.748,
+    79.371,
+    304.951,
+    113.585
+   ]
+  },
+  {
+   "page": 6,
+   "name": "Table2.Row2.types2",
+   "field": "topmostSubform[0].Page7[0].Table2[0].Row2[0].types2[0]",
+   "type": "Tx",
+   "rect": [
+    304.951,
+    79.371,
+    575.558,
+    113.585
+   ]
+  },
+  {
+   "page": 7,
+   "name": "batchnumroot",
+   "field": "topmostSubform[0].Page8[0].batchnumroot[0]",
+   "type": "Tx",
+   "rect": [
+    36.082,
+    662.819,
+    304.804,
+    673.194
+   ]
+  },
+  {
+   "page": 7,
+   "name": "batchnumext",
+   "field": "topmostSubform[0].Page8[0].batchnumext[0]",
+   "type": "Tx",
+   "rect": [
+    309.886,
+    662.819,
+    576.589,
+    673.194
+   ]
+  },
+  {
+   "page": 7,
+   "name": "batchsendroot",
+   "field": "topmostSubform[0].Page8[0].batchsendroot[0]",
+   "type": "Tx",
+   "rect": [
+    36.584,
+    619.109,
+    305.393,
+    629.484
+   ]
+  },
+  {
+   "page": 7,
+   "name": "batchsendext",
+   "field": "topmostSubform[0].Page8[0].batchsendext[0]",
+   "type": "Tx",
+   "rect": [
+    309.886,
+    619.109,
+    574.798,
+    629.484
+   ]
+  },
+  {
+   "page": 7,
+   "name": "batchsendtitle",
+   "field": "topmostSubform[0].Page8[0].batchsendtitle[0]",
+   "type": "Tx",
+   "rect": [
+    36.601,
+    588.642,
+    575.41,
+    599.017
+   ]
+  },
+  {
+   "page": 7,
+   "name": "batchsendlast",
+   "field": "topmostSubform[0].Page8[0].batchsendlast[0]",
+   "type": "Tx",
+   "rect": [
+    36.584,
+    558.278,
+    305.393,
+    568.653
+   ]
+  },
+  {
+   "page": 7,
+   "name": "batchsendfirst",
+   "field": "topmostSubform[0].Page8[0].batchsendfirst[0]",
+   "type": "Tx",
+   "rect": [
+    309.886,
+    558.278,
+    574.798,
+    568.653
+   ]
+  },
+  {
+   "page": 7,
+   "name": "batchsendtele",
+   "field": "topmostSubform[0].Page8[0].batchsendtele[0]",
+   "type": "Tx",
+   "rect": [
+    37.191,
+    526.507,
+    306.006,
+    536.882
+   ]
+  },
+  {
+   "page": 7,
+   "name": "batchsendfax",
+   "field": "topmostSubform[0].Page8[0].batchsendfax[0]",
+   "type": "Tx",
+   "rect": [
+    309.886,
+    526.507,
+    575.41,
+    536.882
+   ]
+  },
+  {
+   "page": 7,
+   "name": "batchsendemail",
+   "field": "topmostSubform[0].Page8[0].batchsendemail[0]",
+   "type": "Tx",
+   "rect": [
+    37.191,
+    495.893,
+    574.799,
+    506.268
+   ]
+  },
+  {
+   "page": 7,
+   "name": "batchreceiveroot",
+   "field": "topmostSubform[0].Page8[0].batchreceiveroot[0]",
+   "type": "Tx",
+   "rect": [
+    36.584,
+    449.937,
+    304.804,
+    460.312
+   ]
+  },
+  {
+   "page": 7,
+   "name": "batchreceiveext",
+   "field": "topmostSubform[0].Page8[0].batchreceiveext[0]",
+   "type": "Tx",
+   "rect": [
+    309.886,
+    449.937,
+    574.798,
+    460.312
+   ]
+  },
+  {
+   "page": 7,
+   "name": "batchcreationday",
+   "field": "topmostSubform[0].Page8[0].batchcreationday[0]",
+   "type": "Tx",
+   "rect": [
+    116.13,
+    416.786,
+    138.402,
+    434.296
+   ]
+  },
+  {
+   "page": 7,
+   "name": "batchcreationmonth",
+   "field": "topmostSubform[0].Page8[0].batchcreationmonth[0]",
+   "type": "Tx",
+   "rect": [
+    175.122,
+    416.786,
+    196.988,
+    434.296
+   ]
+  },
+  {
+   "page": 7,
+   "name": "batchcreationyear",
+   "field": "topmostSubform[0].Page8[0].batchcreationyear[0]",
+   "type": "Tx",
+   "rect": [
+    226.103,
+    416.786,
+    260.637,
+    434.296
+   ]
+  },
+  {
+   "page": 7,
+   "name": "vichaerversion",
+   "field": "topmostSubform[0].Page8[0].vichaerversion[0]",
+   "type": "Tx",
+   "rect": [
+    309.886,
+    416.551,
+    574.798,
+    426.926
+   ]
+  },
+  {
+   "page": 7,
+   "name": "messagenumroot",
+   "field": "topmostSubform[0].Page8[0].messagenumroot[0]",
+   "type": "Tx",
+   "rect": [
+    36.082,
+    359.801,
+    304.804,
+    370.176
+   ]
+  },
+  {
+   "page": 7,
+   "name": "messagenumext",
+   "field": "topmostSubform[0].Page8[0].messagenumext[0]",
+   "type": "Tx",
+   "rect": [
+    309.886,
+    359.801,
+    576.589,
+    370.176
+   ]
+  },
+  {
+   "page": 7,
+   "name": "messagesendroot",
+   "field": "topmostSubform[0].Page8[0].messagesendroot[0]",
+   "type": "Tx",
+   "rect": [
+    36.584,
+    315.405,
+    304.804,
+    325.78
+   ]
+  },
+  {
+   "page": 7,
+   "name": "messagesendext",
+   "field": "topmostSubform[0].Page8[0].messagesendext[0]",
+   "type": "Tx",
+   "rect": [
+    309.886,
+    315.405,
+    574.798,
+    325.78
+   ]
+  },
+  {
+   "page": 7,
+   "name": "messagesendtitle",
+   "field": "topmostSubform[0].Page8[0].messagesendtitle[0]",
+   "type": "Tx",
+   "rect": [
+    37.191,
+    284.145,
+    575.411,
+    299.509
+   ]
+  },
+  {
+   "page": 7,
+   "name": "messagesendlast",
+   "field": "topmostSubform[0].Page8[0].messagesendlast[0]",
+   "type": "Tx",
+   "rect": [
+    35.796,
+    254.52,
+    304.605,
+    269.884
+   ]
+  },
+  {
+   "page": 7,
+   "name": "messagesendfirst",
+   "field": "topmostSubform[0].Page8[0].messagesendfirst[0]",
+   "type": "Tx",
+   "rect": [
+    309.098,
+    254.52,
+    575.41,
+    269.884
+   ]
+  },
+  {
+   "page": 7,
+   "name": "messagesendtele",
+   "field": "topmostSubform[0].Page8[0].messagesendtele[0]",
+   "type": "Tx",
+   "rect": [
+    37.397,
+    225.15,
+    306.212,
+    240.514
+   ]
+  },
+  {
+   "page": 7,
+   "name": "messagesendfax",
+   "field": "topmostSubform[0].Page8[0].messagesendfax[0]",
+   "type": "Tx",
+   "rect": [
+    309.098,
+    224.223,
+    574.622,
+    239.587
+   ]
+  },
+  {
+   "page": 7,
+   "name": "messagesendemail",
+   "field": "topmostSubform[0].Page8[0].messagesendemail[0]",
+   "type": "Tx",
+   "rect": [
+    36.403,
+    193.479,
+    575.411,
+    208.843
+   ]
+  },
+  {
+   "page": 7,
+   "name": "messagerecroot",
+   "field": "topmostSubform[0].Page8[0].messagerecroot[0]",
+   "type": "Tx",
+   "rect": [
+    36.403,
+    146.228,
+    305.394,
+    156.603
+   ]
+  },
+  {
+   "page": 7,
+   "name": "messcreateday",
+   "field": "topmostSubform[0].Page8[0].messcreateday[0]",
+   "type": "Tx",
+   "rect": [
+    391.521,
+    145.579,
+    413.793,
+    163.089
+   ]
+  },
+  {
+   "page": 7,
+   "name": "messcreatemonth",
+   "field": "topmostSubform[0].Page8[0].messcreatemonth[0]",
+   "type": "Tx",
+   "rect": [
+    450.513,
+    145.579,
+    472.379,
+    163.089
+   ]
+  },
+  {
+   "page": 7,
+   "name": "messcreateyear",
+   "field": "topmostSubform[0].Page8[0].messcreateyear[0]",
+   "type": "Tx",
+   "rect": [
+    501.27,
+    146.009,
+    535.804,
+    163.519
+   ]
+  },
+  {
+   "page": 7,
+   "name": "repident",
+   "field": "topmostSubform[0].Page8[0].repident[0]",
+   "type": "Tx",
+   "rect": [
+    36.403,
+    114.611,
+    264.598,
+    131.885
+   ]
+  },
+  {
+   "page": 7,
+   "name": "Lb826.dom.domes",
+   "field": "topmostSubform[0].Page8[0].Lb826[0].dom[0].domes[0]",
+   "type": "Btn",
+   "rect": [
+    282.255,
+    116.895,
+    292.255,
+    126.895
+   ],
+   "on": "/1"
+  },
+  {
+   "page": 7,
+   "name": "Lb826.forSa.foreignsame",
+   "field": "topmostSubform[0].Page8[0].Lb826[0].forSa[0].foreignsame[0]",
+   "type": "Btn",
+   "rect": [
+    347.259,
+    116.895,
+    357.259,
+    126.895
+   ],
+   "on": "/1"
+  },
+  {
+   "page": 7,
+   "name": "Lb826.other.otherrep",
+   "field": "topmostSubform[0].Page8[0].Lb826[0].other[0].otherrep[0]",
+   "type": "Btn",
+   "rect": [
+    438.951,
+    116.895,
+    448.951,
+    126.895
+   ],
+   "on": "/1"
+  },
+  {
+   "page": 7,
+   "name": "Lb826.forSi.reportsim",
+   "field": "topmostSubform[0].Page8[0].Lb826[0].forSi[0].reportsim[0]",
+   "type": "Btn",
+   "rect": [
+    494.423,
+    116.895,
+    504.423,
+    126.895
+   ],
+   "on": "/1"
+  },
+  {
+   "page": 7,
+   "name": "Lb827.ae.adverse",
+   "field": "topmostSubform[0].Page8[0].Lb827[0].ae[0].adverse[0]",
+   "type": "Btn",
+   "rect": [
+    52.181,
+    81.822,
+    62.181,
+    91.822
+   ],
+   "on": "/1"
+  },
+  {
+   "page": 7,
+   "name": "Lb827.aepp.adverseprod",
+   "field": "topmostSubform[0].Page8[0].Lb827[0].aepp[0].adverseprod[0]",
+   "type": "Btn",
+   "rect": [
+    148.876,
+    81.822,
+    158.876,
+    91.822
+   ],
+   "on": "/1"
+  },
+  {
+   "page": 7,
+   "name": "Lb827.pp.problem",
+   "field": "topmostSubform[0].Page8[0].Lb827[0].pp[0].problem[0]",
+   "type": "Btn",
+   "rect": [
+    333.435,
+    81.822,
+    343.435,
+    91.822
+   ],
+   "on": "/1"
+  }
+ ]
+}

@@ -1,0 +1,7 @@
+# OCR extras for the MedWatch 3500A -> XML pipeline (medwatch_ocr).
+# Kept out of requirements.txt because paddlepaddle is ~1 GB and would slow
+# down / break the lightweight web deploy. Install locally with:
+#   pip install -r requirements.txt -r requirements-medwatch.txt
+# Without these the pipeline still runs with --engine text-layer / auto.
+paddleocr==3.7.0
+paddlepaddle==3.3.1

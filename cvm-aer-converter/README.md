@@ -1,0 +1,196 @@
+# cvm-aer — Form FDA 1932 / 1932a → CVM VICH HL7 message
+
+Command-line converter for FDA CVM veterinary adverse event reports. It reads a
+filled **Form FDA 1932** (static, fillable or scanned) or **Form FDA 1932a**
+(dynamic XFA) PDF and writes CVM's electronic submission message, **`vich-hl7`**:
+the VICH GL42 data elements carried in HL7 v3 (`MCCI_IN200100UV01`, VICH GL35),
+with the form PDF and every supporting document embedded base64.
+
+Every message is **validated automatically** against FDA's published VICH
+schemas before it is written; a message the schemas reject is an error, never an
+output.
+
+No web server, no GUI — a single Python package (`cvm_aer`) with a CLI and an
+optional folder service.
+
+```
+cvm-aer-converter/
+  cvm_aer/                  the package
+    cli.py                  command line (python -m cvm_aer ...)
+    pipeline.py             PDF -> VeterinaryReport -> vich-hl7, validated
+    xfa_1932a.py            dynamic Form 1932a: reads the XFA dataset
+    vet_extract.py          static Form 1932: AcroForm or PaddleOCR + field template
+    form_1932.py            Form 1932 field map, sample filler
+    form_geometry.py        rectangle / checkbox helpers for the template reader
+    ocr.py                  PaddleOCR + pypdfium2 wrapper
+    models.py               VeterinaryReport and its parts
+    vich_hl7.py             HL7 v3 (GL35) message serialiser
+    validate.py             FDA VICH schema validation (fetch, cache, check)
+    service.py              folder service: ZIP in -> XML out
+    templates/fda_1932_2023.json
+  tests/
+  cvm-aer-service.ini.sample
+  vich-schemas/             FDA's VICH HL7 schema set (63 XSDs) the messages are validated against
+  requirements.txt          core dependencies (pypdf, pypdfium2, Pillow, numpy, lxml)
+  requirements-ocr.txt      PaddleOCR, only for image-only scans
+```
+
+## Install on a Linux server (from GitHub)
+
+`install/install.sh` checks out only this folder from GitHub, creates the Python
+environment, installs `requirements.txt`, creates the folders, writes
+`cvm-aer-service.ini` once (never overwritten), self-tests a sample form, and can
+install a systemd service. Run it again to update to the latest code.
+
+```bash
+export GITHUB_TOKEN=...            # read access to the (private) repository; not saved
+curl -fsSL -H "Authorization: Bearer $GITHUB_TOKEN" \
+  https://raw.githubusercontent.com/asaxena431/pharmawatch-dashboard/main/cvm-aer-converter/install/install.sh -o install.sh
+sudo -E bash install.sh --service  # --branch NAME, --with-ocr, --help for the rest
+```
+
+| Path | What |
+|---|---|
+| `/opt/cvm-aer/src/cvm-aer-converter` | the code (replaced on every run) |
+| `/opt/cvm-aer/.venv` | Python environment |
+| `/opt/cvm-aer/cvm-aer-service.ini` | the configuration: fill in `[intake]` and `[email]` |
+| `/opt/cvm-aer/run-cvm-aer` | `python -m cvm_aer` with that ini, e.g. `run-cvm-aer --once` |
+| `/srv/cvm-aer/{inbound,outbound,processed,error}` | the folders |
+
+The service is `cvm-aer` (`systemctl status cvm-aer`, `journalctl -u cvm-aer -f`),
+started after network shares (`remote-fs.target`) are mounted. `CVM_AER_CONFIG`
+names the ini when `--config` is not given.
+
+## Install by hand
+
+Linux:
+```bash
+cd cvm-aer-converter
+python3 -m venv .venv && source .venv/bin/activate
+pip install -r requirements.txt
+pip install -r requirements-ocr.txt      # only if you have scanned, image-only forms (~1 GB)
+```
+
+Windows (cmd):
+```bat
+cd cvm-aer-converter
+python -m venv .venv
+.venv\Scripts\activate
+pip install -r requirements.txt
+pip install -r requirements-ocr.txt
+```
+
+Nothing is installed into Python: run `python -m cvm_aer ...` from this folder.
+
+## Convert one report
+
+```bash
+# 1932a (dynamic XFA) or 1932 (static) — the layout is detected; the message is
+# schema-validated before it is written
+python -m cvm_aer convert case.pdf -o out/case.xml
+
+# with the case's supporting documents (embedded in the message with the form)
+python -m cvm_aer convert case.pdf --attach "lab report.pdf" --attach photo.jpg -o out.xml
+
+# re-check a message that is already on disk
+python -m cvm_aer validate out.xml
+
+# also dump the parsed report as JSON
+python -m cvm_aer convert case.pdf -o out.xml --json out.json
+
+# see what was read off the form
+python -m cvm_aer ocr case.pdf
+```
+
+Options: `--layout auto|1932|1932a`, `--engine text-layer|auto|paddleocr`
+(`text-layer` reads a fillable PDF's AcroForm directly; use `auto` or
+`paddleocr` for a printed/scanned copy, ~30 s per page), `--dpi`, `--lang`.
+
+Exit codes: `0` ok, `2` bad input (file not found, OCR failure, wrong option),
+`3` the generated message does not validate (the complaints are printed, nothing
+is written). `--no-validate` writes the message anyway, for diagnosing such a case.
+
+## Schema validation
+
+Every `convert` and every case the folder service handles is checked against
+FDA's VICH schema set (entry `multicacheschemas/MCCI_IN200100UV01.xsd`) with
+`lxml`; `python -m cvm_aer validate out.xml [more.xml ...]` re-checks messages
+already on disk (exit `0` valid, `1` complaints listed).
+
+The schema set (63 XSDs, 1.3 MB, from
+`accessdata.fda.gov/icsr/schema/cvm/schemas/vich/`) ships in `vich-schemas/`,
+so validation works offline. `CVM_AER_SCHEMA_DIR` or `--schema-dir` on
+`validate` point at another copy; if `vich-schemas/` is deleted the set is
+downloaded once into `~/.cache/cvm_aer/vich-schemas`.
+
+## Sample form
+
+```bash
+python -m cvm_aer samples --output-dir samples
+python -m cvm_aer convert samples/FDA-1932_cvm_veterinary.pdf -o out/cvm_veterinary.xml
+```
+`samples` downloads the blank Form FDA 1932 from fda.gov once (cached under
+`~/.cache/cvm_aer`) and fills it with a synthetic case.
+
+## Folder service
+
+One ZIP = one case: the 1932/1932a PDF inside becomes the message, the other
+files are its supporting documents, embedded. The message is schema-validated,
+then written to `outbound` and the ZIP moves to `processed`; if the case cannot
+be read or its message does not validate, the ZIP moves to `error` with an
+e-mail note (SMTP, Outlook or a `.eml` drop folder) and nothing is written to
+`outbound`.
+
+```bash
+cp cvm-aer-service.ini.sample cvm-aer-service.ini      # edit the folders
+python -m cvm_aer --once                  # one sweep
+python -m cvm_aer                         # keep watching
+```
+The service is the default command (`python -m cvm_aer service ...` also works). The ini is
+`--config <path>`, else `$CVM_AER_CONFIG`, else `cvm-aer-service.ini` in the current folder.
+`--inbound/--outbound/--processed/--error` override the folders in the ini.
+
+To test the error path, run with `--format gl42` (or `format = gl42` in the ini):
+gl42 is accepted but never converted, so every ZIP goes to `error` and the e-mail
+note is sent. `convert --format gl42` exits 2 with the same message.
+
+```bash
+python -m cvm_aer --once --format gl42    # every ZIP -> error folder + e-mail note
+```
+
+## Case e-mails
+
+With `[intake] source` set, the service reads a mailbox on every sweep, before
+inbound. One e-mail = one case: a single ZIP attachment goes to `inbound` as is;
+otherwise all the attachments are zipped into one ZIP named after the form PDF
+(`N141562.pdf` -> `N141562.zip`). The sender's file names are kept; `-2` is added
+only if that name is already in `inbound`. Outlook's signature images
+(`image001.png` ...) are left out (`ignore`).
+
+Which e-mails: only those in `[intake] folder` whose subject contains `CVM-AER`
+(any case, e.g. `Fwd: cvm-aer N141562`); every other e-mail is left untouched.
+`subject_contains` takes other or more words (comma-separated); left empty it is
+still `CVM-AER`, and `*` reads every e-mail.
+
+How an e-mail is known to be done:
+- it is moved to `processed_folder` (default `CVM-AER Processed`), or to
+  `rejected_folder` (`CVM-AER Rejected`) with the `[email]` note when it has no
+  attachments, more than one ZIP, or a broken ZIP;
+- its Message-ID is written to the ledger (`cvm-aer-intake-ledger.txt` next to
+  `inbound`), so it is never taken twice even if the move failed.
+
+Sources: `outlook` (the Outlook signed in on the PC; `pip install pywin32`),
+`imap` (host / username / password), `folder` (saved `.eml` files, for testing).
+
+```bash
+python -m cvm_aer intake                  # read the mailbox once, ZIPs -> inbound
+python -m cvm_aer --once                  # mailbox + inbound, one sweep
+```
+
+## Tests
+
+```bash
+pip install pytest ruff
+python -m pytest
+ruff check .
+```
