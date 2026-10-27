@@ -35,7 +35,33 @@ cvm-aer-converter/
   requirements-ocr.txt      PaddleOCR, only for image-only scans
 ```
 
-## Install
+## Install on a Linux server (from GitHub)
+
+`install/install.sh` checks out only this folder from GitHub, creates the Python
+environment, installs `requirements.txt`, creates the folders, writes
+`cvm-aer-service.ini` once (never overwritten), self-tests a sample form, and can
+install a systemd service. Run it again to update to the latest code.
+
+```bash
+export GITHUB_TOKEN=...            # read access to the (private) repository; not saved
+curl -fsSL -H "Authorization: Bearer $GITHUB_TOKEN" \
+  https://raw.githubusercontent.com/asaxena431/pharmawatch-dashboard/main/cvm-aer-converter/install/install.sh -o install.sh
+sudo -E bash install.sh --service  # --branch NAME, --with-ocr, --help for the rest
+```
+
+| Path | What |
+|---|---|
+| `/opt/cvm-aer/src/cvm-aer-converter` | the code (replaced on every run) |
+| `/opt/cvm-aer/.venv` | Python environment |
+| `/opt/cvm-aer/cvm-aer-service.ini` | the configuration: fill in `[intake]` and `[email]` |
+| `/opt/cvm-aer/run-cvm-aer` | `python -m cvm_aer` with that ini, e.g. `run-cvm-aer --once` |
+| `/srv/cvm-aer/{inbound,outbound,processed,error}` | the folders |
+
+The service is `cvm-aer` (`systemctl status cvm-aer`, `journalctl -u cvm-aer -f`),
+started after network shares (`remote-fs.target`) are mounted. `CVM_AER_CONFIG`
+names the ini when `--config` is not given.
+
+## Install by hand
 
 Linux:
 ```bash
@@ -121,7 +147,7 @@ python -m cvm_aer --once                  # one sweep
 python -m cvm_aer                         # keep watching
 ```
 The service is the default command (`python -m cvm_aer service ...` also works). The ini is
-`cvm-aer-service.ini` in the current folder unless you pass `--config <path>`.
+`--config <path>`, else `$CVM_AER_CONFIG`, else `cvm-aer-service.ini` in the current folder.
 `--inbound/--outbound/--processed/--error` override the folders in the ini.
 
 To test the error path, run with `--format gl42` (or `format = gl42` in the ini):
