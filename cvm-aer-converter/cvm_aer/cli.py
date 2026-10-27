@@ -17,7 +17,7 @@ Examples::
     python -m cvm_aer ocr case.pdf
 
     # folder service: ZIPs in inbound/ -> XML in outbound/ (the default when no command is given)
-    python -m cvm_aer                         # reads ./cvm-aer-service.ini, or --config <path>
+    python -m cvm_aer                         # reads $CVM_AER_CONFIG, else ./cvm-aer-service.ini, or --config <path>
     python -m cvm_aer --once                  # one sweep and exit
 
     # read the case e-mails once ([intake] in the ini): each e-mail -> one ZIP in inbound/
@@ -45,6 +45,8 @@ from .pipeline import (
 from .validate import SchemaError
 
 PROG = "cvm-aer"
+CONFIG_ENV = "CVM_AER_CONFIG"
+DEFAULT_CONFIG = "cvm-aer-service.ini"
 COMMANDS = ("samples", "ocr", "convert", "validate", "service", "intake")
 DEFAULT_COMMAND = "service"
 
@@ -61,6 +63,14 @@ def _add_format_arg(parser: argparse.ArgumentParser, default: Optional[str], def
     parser.add_argument("--format", dest="output_format", choices=list(FORMATS), default=default,
                         help=f"output format (default: {default_text}); gl42 is accepted only to test the "
                              "error path - the case is not converted and fails")
+
+
+CONFIG_HELP = f"the configuration file (default: ${CONFIG_ENV}, else {DEFAULT_CONFIG} in the current folder)"
+
+
+def default_config() -> str:
+    """The ini the installer's run-cvm-aer / service points at, else the one in the current folder."""
+    return os.environ.get(CONFIG_ENV) or DEFAULT_CONFIG
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -104,8 +114,7 @@ def build_parser() -> argparse.ArgumentParser:
         "service",
         help="watch an inbound folder for case ZIPs and write validated vich-hl7 messages to an outbound folder",
     )
-    service.add_argument("--config", "-c", default="cvm-aer-service.ini",
-                         help="the configuration file (default: cvm-aer-service.ini)")
+    service.add_argument("--config", "-c", default=default_config(), help=CONFIG_HELP)
     service.add_argument("--once", action="store_true",
                          help="process what is in the inbound folder now and exit instead of running forever")
     for folder in ("inbound", "outbound", "processed", "error"):
@@ -116,8 +125,7 @@ def build_parser() -> argparse.ArgumentParser:
         "intake",
         help="read the case e-mails once ([intake] in the ini): each e-mail's attachments -> one ZIP in inbound",
     )
-    intake.add_argument("--config", "-c", default="cvm-aer-service.ini",
-                        help="the configuration file (default: cvm-aer-service.ini)")
+    intake.add_argument("--config", "-c", default=default_config(), help=CONFIG_HELP)
     intake.add_argument("--inbound", help="override [folders] inbound")
     return parser
 

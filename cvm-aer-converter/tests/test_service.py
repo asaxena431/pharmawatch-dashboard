@@ -394,3 +394,21 @@ def test_format_on_the_command_line_overrides_the_ini(tmp_path, form_pdf, monkey
     assert main(["--once", "--config", path, "--format", "gl42"]) == 1
     assert os.listdir(tmp_path / "error") == ["case-8.zip"]
     assert os.listdir(tmp_path / "outbound") == []
+
+
+def test_cvm_aer_config_names_the_ini_from_any_folder(tmp_path, monkeypatch):
+    from cvm_aer.cli import main
+
+    config = _config(tmp_path, output_format=FORMAT_VICH_HL7)
+    ini = tmp_path / "elsewhere" / "prod.ini"
+    ini.parent.mkdir()
+    ini.write_text(
+        "[folders]\n" + "\n".join(f"{name} = {path}" for name, path in
+                                  zip(("inbound", "outbound", "processed", "error"), config.folders)) + "\n",
+        encoding="utf-8",
+    )
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setenv("CVM_AER_CONFIG", str(ini))
+    assert main(["--once"]) == 0
+    monkeypatch.setenv("CVM_AER_CONFIG", str(tmp_path / "missing.ini"))
+    assert main(["--once"]) == 2
