@@ -48,7 +48,8 @@ settle_seconds = 5
 ;   imap    - a mail server over IMAP: host, username, password below
 ;   folder  - .eml files saved in eml_dir (for testing without a mailbox)
 source =
-; outlook only: the mailbox as Outlook lists it (e.g. a shared mailbox); empty = your own
+; outlook only: the mailbox as Outlook lists it in the folder pane (e.g. a shared mailbox,
+; or its e-mail address); empty = your own.  A wrong name is logged with the names Outlook has.
 mailbox =
 ; The folder that is watched, e.g. Inbox or Inbox/CVM-AER
 folder = Inbox

@@ -271,13 +271,64 @@ class ImapSource:
             pass
 
 
+def _outlook_folders(parent: Any) -> List[Any]:
+    folders = parent.Folders
+    return [folders.Item(index) for index in range(1, folders.Count + 1)]
+
+
+def _outlook_names(folders: Sequence[Any]) -> str:
+    return ", ".join(repr(str(folder.Name)) for folder in folders) or "none"
+
+
 def _outlook_child(parent: Any, name: str, create: bool) -> Any:
-    try:
-        return parent.Folders.Item(name)
-    except Exception:
-        if not create:
-            raise RuntimeError(f"Outlook has no folder {name!r} in {getattr(parent, 'Name', parent)!r}") from None
+    """``parent``'s subfolder ``name``, whatever its case; Outlook's own lookup fails with "Array index out of bounds"."""
+    children = _outlook_folders(parent)
+    for child in children:
+        if str(child.Name).lower() == name.lower():
+            return child
+    if create:
         return parent.Folders.Add(name)
+    raise RuntimeError(
+        f"Outlook has no folder {name!r} in {str(getattr(parent, 'Name', parent))!r} "
+        f"(it has: {_outlook_names(children)}); check [intake] folder"
+    )
+
+
+def _outlook_shared_inbox(namespace: Any, mailbox: str, mailboxes: Sequence[Any]) -> Any:
+    """The Inbox of a mailbox that is not in Outlook's folder list but this account may open."""
+    try:
+        recipient = namespace.CreateRecipient(mailbox)
+        recipient.Resolve()
+        if recipient.Resolved:
+            return namespace.GetSharedDefaultFolder(recipient, OL_FOLDER_INBOX)
+    except Exception as exc:
+        LOGGER.debug("opening %r as a shared mailbox failed: %s: %s", mailbox, type(exc).__name__, exc)
+    raise RuntimeError(
+        f"Outlook has no mailbox {mailbox!r} (the mailboxes in this Outlook: {_outlook_names(mailboxes)}); "
+        "set [intake] mailbox to one of them, or leave it empty for your own"
+    )
+
+
+def _outlook_watched(namespace: Any, settings: IntakeSettings) -> Any:
+    parts = [part for part in re.split(r"[\\/]", settings.folder or "Inbox") if part]
+    inbox_first = bool(parts) and parts[0].lower() == "inbox"
+    if settings.mailbox:
+        mailboxes = _outlook_folders(namespace)
+        folder = next((box for box in mailboxes if str(box.Name).lower() == settings.mailbox.lower()), None)
+        if folder is None:
+            if not inbox_first:
+                raise RuntimeError(
+                    f"Outlook has no mailbox {settings.mailbox!r} (the mailboxes in this Outlook: "
+                    f"{_outlook_names(mailboxes)}); set [intake] mailbox to one of them, or leave it empty for your own"
+                )
+            folder, parts = _outlook_shared_inbox(namespace, settings.mailbox, mailboxes), parts[1:]
+    elif inbox_first:
+        folder, parts = namespace.GetDefaultFolder(OL_FOLDER_INBOX), parts[1:]
+    else:
+        folder = namespace.GetDefaultFolder(OL_FOLDER_INBOX).Parent
+    for part in parts:
+        folder = _outlook_child(folder, part, create=False)
+    return folder
 
 
 def _outlook_time(value: Any) -> datetime:
@@ -296,26 +347,30 @@ class OutlookSource:
         self.settings = settings
 
         namespace = win32com.client.Dispatch("Outlook.Application").GetNamespace("MAPI")
-        parts = [part for part in re.split(r"[\\/]", settings.folder or "Inbox") if part]
-        if settings.mailbox:
-            folder = namespace.Folders.Item(settings.mailbox)
-        elif parts and parts[0].lower() == "inbox":
-            folder, parts = namespace.GetDefaultFolder(OL_FOLDER_INBOX), parts[1:]
-        else:
-            folder = namespace.GetDefaultFolder(OL_FOLDER_INBOX).Parent
-        for part in parts:
-            folder = _outlook_child(folder, part, create=False)
-        self.folder = folder
+        self.folder = folder = _outlook_watched(namespace, settings)
         self.processed = _outlook_child(folder, settings.processed_folder, create=True)
         self.rejected = _outlook_child(folder, settings.rejected_folder, create=True)
 
     def messages(self) -> Iterator[Tuple[Mail, Any]]:
         items = self.folder.Items
-        # Taken up front: moving an item renumbers the collection.
-        for item in [items.Item(index) for index in range(1, items.Count + 1)]:
-            # The subject is checked first so other e-mails' attachments are never opened.
-            if getattr(item, "Class", None) == OL_MAIL_ITEM and self.settings.wants(item.Subject):
-                yield self._mail(item), item
+        # Taken up front: moving an item renumbers the collection.  The count can drop
+        # while they are taken (an Outlook rule, a sync), so a vanished item is skipped.
+        taken = []
+        for index in range(1, items.Count + 1):
+            try:
+                taken.append(items.Item(index))
+            except Exception:
+                break
+        for item in taken:
+            try:
+                # The subject is checked first so other e-mails' attachments are never opened.
+                if getattr(item, "Class", None) != OL_MAIL_ITEM or not self.settings.wants(item.Subject):
+                    continue
+                mail = self._mail(item)
+            except Exception as exc:  # left where it is, to be tried again next sweep
+                LOGGER.error("an Outlook item could not be read: %s: %s", type(exc).__name__, exc)
+                continue
+            yield mail, item
 
     @staticmethod
     def _mail(item: Any) -> Mail:

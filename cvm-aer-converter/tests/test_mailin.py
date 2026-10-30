@@ -302,8 +302,8 @@ class _MailItem:
         folder.Items.items.append(self)
 
 
-def _fake_outlook(monkeypatch, inbox):
-    namespace = types.SimpleNamespace(GetDefaultFolder=lambda kind: inbox, Folders=_Collection([]))
+def _fake_outlook(monkeypatch, inbox, mailboxes=(), **extra):
+    namespace = types.SimpleNamespace(GetDefaultFolder=lambda kind: inbox, Folders=_Collection(list(mailboxes)), **extra)
     application = types.SimpleNamespace(GetNamespace=lambda name: namespace)
     client = types.ModuleType("win32com.client")
     client.Dispatch = lambda name: application
@@ -391,3 +391,94 @@ def test_the_intake_command_reads_the_mailbox_once(tmp_path, monkeypatch):
     monkeypatch.chdir(tmp_path)
     assert main(["intake"]) == 0
     assert len(os.listdir(tmp_path / "inbound")) == 1
+
+
+def _outlook_config(tmp_path, **intake):
+    config = _config(tmp_path)
+    config.intake = service.IntakeSettings(source=service.SOURCE_OUTLOOK, ledger=str(tmp_path / "ledger.txt"), **intake)
+    return config
+
+
+def test_outlook_with_no_e_mail_takes_nothing_and_raises_nothing(monkeypatch, tmp_path):
+    inbox = _Folder("Inbox")
+    _fake_outlook(monkeypatch, inbox)
+
+    assert mailin.collect(_outlook_config(tmp_path)) == []
+    assert _outlook_names_of(inbox) == ["CVM-AER Processed", "CVM-AER Rejected"]
+
+
+def _outlook_names_of(folder):
+    return [child.Name for child in folder.Folders.items]
+
+
+def test_outlook_finds_existing_folders_whatever_their_case(monkeypatch, tmp_path):
+    inbox = _Folder("Inbox")
+    watched = inbox._add("CVM-AER")
+    watched._add("cvm-aer processed")
+    watched.Items.items.append(_MailItem(watched, "CVM-AER N141562", [("N141562.zip", _zip_bytes([("form.pdf", b"1")]))]))
+    _fake_outlook(monkeypatch, inbox)
+
+    (entry,) = mailin.collect(_outlook_config(tmp_path, folder="inbox/cvm-aer"))
+
+    assert os.path.basename(entry.archive) == "N141562.zip"
+    assert _outlook_names_of(watched) == ["cvm-aer processed", "CVM-AER Rejected"]
+    assert watched.Folders.Item(1).Items.Count == 1
+
+
+def test_outlook_names_the_folders_it_has_when_the_watched_one_is_missing(monkeypatch, tmp_path):
+    inbox = _Folder("Inbox")
+    inbox._add("Archive")
+    _fake_outlook(monkeypatch, inbox)
+
+    with pytest.raises(RuntimeError, match=r"no folder 'CVM-AER' in 'Inbox' \(it has: 'Archive'\)"):
+        mailin.collect(_outlook_config(tmp_path, folder="Inbox/CVM-AER"))
+
+
+def test_outlook_names_the_mailboxes_it_has_when_the_mailbox_is_wrong(monkeypatch, tmp_path):
+    _fake_outlook(monkeypatch, _Folder("Inbox"), mailboxes=[_Folder("Anurag.Saxena@fda.hhs.gov")])
+
+    with pytest.raises(RuntimeError, match=r"no mailbox 'CVM shared'.*'Anurag.Saxena@fda.hhs.gov'"):
+        mailin.collect(_outlook_config(tmp_path, mailbox="CVM shared"))
+
+
+def test_outlook_mailbox_name_is_matched_whatever_its_case(monkeypatch, tmp_path):
+    shared = _Folder("CVM-AER Intake")
+    shared_inbox = shared._add("Inbox")
+    shared_inbox.Items.items.append(_MailItem(shared_inbox, "CVM-AER 1", [("a.pdf", b"1")]))
+    _fake_outlook(monkeypatch, _Folder("Inbox"), mailboxes=[shared])
+
+    (entry,) = mailin.collect(_outlook_config(tmp_path, mailbox="cvm-aer intake"))
+
+    assert os.path.basename(entry.archive) == "a.zip"
+
+
+def test_outlook_opens_a_shared_mailbox_not_in_the_folder_list(monkeypatch, tmp_path):
+    shared_inbox = _Folder("Inbox")
+    shared_inbox.Items.items.append(_MailItem(shared_inbox, "CVM-AER 1", [("a.pdf", b"1")]))
+    recipient = types.SimpleNamespace(Resolved=True, Resolve=lambda: True)
+    _fake_outlook(
+        monkeypatch, _Folder("Inbox"),
+        CreateRecipient=lambda name: recipient,
+        GetSharedDefaultFolder=lambda who, kind: shared_inbox if who is recipient and kind == 6 else None,
+    )
+
+    (entry,) = mailin.collect(_outlook_config(tmp_path, mailbox="cvm-aer@fda.hhs.gov"))
+
+    assert os.path.basename(entry.archive) == "a.zip"
+    assert shared_inbox.Folders.Item(1).Items.Count == 1
+
+
+class _Shrinking(_Collection):
+    @property
+    def Count(self):
+        return len(self.items) + 1  # an item that vanished after Count was read
+
+
+def test_outlook_skips_an_item_that_vanished_while_reading(monkeypatch, tmp_path):
+    inbox = _Folder("Inbox")
+    inbox.Items = _Shrinking([_MailItem(inbox, "CVM-AER 1", [("a.pdf", b"1")])])
+    _fake_outlook(monkeypatch, inbox)
+
+    (entry,) = mailin.collect(_outlook_config(tmp_path))
+
+    assert os.path.basename(entry.archive) == "a.zip"
