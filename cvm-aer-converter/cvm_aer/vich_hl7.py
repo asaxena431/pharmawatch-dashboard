@@ -28,7 +28,7 @@ NS = "urn:hl7-org:v3"
 XSI = "http://www.w3.org/2001/XMLSchema-instance"
 SCHEMA = "urn:hl7-org:v3 http://www.accessdata.fda.gov/icsr/schema/cvm/schemas/vich/multicacheschemas/MCCI_IN200100UV01.xsd"
 VERSION_CODE = "VICHAER1.0.0"
-PROFILE_ID = "AES.FDA.SRPRGL42.M.V1.ACCOUNT.AE"
+PROFILE_ID = "AES.FDA.VICHGL42.M.V1.ACCOUNT.AE"
 
 # Code systems the message uses, by the concept they code.
 CS_VICH = "2.16.840.1.113883.13.206"  # VICH AER data elements
@@ -360,12 +360,27 @@ def _interval(observation: ET.Element, low: Optional[str], high: Optional[str], 
     _coded(observation, "methodCode", METHOD_CODES.get(basis or ""), CS_METHOD, basis)
 
 
+def _onset(observation: ET.Element, event) -> None:
+    time = _element(observation, "effectiveTime", xsi_type="IVL_TS")
+    onset = _date(event.onset_date)
+    _element(time, "low", value=onset) if onset else _element(time, "low", nullFlavor="NI")
+    duration = _number(event.duration)
+    if duration:
+        _element(time, "width", value=duration, unit=AGE_UNITS.get(event.duration_unit or "Day", "d"))
+    else:
+        _element(time, "width", nullFlavor="NI")
+
+
 def _reactions(parent: ET.Element, report: VeterinaryReport) -> None:
-    """B.3.2 clinical manifestations, coded as VeDDRA LLTs when the reported term is one."""
-    for sign, llt in (
-        (sign, llt) for sign in report.event.signs for llt in (veddra.code(sign.term) or [None])
+    """B.3.2 clinical manifestations, coded as VeDDRA LLTs when the reported term is one;
+    the first carries the B.3.3 onset date and B.3.5 duration, so no Reaction is left uncoded."""
+    event = report.event
+    for index, (sign, llt) in enumerate(
+        (sign, llt) for sign in event.signs for llt in (veddra.code(sign.term) or [None])
     ):
         observation = _observation(parent, "T95020", "Reaction")
+        if index == 0:
+            _onset(observation, event)
         if llt:
             value = _value(
                 observation,
@@ -391,16 +406,8 @@ def _reactions(parent: ET.Element, report: VeterinaryReport) -> None:
             displayName=sign.count_basis or "Actual",
         )
 
-    event = report.event
-    observation = _observation(parent, "T95020", "Reaction")
-    time = _element(observation, "effectiveTime", xsi_type="IVL_TS")
-    onset = _date(event.onset_date)
-    _element(time, "low", value=onset) if onset else _element(time, "low", nullFlavor="NI")
-    duration = _number(event.duration)
-    if duration:
-        _element(time, "width", value=duration, unit=AGE_UNITS.get(event.duration_unit or "Day", "d"))
-    else:
-        _element(time, "width", nullFlavor="NI")
+    if not event.signs:
+        _onset(_observation(parent, "T95020", "Reaction"), event)
 
     observation = _observation(parent, "T95021", "Length Of Time Between Exposure To VMP And Onset Of AE")
     onset_delay = _number(event.time_to_onset)

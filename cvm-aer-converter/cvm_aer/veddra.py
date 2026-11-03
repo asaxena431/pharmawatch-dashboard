@@ -1,4 +1,4 @@
-"""VeDDRA low level terms (EMA's VeDDRA_2026 list) for coding B.3.2 clinical signs."""
+"""VeDDRA low level terms (EMA's VeDDRA list, Rev.17 of October 2026) for coding B.3.2 clinical signs."""
 
 import csv
 import os
@@ -6,7 +6,8 @@ import re
 from functools import lru_cache
 from typing import Dict, List, Optional, Tuple
 
-VERSION = "2026"
+# codeSystemVersion is the VeDDRA revision number (the VICH guide's samples use 7 and 8).
+VERSION = "17"
 CODE_SYSTEM = "2.16.840.1.113883.4.358"
 _LIST = os.path.join(os.path.dirname(__file__), "data", "veddra_2026.csv")
 
