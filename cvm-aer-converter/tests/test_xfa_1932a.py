@@ -129,3 +129,21 @@ def test_an_initial_report_states_its_submission_type_and_receive_date():
     xml = _message(submissiontype="INIT", todaysdate="2025-03-01")
     assert 'displayName="Initial"' in xml and '<effectiveTime value="20250301" />' in xml
     assert 'displayName="Initial"' not in _message(todaysdate="2025-03-01")
+
+
+def test_a_country_is_written_as_its_iso_3_character_code():
+    xml = _message(rep01countrycode="US", rep02countrycode="United States")
+    assert xml.count("<country>USA</country>") >= 2 and "<country>US</country>" not in xml
+
+
+def test_a_strength_the_form_lacks_is_sent_as_unknown():
+    xml = _message(p01ingredient1="Buprenorphine", p01ingredientstrength1="11 injections home injection")
+    quantity = xml[xml.index("<quantity>") : xml.index("</quantity>")]
+    assert quantity.count('code="C17998"') == 2 and quantity.count('value="1"') == 2
+
+
+def test_clinical_signs_are_coded_as_veddra_low_level_terms():
+    xml = _message(concurrentproblemstext="Urinary Tract Infection and cystitis.\nfeeling blue")
+    assert 'code="2026" codeSystem="2.16.840.1.113883.4.358" codeSystemVersion="2026"' in xml
+    assert 'code="725"' in xml and 'displayName="Cystitis"' in xml
+    assert "<originalText>feeling blue</originalText>" in xml

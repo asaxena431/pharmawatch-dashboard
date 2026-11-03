@@ -83,7 +83,7 @@ OUTCOMES = {"recovered": "RECN", "died": "DEAD"}
 CHALLENGE = {"yes": "Y", "no": "N", "not applicable": "NR"}
 ADMINISTERED_BY = {"veterinarian/veterinary staff": "AVET", "owner": "OWNE", "other": "OTHE"}
 SUSPICION = {"high": "High", "medium": "Medium", "low": "Low", "unknown": "Unknown"}
-COUNTRIES = {"united states": "US", "usa": "US", "us": "US", "canada": "CA"}
+COUNTRIES = {"united states": "USA", "usa": "USA", "us": "USA", "canada": "CAN"}
 PERSONS = {"sender": "rep01", "hcp": "rep02", "owner": "rep03"}
 UNITS = {"y": "YEAR", "m": "MTH", "w": "WEEK", "d": "DAY"}
 

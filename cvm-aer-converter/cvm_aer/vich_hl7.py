@@ -21,6 +21,7 @@ import xml.etree.ElementTree as ET
 from datetime import datetime, timezone
 from typing import Iterable, Mapping, Optional, Sequence, Tuple
 
+from . import veddra
 from .models import VeterinaryReport
 
 NS = "urn:hl7-org:v3"
@@ -89,6 +90,11 @@ DOSAGE_FORM_CODES = {
     "Topical": "C29167",
 }
 ADMINISTERED_BY_CODES = {"Owner": "C82468", "Veterinarian": "C82470", "Other": "C17649", "Unknown": "C17998"}
+# ISO 3166 3-character country codes, which VICH addresses use.
+COUNTRIES = {
+    "us": "USA", "usa": "USA", "united states": "USA", "united states of america": "USA",
+    "ca": "CAN", "canada": "CAN", "mx": "MEX", "mexico": "MEX", "gb": "GBR", "united kingdom": "GBR",
+}
 US_STATES = {
     "alabama": "AL", "alaska": "AK", "arizona": "AZ", "arkansas": "AR", "california": "CA", "colorado": "CO",
     "connecticut": "CT", "delaware": "DE", "district of columbia": "DC", "florida": "FL", "georgia": "GA",
@@ -206,7 +212,7 @@ def _address(parent: ET.Element, organisation) -> None:
         ("city", organisation.city),
         ("state", US_STATES.get((organisation.state or "").strip().lower(), organisation.state)),
         ("postalCode", organisation.postcode),
-        ("country", organisation.country),
+        ("country", COUNTRIES.get((organisation.country or "").strip().lower(), organisation.country)),
     ):
         element = _element(address, tag) if value else _element(address, tag, nullFlavor="NI")
         if value:
@@ -355,10 +361,22 @@ def _interval(observation: ET.Element, low: Optional[str], high: Optional[str], 
 
 
 def _reactions(parent: ET.Element, report: VeterinaryReport) -> None:
-    """B.3.2 clinical manifestations: the reported terms, VeDDRA coding left to CVM."""
-    for sign in report.event.signs:
+    """B.3.2 clinical manifestations, coded as VeDDRA LLTs when the reported term is one."""
+    for sign, llt in (
+        (sign, llt) for sign in report.event.signs for llt in (veddra.code(sign.term) or [None])
+    ):
         observation = _observation(parent, "T95020", "Reaction")
-        value = _value(observation, "CE", nullFlavor="NI")
+        if llt:
+            value = _value(
+                observation,
+                "CE",
+                code=llt[0],
+                codeSystem=veddra.CODE_SYSTEM,
+                codeSystemVersion=veddra.VERSION,
+                displayName=llt[1],
+            )
+        else:
+            value = _value(observation, "CE", nullFlavor="NI")
         if sign.term:
             _element(value, "originalText").text = sign.term
         reference = _element(observation, "referenceRange")
@@ -504,20 +522,22 @@ def _product(parent: ET.Element, report: VeterinaryReport, product_id: str) -> N
     for ingredient in product.active_ingredients:
         block = _element(kind, "ingredient", classCode="INGR")
         quantity = _element(block, "quantity")
+        # B.2.2.1 a strength the form doesn't give is sent as 1 Unknown per 1 Unknown (C17998),
+        # as FDA's VICH Step by Step guide (3.2.2.1) prescribes for an unknown strength unit.
         strength = _number(ingredient.strength_value)
-        if strength and ingredient.strength_unit:
-            numerator = _element(quantity, "numerator", xsi_type="PQ", value=strength)
+        known = bool(strength and ingredient.strength_unit)
+        numerator = _element(quantity, "numerator", xsi_type="PQ", value=strength if known else "1")
+        if known:
             _element(numerator, "translation", code=ingredient.strength_unit, codeSystem=CS_UNIT)
         else:
-            _element(quantity, "numerator", xsi_type="PQ", nullFlavor="NI")
-        if strength and ingredient.strength_unit and ingredient.strength_denominator_unit:
-            unit = ingredient.strength_denominator_unit
-            strength_denominator = _element(
-                quantity, "denominator", xsi_type="PQ", value=_number(ingredient.strength_denominator_value) or "1"
-            )
+            _element(numerator, "translation", code="C17998", codeSystem=CS_UNIT, displayName="Unknown")
+        unit = ingredient.strength_denominator_unit if known else None
+        denominator_value = (_number(ingredient.strength_denominator_value) or "1") if unit else "1"
+        strength_denominator = _element(quantity, "denominator", xsi_type="PQ", value=denominator_value)
+        if unit:
             _element(strength_denominator, "translation", code=unit, codeSystem=CS_UNIT, displayName=unit)
         else:
-            _element(quantity, "denominator", xsi_type="PQ", nullFlavor="NI")
+            _element(strength_denominator, "translation", code="C17998", codeSystem=CS_UNIT, displayName="Unknown")
         substance = _element(block, "ingredientSubstance", determinerCode="KIND", classCode="MMAT")
         if ingredient.code:
             _element(substance, "code", code=ingredient.code, codeSystem="2.16.840.1.113883.4.9")

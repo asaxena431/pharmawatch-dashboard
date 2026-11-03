@@ -88,7 +88,7 @@ def test_a_scanned_1932a_reads_into_the_dataset_names():
     assert values["todaysdate"] == "2025-03-01"
     assert values["reporttype_ae"] == "Y"
     assert (values["rep01firstname"], values["rep01lastname"]) == ("Ada", "Lovelace")
-    assert (values["rep01city"], values["rep01statetext"], values["rep01countrycode"]) == ("Tallahassee", "Florida", "US")
+    assert (values["rep01city"], values["rep01statetext"], values["rep01countrycode"]) == ("Tallahassee", "Florida", "USA")
     assert values["rep01categorisation"] == "OWNE"
     assert (values["species"], values["breed"], values["sex"]) == ("CAT", "Tabby", "F")
     assert (values["age"], values["ageto"], values["ageunitcode"]) == ("4", "5", "YEAR")
