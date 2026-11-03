@@ -23,8 +23,8 @@ format = vich-hl7
 ; auto | 1932 (static form) | 1932a (dynamic XFA form)
 layout = auto
 ; text-layer (default, exact and instant on fillable PDFs) | auto | paddleocr
-; A scanned or printed copy has nothing for text-layer to read: it is moved to error.
-; engine = auto or paddleocr OCRs a scanned static 1932 only (not a scanned 1932a).
+; A scanned or printed copy (1932 or 1932a) is OCRed whatever the engine, about 40 s per
+; form page; it needs requirements-ocr.txt, else the case goes to error saying so.
 engine = text-layer
 dpi = 200
 lang = en

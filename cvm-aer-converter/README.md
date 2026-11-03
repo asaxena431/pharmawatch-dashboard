@@ -2,7 +2,7 @@
 
 Command-line converter for FDA CVM veterinary adverse event reports. It reads a
 filled **Form FDA 1932** (static, fillable or scanned) or **Form FDA 1932a**
-(dynamic XFA) PDF and writes CVM's electronic submission message, **`vich-hl7`**:
+(dynamic XFA, or scanned) PDF and writes CVM's electronic submission message, **`vich-hl7`**:
 the VICH GL42 data elements carried in HL7 v3 (`MCCI_IN200100UV01`, VICH GL35),
 with the form PDF and every supporting document embedded base64.
 
@@ -19,6 +19,7 @@ cvm-aer-converter/
     cli.py                  command line (python -m cvm_aer ...)
     pipeline.py             PDF -> VeterinaryReport -> vich-hl7, validated
     xfa_1932a.py            dynamic Form 1932a: reads the XFA dataset
+    scan_1932a.py           scanned/printed Form 1932a: OCRs its form pages
     vet_extract.py          static Form 1932: AcroForm or PaddleOCR + field template
     form_1932.py            Form 1932 field map, sample filler
     form_geometry.py        rectangle / checkbox helpers for the template reader
@@ -32,7 +33,7 @@ cvm-aer-converter/
   cvm-aer-service.ini.sample
   vich-schemas/             FDA's VICH HL7 schema set (63 XSDs) the messages are validated against
   requirements.txt          core dependencies (pypdf, pypdfium2, Pillow, numpy, lxml)
-  requirements-ocr.txt      PaddleOCR, only for image-only scans
+  requirements-ocr.txt      PaddleOCR, only for scanned 1932 / 1932a copies
 ```
 
 ## Install on a Linux server (from GitHub)
@@ -68,7 +69,7 @@ Linux:
 cd cvm-aer-converter
 python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
-pip install -r requirements-ocr.txt      # only if you have scanned, image-only forms (~1 GB)
+pip install -r requirements-ocr.txt      # only if you have scanned 1932 / 1932a copies (~1 GB)
 ```
 
 Windows (cmd):
@@ -105,6 +106,9 @@ python -m cvm_aer ocr case.pdf
 Options: `--layout auto|1932|1932a`, `--engine text-layer|auto|paddleocr`
 (`text-layer` reads a fillable PDF's AcroForm directly; use `auto` or
 `paddleocr` for a printed/scanned copy, ~30 s per page), `--dpi`, `--lang`.
+A scanned or printed copy (no fields, no text) is always OCRed: a scanned 1932a
+has its form pages (footer `FORM FDA 1932a`) read label by label, about 40 s per
+page; the pages after them are only embedded. Check OCR output before it is sent.
 
 Exit codes: `0` ok, `2` bad input (file not found, OCR failure, wrong option),
 `3` the generated message does not validate (the complaints are printed, nothing

@@ -117,7 +117,8 @@ def convert_pdf(
     ``engine`` applies to the static 1932 only.  ``text-layer`` reads the
     AcroForm directly, which is exact and instant on a fillable form; ``auto``
     runs PaddleOCR and falls back to the text layer; ``paddleocr`` forces OCR.
-    Printed or scanned copies have no text layer and need one of the latter.
+    A scanned or printed copy (no fields, no text) is OCRed whatever the engine:
+    a scanned 1932a with :mod:`cvm_aer.scan_1932a`, a scanned 1932 as ``auto``.
 
     ``attachments`` are the case's supporting documents: named in the report
     and embedded with the form itself in the message.
@@ -133,9 +134,48 @@ def convert_pdf(
         raise ValueError(f"unknown layout: {layout}")
     if engine not in ENGINES:
         raise ValueError(f"unknown engine: {engine}")
-    if layout == LAYOUT_1932A or (layout == LAYOUT_AUTO and is_1932a_form(pdf_path)):
+    if layout != LAYOUT_1932 and is_1932a_form(pdf_path):
+        return _convert_1932a(pdf_path, output_format, attachments, validate)
+    if layout != LAYOUT_1932 and is_image_only(pdf_path):
+        scanned = _read_scanned_1932a(pdf_path, attachments, dpi, lang)
+        if scanned is not None:
+            return _result_1932a(scanned, output_format, validate)
+        # Nothing for the text layer to read: a scanned static 1932 is OCRed.
+        if engine == ENGINE_TEXT_LAYER:
+            engine = ENGINE_AUTO
+    if layout == LAYOUT_1932A:
         return _convert_1932a(pdf_path, output_format, attachments, validate)
     return _convert_1932(pdf_path, output_format, engine, dpi, lang, attachments, validate)
+
+
+def is_image_only(pdf_path: str) -> bool:
+    """True for a scanned or printed copy: no form fields and no text on its first page."""
+    from pypdf import PdfReader
+
+    try:
+        reader = PdfReader(pdf_path)
+        if reader.get_fields():
+            return False
+        return not (reader.pages[0].extract_text() or "").strip() if reader.pages else False
+    except Exception:
+        return False
+
+
+def _read_scanned_1932a(pdf_path: str, attachments: Sequence[str], dpi: int, lang: str):
+    """A scanned 1932a read with OCR; None when the scan is not a 1932a."""
+    from . import scan_1932a
+
+    try:
+        import paddleocr  # noqa: F401
+    except ImportError:
+        raise UnreadableFormError(
+            f"{os.path.basename(pdf_path)} is a scanned or printed copy; reading it needs OCR: "
+            "pip install -r requirements-ocr.txt"
+        ) from None
+    try:
+        return scan_1932a.read_scanned_1932a(pdf_path, attachments, dpi=dpi, lang=lang)
+    except scan_1932a.NotA1932aScan:
+        return None
 
 
 def _convert_1932a(
@@ -143,7 +183,12 @@ def _convert_1932a(
 ) -> ConversionResult:
     from . import xfa_1932a
 
-    form = xfa_1932a.read_1932a(pdf_path, attachments)
+    return _result_1932a(xfa_1932a.read_1932a(pdf_path, attachments), output_format, validate)
+
+
+def _result_1932a(form, output_format: Optional[str], validate: bool) -> ConversionResult:
+    from . import xfa_1932a
+
     report = xfa_1932a.map_veterinary_report(form)
     lines = [f"{key} = {value}" for key, value in form.values.items() if value]
     ocr = OcrResult(lines=lines, pages=0, engine=form.engine)
