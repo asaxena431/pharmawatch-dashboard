@@ -726,7 +726,8 @@ def _characteristics(parent: ET.Element, report: VeterinaryReport) -> None:
 
 
 def _submission(report: VeterinaryReport) -> dict:
-    kinds = {"initial": ("C48660", "Initial"), "follow-up": ("C68609", "Follow-up"), "periodic": ("C53578", "Periodic")}
+    # FDA's Type of Submission list has no "Initial": an initial 1932a is sent as Expedited (C68624).
+    kinds = {"initial": ("C68624", "Expedited"), "follow-up": ("C68609", "Follow-up"), "periodic": ("C53578", "Periodic")}
     for submission in report.submission_types:
         entry = kinds.get(submission.strip().lower())
         if entry:

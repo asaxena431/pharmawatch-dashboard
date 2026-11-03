@@ -127,8 +127,9 @@ def test_the_exposure_dates_are_the_first_component_of_the_drug_period():
 
 def test_an_initial_report_states_its_submission_type_and_receive_date():
     xml = _message(submissiontype="INIT", todaysdate="2025-03-01")
-    assert 'displayName="Initial"' in xml and '<effectiveTime value="20250301" />' in xml
-    assert 'displayName="Initial"' not in _message(todaysdate="2025-03-01")
+    assert 'code="C68624"' in xml and 'displayName="Expedited"' in xml
+    assert '<effectiveTime value="20250301" />' in xml
+    assert 'code="C68624"' not in _message(todaysdate="2025-03-01")
 
 
 def test_a_country_is_written_as_its_iso_3_character_code():
