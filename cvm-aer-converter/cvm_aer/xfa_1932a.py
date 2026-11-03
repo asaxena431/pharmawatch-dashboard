@@ -64,6 +64,10 @@ FORMULATIONS = {
     "OTHE": "Other",
 }
 ADMINISTERED_BY = {"AVET": "Veterinarian", "OWNE": "Owner", "OTHE": "Other", "UNKN": "Unknown"}
+STRENGTH_UNITS = {
+    "mg", "g", "kg", "mcg", "ug", "\u00b5g", "ng", "ml", "l", "iu", "u", "units", "%", "mg/ml", "meq", "mmol",
+}
+SUBMISSION_TYPES = {"INIT": "Initial", "FOLL": "Follow-up"}
 REPORTER_CATEGORIES = {"OWNE": "Owner", "AVET": "Veterinarian", "OTHE": "Other", "UNKN": "Unknown"}
 CHALLENGE = {"Y": "Yes", "N": "No", "NR": "Not relevant", "UNK": "Unknown"}
 AGE_UNITS = {"DAY": "Day", "WEEK": "Week", "MTH": "Month", "MONTH": "Month", "YEAR": "Year", "HOUR": "Hour"}
@@ -223,6 +227,9 @@ def _ingredients(form: Xfa1932a) -> List[ActiveIngredient]:
             continue
         # A strength reads "15mg/ml": amount and unit over a unit of the product.
         match = re.match(r"\s*(\d+(?:\.\d+)?)\s*([^/\s]+)?\s*(?:/\s*(\d+(?:\.\d+)?)?\s*(\S+))?", strength or "")
+        # Only a measured strength ("15mg/ml") is one; "11 injections home injection" is not.
+        if match and (match.group(2) or "").lower() not in STRENGTH_UNITS:
+            match = None
         ingredients.append(
             ActiveIngredient(
                 name=name,
@@ -242,7 +249,10 @@ def map_veterinary_report(form: Xfa1932a) -> VeterinaryReport:
         aer_id=form.get("pvcaseno"),
         report_identifier=form.get("manufacturerref"),
         type_of_information="Adverse event" if form.get("reporttype_ae") == "Y" else "Product defect",
-        first_received_date=form.get("receiveddate"),
+        submission_types=[SUBMISSION_TYPES[form.get("submissiontype")]] if form.get("submissiontype") in SUBMISSION_TYPES else [],
+        # A.4.2 for an initial report the date of this report is the date it was first received.
+        first_received_date=form.get("receiveddate")
+        or (form.get("todaysdate") if form.get("submissiontype") == "INIT" else None),
         submission_date=form.get("todaysdate"),
         primary_reporter=_person(form, "rep01"),
         other_reporter=_person(form, "rep02"),

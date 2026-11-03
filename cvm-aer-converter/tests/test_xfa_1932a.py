@@ -81,3 +81,51 @@ def test_a_submission_round_trips_through_the_pipeline(tmp_path):
     assert 'displayName="Dog"' in result.xml
     assert result.validated is True
     assert result.summary["attachments"] == ["lab report.pdf"]
+
+
+def test_a_1932a_without_an_mah_is_not_sent_as_an_mah_report(tmp_path):
+    # LSMV requires an ATCvet code (B.2.1.3) on any message with an MAH author.
+    assert 'code="T95001"' not in convert_pdf(_xfa_pdf(str(tmp_path / "case.pdf"))).xml
+
+
+def _message(**values) -> str:
+    from cvm_aer import vich_hl7, xfa_1932a
+
+    form = xfa_1932a.Xfa1932a(values={"reporttype_ae": "Y", "p01brandname": "Librela", **values})
+    return vich_hl7.to_xml_string(xfa_1932a.map_veterinary_report(form))
+
+
+def test_a_us_state_is_written_as_its_two_letter_code():
+    xml = _message(rep01statetext="Florida", rep02statetext="new york", rep01countrycode="US")
+    assert "<state>FL</state>" in xml and "<state>NY</state>" in xml and "Florida" not in xml
+
+
+def test_the_product_is_referred_to_by_its_number():
+    xml = _message()
+    assert '<id root="1.2.3.4" extension="1" />' in xml and '<id extension="1" />' in xml
+
+
+def test_a_dose_or_strength_without_a_unit_is_not_sent():
+    xml = _message(
+        p01dosagetext="02/19: Buprenorphine and 02/25: Diphenhydramine",
+        p01ingredient1="Buprenorphine",
+        p01ingredientstrength1="11 injections home injection",
+    )
+    dose = xml[xml.index("<doseCheckQuantity>") : xml.index("</doseCheckQuantity>")]
+    assert "value=" not in dose and 'value="11"' not in xml and 'code="Injection"' not in xml
+
+
+def test_a_measured_strength_is_sent():
+    assert 'code="mg"' in _message(p01ingredient1="Buprenorphine", p01ingredientstrength1="0.3 mg/ml")
+
+
+def test_the_exposure_dates_are_the_first_component_of_the_drug_period():
+    xml = _message(p01treatmentstartdate="2025-02-19", p01treatmentenddate="2025-02-27")
+    assert '<effectiveTime xsi:type="SXPR_TS">\n' in xml
+    assert '<low value="20250219" />' in xml and '<high value="20250227" />' in xml
+
+
+def test_an_initial_report_states_its_submission_type_and_receive_date():
+    xml = _message(submissiontype="INIT", todaysdate="2025-03-01")
+    assert 'displayName="Initial"' in xml and '<effectiveTime value="20250301" />' in xml
+    assert 'displayName="Initial"' not in _message(todaysdate="2025-03-01")

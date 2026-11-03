@@ -307,6 +307,8 @@ def read_values(form: ScannedForm) -> Dict[str, str]:
 
     values["pvcaseno"] = form.text("", "individual case safety report number")
     values["todaysdate"] = form.date("", "date of this report")
+    submission = form.ticked("", "submission type", ("initial", "follow-up"))
+    values["submissiontype"] = {"initial": "INIT", "follow-up": "FOLL"}[submission[0]] if len(submission) == 1 else None
     report_types = form.ticked("", "report type", ("adverse event", "product problem", "product use error"))
     values["reporttype_ae"] = "Y" if "adverse event" in report_types or not report_types else "N"
 

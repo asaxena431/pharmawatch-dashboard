@@ -17,7 +17,6 @@ from __future__ import annotations
 
 import base64
 import re
-import uuid
 import xml.etree.ElementTree as ET
 from datetime import datetime, timezone
 from typing import Iterable, Mapping, Optional, Sequence, Tuple
@@ -90,6 +89,19 @@ DOSAGE_FORM_CODES = {
     "Topical": "C29167",
 }
 ADMINISTERED_BY_CODES = {"Owner": "C82468", "Veterinarian": "C82470", "Other": "C17649", "Unknown": "C17998"}
+US_STATES = {
+    "alabama": "AL", "alaska": "AK", "arizona": "AZ", "arkansas": "AR", "california": "CA", "colorado": "CO",
+    "connecticut": "CT", "delaware": "DE", "district of columbia": "DC", "florida": "FL", "georgia": "GA",
+    "hawaii": "HI", "idaho": "ID", "illinois": "IL", "indiana": "IN", "iowa": "IA", "kansas": "KS",
+    "kentucky": "KY", "louisiana": "LA", "maine": "ME", "maryland": "MD", "massachusetts": "MA",
+    "michigan": "MI", "minnesota": "MN", "mississippi": "MS", "missouri": "MO", "montana": "MT",
+    "nebraska": "NE", "nevada": "NV", "new hampshire": "NH", "new jersey": "NJ", "new mexico": "NM",
+    "new york": "NY", "north carolina": "NC", "north dakota": "ND", "ohio": "OH", "oklahoma": "OK",
+    "oregon": "OR", "pennsylvania": "PA", "rhode island": "RI", "south carolina": "SC", "south dakota": "SD",
+    "tennessee": "TN", "texas": "TX", "utah": "UT", "vermont": "VT", "virginia": "VA", "washington": "WA",
+    "west virginia": "WV", "wisconsin": "WI", "wyoming": "WY", "puerto rico": "PR", "guam": "GU",
+    "american samoa": "AS", "virgin islands": "VI", "u.s. virgin islands": "VI", "northern mariana islands": "MP",
+}
 REPORTER_CODES = {"Owner": "C82468", "Veterinarian": "C82470", "Other": "C17649"}
 # B.3.8 outcome counts, in the order the message lists them.
 OUTCOME_CODES = (
@@ -192,7 +204,7 @@ def _address(parent: ET.Element, organisation) -> None:
     for tag, value in (
         ("streetAddressLine", organisation.street),
         ("city", organisation.city),
-        ("state", organisation.state),
+        ("state", US_STATES.get((organisation.state or "").strip().lower(), organisation.state)),
         ("postalCode", organisation.postcode),
         ("country", organisation.country),
     ):
@@ -395,34 +407,32 @@ def _product(parent: ET.Element, report: VeterinaryReport, product_id: str) -> N
     administration = _element(holder, "substanceAdministration", classCode="SBADM", moodCode="EVN")
     _element(administration, "id", root="1.2.3.4", extension=product_id)
 
-    # SXPR_TS needs two components, so without a dosing interval the span stands alone.
+    # B.2.1.7.1.3 the exposure span is the first component of an SXPR_TS, the dosing
+    # interval its second (SXPR_TS needs two components).
     interval = _number(product.administration_interval)
-    if interval:
-        time = _element(administration, "effectiveTime", xsi_type="SXPR_TS")
-        span = _element(time, "comp", xsi_type="IVL_TS")
-    else:
-        span = _element(administration, "effectiveTime", xsi_type="IVL_TS")
+    time = _element(administration, "effectiveTime", xsi_type="SXPR_TS")
+    span = _element(time, "comp", xsi_type="IVL_TS")
     first, last = _date(product.first_exposure), _date(product.last_exposure)
     _element(span, "low", value=first) if first else _element(span, "low", nullFlavor="NI")
     _element(span, "high", value=last) if last else _element(span, "high", nullFlavor="NI")
+    period = _element(time, "comp", xsi_type="PIVL_TS", operator="A")
     if interval:
-        period = _element(time, "comp", xsi_type="PIVL_TS", operator="A")
         _element(period, "period", value=interval, unit=AGE_UNITS.get(product.administration_interval_unit or "Day", "d"))
+    else:
+        _element(period, "period", nullFlavor="NI")
 
     _coded(administration, "routeCode", ROUTE_CODES.get(product.route or ""), CS_ROUTE, product.route)
+    # B.2.1.7.1.2 a dose is sent only with its unit: "02/19: Buprenorphine ..." is no dose.
     dose = _element(administration, "doseCheckQuantity")
     value = _number(product.dose_value)
     if value and product.dose_unit:
         numerator = _element(dose, "numerator", xsi_type="PQ", value=value)
         _element(numerator, "translation", code=product.dose_unit, codeSystem=CS_UNIT, displayName=product.dose_unit)
-    elif value:
-        # A dose without a coded unit ("1 Vial 15mg/ml"): the amount, unit unknown.
-        numerator = _element(dose, "numerator", xsi_type="PQ", value=value)
-        _element(numerator, "translation", nullFlavor="NI")
+        denominator = _element(dose, "denominator", xsi_type="PQ", value=_number(product.dose_denominator_value) or "1")
+        _element(denominator, "translation", code=product.dose_denominator_unit or "1", codeSystem=CS_UNIT)
     else:
         _element(dose, "numerator", xsi_type="PQ", nullFlavor="NI")
-    denominator = _element(dose, "denominator", xsi_type="PQ", value=_number(product.dose_denominator_value) or "1")
-    _element(denominator, "translation", code=product.dose_denominator_unit or "1", codeSystem=CS_UNIT)
+        _element(dose, "denominator", xsi_type="PQ", nullFlavor="NI")
 
     consumable = _element(administration, "consumable", typeCode="CSM")
     instance = _element(consumable, "instanceOfKind", classCode="INST")
@@ -495,15 +505,19 @@ def _product(parent: ET.Element, report: VeterinaryReport, product_id: str) -> N
         block = _element(kind, "ingredient", classCode="INGR")
         quantity = _element(block, "quantity")
         strength = _number(ingredient.strength_value)
-        if strength:
+        if strength and ingredient.strength_unit:
             numerator = _element(quantity, "numerator", xsi_type="PQ", value=strength)
-            _element(numerator, "translation", code=ingredient.strength_unit or "1", codeSystem=CS_UNIT)
+            _element(numerator, "translation", code=ingredient.strength_unit, codeSystem=CS_UNIT)
         else:
             _element(quantity, "numerator", xsi_type="PQ", nullFlavor="NI")
-        denominator_unit = ingredient.strength_denominator_unit or product.dosage_form or ""
-        strength_denominator = _element(quantity, "denominator", xsi_type="PQ", value=_number(ingredient.strength_denominator_value) or "1")
-        if denominator_unit:
-            _element(strength_denominator, "translation", code=denominator_unit, codeSystem=CS_UNIT, displayName=denominator_unit)
+        if strength and ingredient.strength_unit and ingredient.strength_denominator_unit:
+            unit = ingredient.strength_denominator_unit
+            strength_denominator = _element(
+                quantity, "denominator", xsi_type="PQ", value=_number(ingredient.strength_denominator_value) or "1"
+            )
+            _element(strength_denominator, "translation", code=unit, codeSystem=CS_UNIT, displayName=unit)
+        else:
+            _element(quantity, "denominator", xsi_type="PQ", nullFlavor="NI")
         substance = _element(block, "ingredientSubstance", determinerCode="KIND", classCode="MMAT")
         if ingredient.code:
             _element(substance, "code", code=ingredient.code, codeSystem="2.16.840.1.113883.4.9")
@@ -570,6 +584,16 @@ def _boolean(observation: ET.Element, value: Optional[str]) -> None:
         _value(observation, "BL", nullFlavor="NI")
 
 
+def _has_mah(report: VeterinaryReport) -> bool:
+    """False for a report no MAH is party to (a 1932a from an owner or vet).
+
+    LSMV treats a message with an MAH author as an MAH report and then requires
+    an ATCvet code (B.2.1.3), which an owner's or vet's 1932a never carries.
+    """
+    mah, contact = report.marketing_authorisation_holder, report.mah_contact
+    return bool(mah.name or mah.address or contact.name or contact.phone or contact.email or report.event.mah_assessment)
+
+
 def _assessments(parent: ET.Element, report: VeterinaryReport, product_id: str) -> None:
     event = report.event
     for code_system, code, display, assessment, explanation in (
@@ -577,6 +601,8 @@ def _assessments(parent: ET.Element, report: VeterinaryReport, product_id: str) 
         (CS_VICH, "T95001", "MAH", event.mah_assessment, None),
         (CS_VICH, "T95009", "RA", event.ra_assessment, event.ra_assessment_explanation),
     ):
+        if display == "MAH" and not _has_mah(report):
+            continue
         component = _element(parent, "component", typeCode="COMP")
         causality = _element(component, "causalityAssessment", classCode="INVSTG", moodCode="EVN")
         if display == "RA":
@@ -617,9 +643,7 @@ def _source_report(parent: ET.Element, person, priority: int, received: Optional
         _element(organisation, "name", nullFlavor="NI")
 
 
-def _parties(parent: ET.Element, report: VeterinaryReport) -> None:
-    holder = _element(parent, "subjectOf1", typeCode="SUBJ")
-    control = _element(holder, "controlActEvent", classCode="CACT", moodCode="EVN")
+def _mah_author(control: ET.Element, report: VeterinaryReport) -> None:
     author = _element(control, "author", typeCode="AUT")
     entity = _element(author, "assignedEntity", classCode="ASSIGNED")
     _element(entity, "code", code="T95001", codeSystem=CS_VICH, displayName="MAH")
@@ -634,6 +658,13 @@ def _parties(parent: ET.Element, report: VeterinaryReport) -> None:
     _telecoms(party, contact.phone, contact.email, contact.fax)
     person = _element(party, "contactPerson", determinerCode="INSTANCE", classCode="PSN")
     _name(person, contact.given_name, contact.family_name, contact.title)
+
+
+def _parties(parent: ET.Element, report: VeterinaryReport) -> None:
+    holder = _element(parent, "subjectOf1", typeCode="SUBJ")
+    control = _element(holder, "controlActEvent", classCode="CACT", moodCode="EVN")
+    if _has_mah(report):
+        _mah_author(control, report)
 
     recipient = _element(control, "primaryInformationRecipient", typeCode="PRCP")
     entity = _element(recipient, "assignedEntity", classCode="ASSIGNED")
@@ -685,7 +716,7 @@ def _submission(report: VeterinaryReport) -> dict:
 
 def _information(report: VeterinaryReport) -> dict:
     if (report.type_of_information or "").lower().startswith("adverse"):
-        return {"code": "C82461", "codeSystem": CS_INFORMATION, "displayName": "Safety Issue "}
+        return {"code": "C82461", "codeSystem": CS_INFORMATION, "displayName": "Safety Issue"}
     if (report.type_of_information or "").lower().startswith("product"):
         return {"code": "C82462", "codeSystem": CS_INFORMATION, "displayName": "Product Defect"}
     return {"nullFlavor": "NI"}
@@ -703,8 +734,8 @@ def to_xml_string(
     moment = created or datetime.now(timezone.utc).astimezone()
     identifier = report.report_identifier or report.aer_id
     batch = batch_id or identifier or moment.strftime("%Y%m%d%H%M%S")
-    # The assessments refer to the product by this id, so it must be stable per report.
-    product_id = str(uuid.uuid5(uuid.NAMESPACE_OID, f"{batch}/{report.product.brand_name or ''}"))
+    # B.2.1 the product's number in the report; the assessments refer to it by it.
+    product_id = "1"
 
     root = _element(
         None,

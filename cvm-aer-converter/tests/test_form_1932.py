@@ -151,3 +151,7 @@ def test_a_message_with_a_large_embedded_scan_validates(veterinary_pdf, tmp_path
     result = convert_pdf(veterinary_pdf, attachments=[str(scan)])
 
     assert result.validated and len(result.xml) > 12_000_000
+
+
+def test_a_1932_from_an_mah_names_the_mah(veterinary_pdf):
+    assert convert_pdf(veterinary_pdf).xml.count('code="T95001"') == 2
