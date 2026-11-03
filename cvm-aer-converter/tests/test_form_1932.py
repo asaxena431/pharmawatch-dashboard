@@ -127,3 +127,27 @@ def test_only_vich_hl7_is_offered(veterinary_pdf):
     report = map_veterinary_report(extract_1932_fields(veterinary_pdf))
     with pytest.raises(ValueError):
         render_xml(report, "mdr")
+
+
+def test_a_scanned_copy_with_nothing_to_read_fails_instead_of_an_empty_message(tmp_path):
+    import pypdf
+
+    from cvm_aer.pipeline import UnreadableFormError
+
+    writer = pypdf.PdfWriter()
+    writer.add_blank_page(width=612, height=792)
+    scan = tmp_path / "copier-scan.pdf"
+    with open(scan, "wb") as handle:
+        writer.write(handle)
+
+    with pytest.raises(UnreadableFormError, match="copier-scan.pdf: it has no fillable fields or text"):
+        convert_pdf(str(scan))
+
+
+def test_a_message_with_a_large_embedded_scan_validates(veterinary_pdf, tmp_path):
+    scan = tmp_path / "scan.pdf"
+    scan.write_bytes(os.urandom(9 * 1024 * 1024))  # 12 MB of base64: one text node past libxml2's 10 MB default
+
+    result = convert_pdf(veterinary_pdf, attachments=[str(scan)])
+
+    assert result.validated and len(result.xml) > 12_000_000

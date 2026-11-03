@@ -39,6 +39,10 @@ ENGINE_PADDLEOCR = "paddleocr"
 ENGINES = (ENGINE_TEXT_LAYER, ENGINE_AUTO, ENGINE_PADDLEOCR)
 
 
+class UnreadableFormError(ValueError):
+    """Nothing could be read off the form, so its message would be all empty fields."""
+
+
 class UnsupportedFormatError(ValueError):
     """A format that is accepted on the command line / in the ini but never converted to."""
 
@@ -176,6 +180,11 @@ def _convert_1932(
             form = extract_1932_fields(pdf_path)
             form.engine = f"acroform (PaddleOCR unavailable: {exc})"
 
+    if not form.values and not form.checks:
+        raise UnreadableFormError(
+            f"nothing could be read from {os.path.basename(pdf_path)}: it has no fillable fields or text, "
+            "so it is a scanned or printed copy (e.g. off a copier); send the fillable 1932 / 1932a PDF instead"
+        )
     report = map_veterinary_report(form, ocr_engine=form.engine)
     lines: List[str] = [f"{key} = {value}" for key, value in sorted(form.values.items())]
     lines += [f"[x] {key}" for key in sorted(form.checks)]

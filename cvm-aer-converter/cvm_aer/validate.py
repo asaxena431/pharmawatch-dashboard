@@ -81,7 +81,9 @@ def schema(directory: Optional[str] = None) -> etree.XMLSchema:
 def complaints(xml: str, directory: Optional[str] = None) -> List[str]:
     """What the schemas object to in ``xml``; empty when it validates."""
     validator = schema(directory)
-    document = etree.fromstring(xml.encode("utf-8") if isinstance(xml, str) else xml)
+    # huge_tree: an embedded scan of 10 MB or more is one text node past libxml2's default limit.
+    parser = etree.XMLParser(huge_tree=True)
+    document = etree.fromstring(xml.encode("utf-8") if isinstance(xml, str) else xml, parser)
     if validator.validate(document):
         return []
     return [f"line {error.line}: {error.message}" for error in validator.error_log]
