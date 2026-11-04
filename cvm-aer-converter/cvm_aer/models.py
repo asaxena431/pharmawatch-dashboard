@@ -205,3 +205,12 @@ class VeterinaryReport:
 
     def to_dict(self) -> dict:
         return asdict(self)
+
+
+@dataclass
+class Sender:
+    """B.8.1.2 / B.8.2.2 the organisation that submits the message, from the [sender] config section."""
+
+    id: Optional[str] = None
+    organisation: Optional[str] = None
+    contact: Person = field(default_factory=Person)

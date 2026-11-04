@@ -101,6 +101,9 @@ def build_parser() -> argparse.ArgumentParser:
                          help="a supporting document of the case; repeat for more than one")
     convert.add_argument("--output", "-o", help="write the XML here instead of stdout")
     convert.add_argument("--json", dest="json_path", help="also write the parsed report as JSON")
+    convert.add_argument("--config", "-c", default=None,
+                         help="ini whose [sender] section names the submitting organisation "
+                              "(default: $CVM_AER_CONFIG or ./cvm-aer-service.ini when present)")
     convert.add_argument("--quiet", "-q", action="store_true", help="suppress the extraction summary on stderr")
     _add_format_arg(convert, FORMAT_VICH_HL7, FORMAT_VICH_HL7)
     _add_common_ocr_args(convert)
@@ -140,6 +143,13 @@ def _write(path: Optional[str], content: str) -> None:
         handle.write(content)
 
 
+def _sender(path: Optional[str]):
+    from .service import load_sender_file
+
+    path = path or default_config()
+    return load_sender_file(path) if path and os.path.exists(path) else None
+
+
 def _run_convert(args: argparse.Namespace) -> int:
     result = convert_pdf(
         args.pdf,
@@ -150,6 +160,7 @@ def _run_convert(args: argparse.Namespace) -> int:
         layout=args.layout,
         attachments=args.attach,
         validate=args.validate,
+        sender=_sender(args.config),
     )
     _write(args.output, result.xml)
     if args.json_path:

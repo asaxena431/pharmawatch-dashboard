@@ -32,12 +32,14 @@ from datetime import datetime
 from email.message import EmailMessage
 from typing import List, Optional, Sequence, Tuple
 
+from .models import Person, Sender
 from .pipeline import ENGINE_TEXT_LAYER, FORMAT_VICH_HL7, FORMATS, LAYOUT_AUTO, convert_pdf
 
 LOGGER = logging.getLogger("cvm_aer.service")
 
 SECTION_FOLDERS = "folders"
 SECTION_CONVERSION = "conversion"
+SECTION_SENDER = "sender"
 SECTION_SERVICE = "service"
 SECTION_EMAIL = "email"
 SECTION_INTAKE = "intake"
@@ -165,6 +167,7 @@ class ServiceConfig:
     settle_seconds: float = SETTLE_SECONDS
     email: EmailSettings = field(default_factory=EmailSettings)
     intake: IntakeSettings = field(default_factory=IntakeSettings)
+    sender: Sender = field(default_factory=Sender)
 
     @property
     def folders(self) -> Tuple[str, str, str, str]:
@@ -222,7 +225,33 @@ def load_config(path: str) -> ServiceConfig:
             drop_dir=os.path.expanduser(mail.get("drop_dir", "") or "") or None,
         ),
         intake=intake,
+        sender=load_sender(parser),
     )
+
+
+def load_sender(parser: configparser.ConfigParser) -> Sender:
+    """[sender] the organisation submitting to FDA: B.8.1.2 / B.8.2.2 in every message."""
+    section = parser[SECTION_SENDER] if parser.has_section(SECTION_SENDER) else {}
+
+    def value(key: str) -> Optional[str]:
+        return (section.get(key) or "").strip() or None
+
+    return Sender(
+        id=value("id"),
+        organisation=value("organisation"),
+        contact=Person(
+            given_name=value("given_name"),
+            family_name=value("family_name"),
+            phone=value("phone"),
+            email=value("email"),
+        ),
+    )
+
+
+def load_sender_file(path: str) -> Sender:
+    parser = configparser.ConfigParser()
+    parser.read(path, encoding="utf-8")
+    return load_sender(parser)
 
 
 def _flag(value, default: bool) -> bool:
@@ -504,6 +533,7 @@ def process_zip(archive: str, config: ServiceConfig) -> Processed:
                 lang=config.lang,
                 layout=config.layout,
                 attachments=attachments,
+                sender=config.sender,
             )
             os.makedirs(config.outbound, exist_ok=True)
             xml_path = os.path.join(config.outbound, unique_name(archive))

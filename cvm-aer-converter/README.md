@@ -54,7 +54,7 @@ sudo -E bash install.sh --service  # --branch NAME, --with-ocr, --help for the r
 |---|---|
 | `/opt/cvm-aer/src/cvm-aer-converter` | the code (replaced on every run) |
 | `/opt/cvm-aer/.venv` | Python environment |
-| `/opt/cvm-aer/cvm-aer-service.ini` | the configuration: fill in `[intake]` and `[email]` |
+| `/opt/cvm-aer/cvm-aer-service.ini` | the configuration: fill in `[intake]`, `[email]` and `[sender]` (your organisation's ID, PV contact, phone, e-mail: the message sender LSMV expects) |
 | `/opt/cvm-aer/run-cvm-aer` | `python -m cvm_aer` with that ini, e.g. `run-cvm-aer --once` |
 | `/srv/cvm-aer/{inbound,outbound,processed,error}` | the folders |
 

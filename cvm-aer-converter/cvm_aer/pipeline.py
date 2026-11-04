@@ -15,7 +15,7 @@ from dataclasses import dataclass
 from typing import List, Optional, Sequence, Tuple
 
 from . import vich_hl7
-from .models import VeterinaryReport
+from .models import Sender, VeterinaryReport
 from .ocr import OcrResult
 from .validate import SchemaError, validate_xml  # noqa: F401  (SchemaError re-exported)
 
@@ -90,10 +90,11 @@ def render_xml(
     output_format: Optional[str] = None,
     documents: Sequence[Tuple[str, bytes]] = (),
     validate: bool = True,
+    sender: Optional[Sender] = None,
 ) -> str:
     """The report as the vich-hl7 message, schema-validated unless ``validate`` is off."""
     check_format(output_format)
-    xml = vich_hl7.to_xml_string(report, documents=documents)
+    xml = vich_hl7.to_xml_string(report, documents=documents, sender=sender)
     if validate:
         validate_xml(xml)
     return xml
@@ -108,6 +109,7 @@ def convert_pdf(
     layout: str = LAYOUT_AUTO,
     attachments: Sequence[str] = (),
     validate: bool = True,
+    sender: Optional[Sender] = None,
 ) -> ConversionResult:
     """Read a 1932 / 1932a PDF and convert it to the vich-hl7 message.
 
@@ -135,17 +137,17 @@ def convert_pdf(
     if engine not in ENGINES:
         raise ValueError(f"unknown engine: {engine}")
     if layout != LAYOUT_1932 and is_1932a_form(pdf_path):
-        return _convert_1932a(pdf_path, output_format, attachments, validate)
+        return _convert_1932a(pdf_path, output_format, attachments, validate, sender)
     if layout != LAYOUT_1932 and is_image_only(pdf_path):
         scanned = _read_scanned_1932a(pdf_path, attachments, dpi, lang)
         if scanned is not None:
-            return _result_1932a(scanned, output_format, validate)
+            return _result_1932a(scanned, output_format, validate, sender)
         # Nothing for the text layer to read: a scanned static 1932 is OCRed.
         if engine == ENGINE_TEXT_LAYER:
             engine = ENGINE_AUTO
     if layout == LAYOUT_1932A:
-        return _convert_1932a(pdf_path, output_format, attachments, validate)
-    return _convert_1932(pdf_path, output_format, engine, dpi, lang, attachments, validate)
+        return _convert_1932a(pdf_path, output_format, attachments, validate, sender)
+    return _convert_1932(pdf_path, output_format, engine, dpi, lang, attachments, validate, sender)
 
 
 def is_image_only(pdf_path: str) -> bool:
@@ -179,14 +181,20 @@ def _read_scanned_1932a(pdf_path: str, attachments: Sequence[str], dpi: int, lan
 
 
 def _convert_1932a(
-    pdf_path: str, output_format: Optional[str], attachments: Sequence[str], validate: bool
+    pdf_path: str,
+    output_format: Optional[str],
+    attachments: Sequence[str],
+    validate: bool,
+    sender: Optional[Sender] = None,
 ) -> ConversionResult:
     from . import xfa_1932a
 
-    return _result_1932a(xfa_1932a.read_1932a(pdf_path, attachments), output_format, validate)
+    return _result_1932a(xfa_1932a.read_1932a(pdf_path, attachments), output_format, validate, sender)
 
 
-def _result_1932a(form, output_format: Optional[str], validate: bool) -> ConversionResult:
+def _result_1932a(
+    form, output_format: Optional[str], validate: bool, sender: Optional[Sender] = None
+) -> ConversionResult:
     from . import xfa_1932a
 
     report = xfa_1932a.map_veterinary_report(form)
@@ -196,7 +204,7 @@ def _result_1932a(form, output_format: Optional[str], validate: bool) -> Convers
     return ConversionResult(
         report=report,
         ocr=ocr,
-        xml=render_xml(report, output_format, documents, validate),
+        xml=render_xml(report, output_format, documents, validate, sender),
         output_format=output_format or FORMAT_VICH_HL7,
         layout=LAYOUT_1932A,
         validated=validate,
@@ -211,6 +219,7 @@ def _convert_1932(
     lang: str,
     attachments: Sequence[str] = (),
     validate: bool = True,
+    sender: Optional[Sender] = None,
 ) -> ConversionResult:
     from .vet_extract import extract_1932_fields, extract_1932_form, map_veterinary_report
 
@@ -240,7 +249,7 @@ def _convert_1932(
     return ConversionResult(
         report=report,
         ocr=ocr,
-        xml=render_xml(report, output_format, documents, validate),
+        xml=render_xml(report, output_format, documents, validate, sender),
         output_format=output_format or FORMAT_VICH_HL7,
         layout=LAYOUT_1932,
         validated=validate,

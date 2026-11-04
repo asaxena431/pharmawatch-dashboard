@@ -41,7 +41,18 @@ settle_seconds = 5
 ; inbound as it is; otherwise all the attachments (form + supporting documents) are
 ; zipped into one ZIP.  The e-mail is then moved to processed_folder - or, when it has
 ; nothing to take (no attachments, two ZIPs, a broken ZIP), to rejected_folder with the
-; [email] note.  Every e-mail taken is written to the ledger, so none is taken twice.
+; [sender]
+; The organisation that submits the messages to FDA, written into every message's batch and
+; message sender (B.8.1.2 / B.8.2.2), as LSMV-accepted messages carry the MAH's own ID and
+; pharmacovigilance contact.  Empty keys are sent as NI.
+id =
+organisation =
+given_name =
+family_name =
+phone =
+email =
+
+[email] note.  Every e-mail taken is written to the ledger, so none is taken twice.
 ; The service reads the mailbox on every sweep; "python -m cvm_aer intake" reads it once.
 ;
 ; Where the e-mails are read from - leave empty to switch e-mail intake off:
@@ -74,6 +85,17 @@ eml_dir =
 ledger =
 ; Attachments left out of the case: the signature / logo images Outlook adds.
 ignore = image0*.png, image0*.jpg, image0*.jpeg, image0*.gif
+
+[sender]
+; The organisation that submits the messages to FDA, written into every message's batch and
+; message sender (B.8.1.2 / B.8.2.2), as LSMV-accepted messages carry the MAH's own ID and
+; pharmacovigilance contact.  Empty keys are sent as NI.
+id =
+organisation =
+given_name =
+family_name =
+phone =
+email =
 
 [email]
 ; The note sent when a case is moved to the error folder, with the case ZIP

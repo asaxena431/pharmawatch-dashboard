@@ -22,7 +22,7 @@ from datetime import datetime, timezone
 from typing import Iterable, Mapping, Optional, Sequence, Tuple
 
 from . import veddra
-from .models import VeterinaryReport
+from .models import Sender, VeterinaryProduct, VeterinaryReport
 
 NS = "urn:hl7-org:v3"
 XSI = "http://www.w3.org/2001/XMLSchema-instance"
@@ -239,6 +239,19 @@ def _weight_kg(report: VeterinaryReport, unit: Optional[str]) -> Tuple[Optional[
     return values[0], values[1]
 
 
+NADA = re.compile(r"\b(ANADA|NADA|A|N)\s*#?\s*-?\s*(\d{3})\s*-?\s*(\d{3})\b", re.IGNORECASE)
+
+
+def nada(product: VeterinaryProduct) -> Optional[str]:
+    """B.8.2.5 the NADA / ANADA (letter + 6 digits, e.g. N141338) in the product's B.2.1.2
+    registration number, as LSMV-accepted messages carry it (USA-USFDACVM-N141338)."""
+    match = NADA.search(product.registration_id or "")
+    if not match:
+        return None
+    letter = "A" if match.group(1).upper().startswith("A") else "N"
+    return letter + match.group(2) + match.group(3)
+
+
 def _receiver(parent: ET.Element) -> None:
     """FDA, the only receiver of a CVM submission."""
     holder = _element(parent, "receiver", typeCode="RCV")
@@ -249,7 +262,14 @@ def _receiver(parent: ET.Element) -> None:
     _element(organisation, "id", root="USFDACVM", extension="Food and Drug Administration, Center for Veterinary Medicine")
 
 
-def _device_sender(parent: ET.Element, report: VeterinaryReport, organisation_id: str, batch: str, trailer: bool = False) -> None:
+def _device_sender(
+    parent: ET.Element,
+    report: VeterinaryReport,
+    organisation_id: str,
+    batch: str,
+    trailer: bool = False,
+    sender: Optional[Sender] = None,
+) -> None:
     """The organisation the message comes from, as batch and message sender.
 
     The batch trailer carries the telecoms on the notification party itself,
@@ -259,11 +279,15 @@ def _device_sender(parent: ET.Element, report: VeterinaryReport, organisation_id
     _element(device, "id")
     agent = _element(device, "asAgent", classCode="AGNT")
     organisation = _element(agent, "representedOrganization", determinerCode="INSTANCE", classCode="ORG")
-    # The sender organisation, identified by the batch it submits.
-    _element(organisation, "id", root=organisation_id, extension=batch)
+    # The sender organisation: its [sender] ID and name, else identified by the batch it submits.
+    _element(organisation, "id", root=organisation_id, extension=(sender and sender.organisation) or batch)
     party = _element(organisation, "notificationParty", classCode="CON")
     _element(party, "id")
-    contact = report.mah_contact
+    configured = sender.contact if sender else None
+    if configured and (configured.name or configured.phone or configured.email):
+        contact = configured
+    else:
+        contact = report.mah_contact
     if trailer:
         _telecoms(party, contact.phone, contact.email, contact.fax)
     person = _element(party, "contactPerson")
@@ -757,9 +781,12 @@ def to_xml_string(
     batch_id: Optional[str] = None,
     sender_root: str = "ID-PHARMAWATCH",
     created: Optional[datetime] = None,
+    sender: Optional[Sender] = None,
 ) -> str:
     """Serialise ``report`` as CVM's VICH AER 1.0.0 HL7 v3 submission message."""
     moment = created or datetime.now(timezone.utc).astimezone()
+    if sender and sender.id:
+        sender_root = sender.id
     identifier = report.report_identifier or report.aer_id
     batch = batch_id or identifier or moment.strftime("%Y%m%d%H%M%S")
     # B.2.1 the product's number in the report; the assessments refer to it by it.
@@ -789,11 +816,11 @@ def to_xml_string(
         _element(message, tag)
 
     _receiver(message)
-    _device_sender(_element(message, "sender", typeCode="SND"), report, sender_root, batch)
+    _device_sender(_element(message, "sender", typeCode="SND"), report, sender_root, batch, sender=sender)
 
     line = _element(message, "attentionLine")
     _element(line, "keyWordText").text = "Report Identifier"
-    _string(line, "value", identifier, xsi_type="ST")
+    _string(line, "value", nada(report.product) or identifier, xsi_type="ST")
     line = _element(message, "attentionLine")
     _element(line, "keyWordText").text = "Domestic vs Foreign Report Category"
     domestic = (report.report_category or "domestic").lower().startswith("domestic")
@@ -833,7 +860,7 @@ def to_xml_string(
 
     # The batch's own receiver and sender close it, after the message it carries.
     _receiver(root)
-    _device_sender(_element(root, "sender"), report, sender_root, batch, trailer=True)
+    _device_sender(_element(root, "sender"), report, sender_root, batch, trailer=True, sender=sender)
 
     ET.indent(root, space="  ")
     return '<?xml version="1.0"?>\n' + ET.tostring(root, encoding="unicode") + "\n"
