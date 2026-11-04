@@ -6,8 +6,8 @@ import re
 from functools import lru_cache
 from typing import Dict, List, Optional, Tuple
 
-# codeSystemVersion is the VeDDRA revision number (the VICH guide's samples use 7 and 8).
-VERSION = "17"
+# The VeDDRA version LSMV accepts, as in an XML LSMV took in (codeSystemVersion="20").
+VERSION = "20"
 CODE_SYSTEM = "2.16.840.1.113883.4.358"
 _LIST = os.path.join(os.path.dirname(__file__), "data", "veddra_2026.csv")
 

@@ -246,7 +246,7 @@ def _receiver(parent: ET.Element) -> None:
     _element(device, "id")
     agent = _element(device, "asAgent", classCode="AGNT")
     organisation = _element(agent, "representedOrganization", determinerCode="INSTANCE", classCode="ORG")
-    _element(organisation, "id", root="USFDA")
+    _element(organisation, "id", root="USFDACVM", extension="Food and Drug Administration, Center for Veterinary Medicine")
 
 
 def _device_sender(parent: ET.Element, report: VeterinaryReport, organisation_id: str, batch: str, trailer: bool = False) -> None:

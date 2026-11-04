@@ -145,7 +145,7 @@ def test_a_strength_the_form_lacks_is_sent_as_unknown():
 
 def test_clinical_signs_are_coded_as_veddra_low_level_terms():
     xml = _message(concurrentproblemstext="Urinary Tract Infection and cystitis.\nfeeling blue")
-    assert 'code="2026" codeSystem="2.16.840.1.113883.4.358" codeSystemVersion="17"' in xml
+    assert 'code="2026" codeSystem="2.16.840.1.113883.4.358" codeSystemVersion="20"' in xml
     assert 'code="725"' in xml and 'displayName="Cystitis"' in xml
     assert "<originalText>feeling blue</originalText>" in xml
 
@@ -154,3 +154,8 @@ def test_every_reaction_is_a_coded_sign_carrying_the_onset_on_the_first():
     xml = _message(concurrentproblemstext="Cystitis", reactionstartdate="2025-02-28")
     reactions = xml.split('code="T95020"')[1:]
     assert len(reactions) == 1 and 'code="725"' in reactions[0] and "<low value=" in reactions[0]
+
+
+def test_the_receiver_is_fda_cvm():
+    xml = _message()
+    assert xml.count('root="USFDACVM" extension="Food and Drug Administration, Center for Veterinary Medicine"') == 2
