@@ -25,3 +25,9 @@ def test_b825_is_the_nada_in_the_registration_number():
     assert nada(VeterinaryProduct(registration_id="11 injections")) is None
     report = VeterinaryReport(product=VeterinaryProduct(registration_id="NADA 141-338"))
     assert '<value xsi:type="ST">N141338</value>' in to_xml_string(report)
+
+
+def test_the_regulatory_authority_is_fda_cvm_when_the_form_has_none():
+    xml = to_xml_string(VeterinaryReport())
+    assert "<name>Food and Drug Administration Center for Veterinary Medicine</name>" in xml
+    assert "<city>Rockville</city>" in xml and '<country nullFlavor="NI"' not in xml.split('code="T95009"')[-1].split("</addr>")[0]

@@ -22,7 +22,7 @@ from datetime import datetime, timezone
 from typing import Iterable, Mapping, Optional, Sequence, Tuple
 
 from . import veddra
-from .models import Sender, VeterinaryProduct, VeterinaryReport
+from .models import Organisation, Sender, VeterinaryProduct, VeterinaryReport
 
 NS = "urn:hl7-org:v3"
 XSI = "http://www.w3.org/2001/XMLSchema-instance"
@@ -250,6 +250,17 @@ def nada(product: VeterinaryProduct) -> Optional[str]:
         return None
     letter = "A" if match.group(1).upper().startswith("A") else "N"
     return letter + match.group(2) + match.group(3)
+
+
+# A.1 the receiving regulatory authority of every CVM submission, as LSMV-accepted messages carry it.
+FDA_CVM = Organisation(
+    name="Food and Drug Administration Center for Veterinary Medicine",
+    street="7500 Standish Place (HFV-210) Room N403",
+    city="Rockville",
+    state="MD",
+    postcode="20855",
+    country="USA",
+)
 
 
 def _receiver(parent: ET.Element) -> None:
@@ -720,10 +731,11 @@ def _parties(parent: ET.Element, report: VeterinaryReport) -> None:
     recipient = _element(control, "primaryInformationRecipient", typeCode="PRCP")
     entity = _element(recipient, "assignedEntity", classCode="ASSIGNED")
     _element(entity, "code", code="T95009", codeSystem=CS_VICH, displayName="RA")
-    _address(entity, report.regulatory_authority)
+    authority = report.regulatory_authority if report.regulatory_authority.address or report.regulatory_authority.name else FDA_CVM
+    _address(entity, authority)
     organisation = _element(entity, "representedOrganization", determinerCode="INSTANCE", classCode="ORG")
-    if report.regulatory_authority.name:
-        _element(organisation, "name").text = report.regulatory_authority.name
+    if authority.name:
+        _element(organisation, "name").text = authority.name
     else:
         _element(organisation, "name", nullFlavor="NI")
 
