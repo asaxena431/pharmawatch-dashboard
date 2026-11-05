@@ -14,8 +14,16 @@ def test_the_configured_sender_fills_the_batch_and_message_sender(tmp_path):
     assert xml.count('value="MAILTO:pv@acme.example"') == 2
 
 
-def test_without_a_sender_the_contact_stays_ni():
-    xml = to_xml_string(VeterinaryReport(), sender=Sender(contact=Person()))
+def test_without_a_sender_the_form_sender_is_the_message_sender():
+    owner = Person(given_name="Roseanna", family_name="Bronhard", phone="561-271-5732", email="r@example.com")
+    xml = to_xml_string(VeterinaryReport(primary_reporter=owner), sender=Sender(contact=Person()))
+    message_sender = xml.split('<sender typeCode="SND">')[1].split("</sender>")[0]
+    assert "<given>Roseanna</given>" in message_sender and 'value="TEL:561-271-5732"' in message_sender
+    assert xml.count("<family>Bronhard</family>") >= 3  # reporter, message sender, batch sender
+
+
+def test_without_any_contact_the_sender_stays_ni():
+    xml = to_xml_string(VeterinaryReport())
     assert 'root="ID-PHARMAWATCH"' in xml and "<given>" not in xml
 
 

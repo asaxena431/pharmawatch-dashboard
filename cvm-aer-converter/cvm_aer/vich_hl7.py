@@ -283,6 +283,9 @@ def _device_sender(
 ) -> None:
     """The organisation the message comes from, as batch and message sender.
 
+    Its contact is the [sender] config's, else the form's MAH contact, else the form's
+    sender (the primary reporter, e.g. the owner on a 1932a).
+
     The batch trailer carries the telecoms on the notification party itself,
     the message header on the contact person.
     """
@@ -294,11 +297,14 @@ def _device_sender(
     _element(organisation, "id", root=organisation_id, extension=(sender and sender.organisation) or batch)
     party = _element(organisation, "notificationParty", classCode="CON")
     _element(party, "id")
-    configured = sender.contact if sender else None
-    if configured and (configured.name or configured.phone or configured.email):
-        contact = configured
-    else:
-        contact = report.mah_contact
+    contact = next(
+        (
+            person
+            for person in (sender.contact if sender else None, report.mah_contact, report.primary_reporter)
+            if person and (person.name or person.phone or person.email)
+        ),
+        report.mah_contact,
+    )
     if trailer:
         _telecoms(party, contact.phone, contact.email, contact.fax)
     person = _element(party, "contactPerson")
