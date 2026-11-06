@@ -83,9 +83,13 @@ def test_a_submission_round_trips_through_the_pipeline(tmp_path):
     assert result.summary["attachments"] == ["lab report.pdf"]
 
 
-def test_a_1932a_without_an_mah_is_not_sent_as_an_mah_report(tmp_path):
-    # LSMV requires an ATCvet code (B.2.1.3) on any message with an MAH author.
-    assert 'code="T95001"' not in convert_pdf(_xfa_pdf(str(tmp_path / "case.pdf"))).xml
+def test_a_1932a_without_an_mah_carries_the_form_sender_in_a2(tmp_path):
+    xml = convert_pdf(_xfa_pdf(str(tmp_path / "case.pdf"))).xml
+    # A.2 author only: no MAH causality assessment is invented.
+    assert xml.count('code="T95001"') == 1
+    author = xml.split('<controlActEvent')[1].split("</author>")[0]
+    assert "<given>CRYSTAL</given>" in author and "<family>JORDAN</family>" in author
+    assert "<city>BUCKHANNON</city>" in author
 
 
 def _message(**values) -> str:

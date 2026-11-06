@@ -273,6 +273,18 @@ def _receiver(parent: ET.Element) -> None:
     _element(organisation, "id", root="USFDACVM", extension="Food and Drug Administration, Center for Veterinary Medicine")
 
 
+def _sender_contact(report: VeterinaryReport, sender: Optional[Sender]):
+    """The [sender] config's contact, else the form's MAH contact, else the form's sender (primary reporter)."""
+    return next(
+        (
+            person
+            for person in (sender.contact if sender else None, report.mah_contact, report.primary_reporter)
+            if person and (person.name or person.phone or person.email)
+        ),
+        report.mah_contact,
+    )
+
+
 def _device_sender(
     parent: ET.Element,
     report: VeterinaryReport,
@@ -297,14 +309,7 @@ def _device_sender(
     _element(organisation, "id", root=organisation_id, extension=(sender and sender.organisation) or batch)
     party = _element(organisation, "notificationParty", classCode="CON")
     _element(party, "id")
-    contact = next(
-        (
-            person
-            for person in (sender.contact if sender else None, report.mah_contact, report.primary_reporter)
-            if person and (person.name or person.phone or person.email)
-        ),
-        report.mah_contact,
-    )
+    contact = _sender_contact(report, sender)
     if trailer:
         _telecoms(party, contact.phone, contact.email, contact.fax)
     person = _element(party, "contactPerson")
@@ -714,28 +719,34 @@ def _source_report(parent: ET.Element, person, priority: int, received: Optional
         _element(organisation, "name", nullFlavor="NI")
 
 
-def _mah_author(control: ET.Element, report: VeterinaryReport) -> None:
+def _mah_author(control: ET.Element, report: VeterinaryReport, sender: Optional[Sender] = None) -> None:
+    """A.2 the MAH; without one on the form (a 1932a), the same contact as B.8.2.2 and its address."""
+    if _has_mah(report):
+        organisation_data, contact = report.marketing_authorisation_holder, report.mah_contact
+    else:
+        contact = _sender_contact(report, sender)
+        organisation_data = contact.organisation
     author = _element(control, "author", typeCode="AUT")
     entity = _element(author, "assignedEntity", classCode="ASSIGNED")
     _element(entity, "code", code="T95001", codeSystem=CS_VICH, displayName="MAH")
-    _address(entity, report.marketing_authorisation_holder)
+    _address(entity, organisation_data)
     organisation = _element(entity, "representedOrganization", determinerCode="INSTANCE", classCode="ORG")
-    if report.marketing_authorisation_holder.name:
-        _element(organisation, "name").text = report.marketing_authorisation_holder.name
+    if organisation_data.name:
+        _element(organisation, "name").text = organisation_data.name
     else:
         _element(organisation, "name", nullFlavor="NI")
-    contact = report.mah_contact
     party = _element(organisation, "contactParty", classCode="CON")
     _telecoms(party, contact.phone, contact.email, contact.fax)
     person = _element(party, "contactPerson", determinerCode="INSTANCE", classCode="PSN")
     _name(person, contact.given_name, contact.family_name, contact.title)
 
 
-def _parties(parent: ET.Element, report: VeterinaryReport) -> None:
+def _parties(parent: ET.Element, report: VeterinaryReport, sender: Optional[Sender] = None) -> None:
     holder = _element(parent, "subjectOf1", typeCode="SUBJ")
     control = _element(holder, "controlActEvent", classCode="CACT", moodCode="EVN")
-    if _has_mah(report):
-        _mah_author(control, report)
+    contact = _sender_contact(report, sender)
+    if _has_mah(report) or contact.name or contact.phone or contact.email:
+        _mah_author(control, report, sender)
 
     recipient = _element(control, "primaryInformationRecipient", typeCode="PRCP")
     entity = _element(recipient, "assignedEntity", classCode="ASSIGNED")
@@ -876,7 +887,7 @@ def to_xml_string(
 
     _source_report(investigation, report.primary_reporter, 1, _date(report.first_received_date))
     _source_report(investigation, report.other_reporter, 2, None)
-    _parties(investigation, report)
+    _parties(investigation, report, sender)
     _characteristics(investigation, report)
 
     # The batch's own receiver and sender close it, after the message it carries.

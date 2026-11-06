@@ -10,8 +10,9 @@ def test_the_configured_sender_fills_the_batch_and_message_sender(tmp_path):
     sender = load_sender_file(str(ini))
     xml = to_xml_string(VeterinaryReport(), sender=sender)
     assert xml.count('root="ZZACME" extension="Acme PV"') == 2
-    assert xml.count("<given>PV</given>") == 2 and xml.count('value="TEL:3174339572"') == 2
-    assert xml.count('value="MAILTO:pv@acme.example"') == 2
+    # batch sender, message sender and A.2
+    assert xml.count("<given>PV</given>") == 3 and xml.count('value="TEL:3174339572"') == 3
+    assert xml.count('value="MAILTO:pv@acme.example"') == 3
 
 
 def test_without_a_sender_the_form_sender_is_the_message_sender():
