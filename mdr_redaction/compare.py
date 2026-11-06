@@ -292,6 +292,7 @@ def load_rows(path: Path, orig_col: str, red_col: str, id_col: str) -> list[dict
         wb = openpyxl.load_workbook(path, read_only=True)
         rows = []
         for ws in wb.worksheets:   # use the first sheet that has a narrative column (header may not be on row 1)
+            ws.reset_dimensions()  # exports from some tools store a wrong <dimension>, which hides every row
             it = ws.iter_rows(values_only=True)
             header = None
             for raw in it:

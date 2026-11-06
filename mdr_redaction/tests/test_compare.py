@@ -1,3 +1,4 @@
+import re
 import unittest
 from pathlib import Path
 
@@ -288,3 +289,23 @@ class LoaderRobustness(unittest.TestCase):
             with self.assertRaises(SystemExit) as cm:
                 load_rows(p, "COMPANY_NARRATIVE", "REDACTED_NARRATIVE", "SAFETY_ID")
         self.assertIn("no data rows", str(cm.exception))
+
+    def test_wrong_dimension_tag_still_reads_rows(self):
+        import tempfile
+        import zipfile
+        import openpyxl
+        from mdr_redaction.compare import load_rows
+        wb = openpyxl.Workbook()
+        wb.active.append(["SAFETY_ID", "FULL_NARRATIVE", "REDACTED_NARRATIVE"])
+        wb.active.append(["S1", "Seen on June 07, 2015.", "Seen on (b)(6) 2015."])
+        with tempfile.TemporaryDirectory() as d:
+            p, bad = Path(d) / "ok.xlsx", Path(d) / "bad.xlsx"
+            wb.save(p)
+            with zipfile.ZipFile(p) as zin, zipfile.ZipFile(bad, "w", zipfile.ZIP_DEFLATED) as zout:
+                for item in zin.infolist():
+                    data = zin.read(item.filename)
+                    if item.filename == "xl/worksheets/sheet1.xml":
+                        data = re.sub(rb'<dimension ref="[^"]*"', b'<dimension ref="A1:A1"', data)
+                    zout.writestr(item, data)
+            rows = load_rows(bad, "COMPANY_NARRATIVE", "REDACTED_NARRATIVE", "SAFETY_ID")
+        self.assertEqual(rows[0]["SAFETY_ID"], "S1")
