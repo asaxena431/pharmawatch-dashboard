@@ -182,3 +182,44 @@ class XlsxColouring(unittest.TestCase):
             self.assertEqual(colours["Acme Clinic"], RED)
             self.assertEqual(colours["Model 8028"], BLUE)
             self.assertEqual(str(orig), r.original)
+
+
+class SpellingAndStatusTabs(unittest.TestCase):
+    def test_fix_typos_preserves_case_and_logs(self):
+        from mdr_redaction.spelling import fix_typos
+        text, fixes = fix_typos("PATIEN RECIEVED the Devcie; the catheter occured fine.")
+        self.assertEqual(text, "PATIENT RECEIVED the Device; the catheter occurred fine.")
+        self.assertEqual(fixes, [("PATIEN", "PATIENT"), ("RECIEVED", "RECEIVED"), ("Devcie", "Device"),
+                                 ("occured", "occurred")])
+
+    def test_compare_fixes_spelling_without_changing_status(self):
+        rows = [{"RECORD_ID": "1", "COMPANY_NARRATIVE": "Patient recieved device on June 07, 2015.",
+                 "REDACTED_NARRATIVE": "Patient recieved device on (B)(6) 2015."}]
+        r = compare(rows, "COMPANY_NARRATIVE", "REDACTED_NARRATIVE", "RECORD_ID")[0]
+        self.assertEqual(r.status, "MATCH")
+        self.assertEqual(r.auto_redacted, "Patient received device on (B)(6) 2015.")
+        self.assertEqual(r.spelling_fixes, "recieved->received")
+        r2 = compare(rows, "COMPANY_NARRATIVE", "REDACTED_NARRATIVE", "RECORD_ID", fix_spelling=False)[0]
+        self.assertIn("recieved", r2.auto_redacted)
+
+    def test_status_tabs_written(self):
+        import tempfile
+        import openpyxl
+        from mdr_redaction.compare import STATUSES, write_xlsx
+        rows = [{"RECORD_ID": "1", "COMPANY_NARRATIVE": "Seen on June 07, 2015.",
+                 "REDACTED_NARRATIVE": "Seen on (B)(6) 2015."},
+                {"RECORD_ID": "2", "COMPANY_NARRATIVE": "Seen on June 07, 2015 by Dr. Smith.",
+                 "REDACTED_NARRATIVE": "Seen on June 07, 2015 by Dr. Smith."}]
+        res = compare(rows, "COMPANY_NARRATIVE", "REDACTED_NARRATIVE", "RECORD_ID")
+        with tempfile.TemporaryDirectory() as d:
+            p = Path(d) / "o.xlsx"
+            write_xlsx(res, p)
+            wb = openpyxl.load_workbook(p)
+            for s in STATUSES:
+                self.assertIn(s, wb.sheetnames)
+            ws = wb["AUTO_EXTRA"]
+            self.assertEqual([c.value for c in ws[1]][:6], ["RECORD_ID", "ORIGINAL (COMPANY_NARRATIVE)",
+                             "EDITOR (REDACTED_NARRATIVE)", "AUTOMATION (REDACTED_NARRATIVE)", "WHY THEY DIFFER",
+                             "SOP REFERENCE"])
+            self.assertEqual(ws.cell(row=2, column=1).value, "2")
+            self.assertEqual(wb["MATCH"].cell(row=2, column=1).value, "1")

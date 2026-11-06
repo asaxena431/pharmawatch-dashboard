@@ -177,6 +177,8 @@ def row(rid: str):
     findings = "".join(f"<li><code>{_e(f)}</code></li>" for f in r.findings.split("; ") if f) or "<li>none</li>"
     reasons = "".join(f"<li>{_e(x)}</li>" for x in r.reason.split("; ") if x)
     refs = "".join(f"<div class='ref'>{_e(x)}</div>" for x in r.sop_reference.split("\n") if x) or "<small>n/a</small>"
+    spell = (f"<p><small>Spelling fixed in automation output: {_e(r.spelling_fixes)}</small></p>"
+             if r.spelling_fixes else "")
     opts = "".join(f"<option value='{o}' {'selected' if v.get('verdict') == o else ''}>{o}</option>" for o in [""] + VERDICTS)
 
     prev_a = f"<a href='{url_for('row', rid=prev_id)}'>&larr; prev</a>" if prev_id else ""
@@ -194,7 +196,7 @@ def row(rid: str):
         f"<div class='box'><small>AUTOMATION (REDACTED_NARRATIVE)</small>"
         f"<p class='t'>{_diff_html(r.original, r.auto_redacted, 'aut')}</p></div></div>"
         f"<h3>Why they differ</h3><ul>{reasons}</ul>"
-        f"<h3>SOP reference</h3>{refs}"
+        f"<h3>SOP reference</h3>{refs}{spell}"
         f"<h3>Automation rules fired ({len([f for f in r.findings.split('; ') if f])})</h3><ul>{findings}</ul>"
         f"<form method='post' action='{url_for('save', rid=rid)}'><h3>Reviewer verdict</h3>"
         f"<p><select name='verdict'>{opts}</select> "

@@ -20,6 +20,7 @@ from dataclasses import dataclass, asdict
 from pathlib import Path
 
 from . import rules as R
+from .spelling import fix_typos
 from .redactor import redact_section
 
 _TOKEN = re.compile(r"\(b\)\s*\)?\((\d)\)", re.I)          # (b)(6), (B)(4), (b))(6) typo
@@ -116,6 +117,7 @@ class RowResult:
     human_redacted: str
     auto_redacted: str
     findings: str
+    spelling_fixes: str = ""   # obvious typos corrected in auto_redacted, as "wrong->right; ..."
 
 
 def _redacted_spans(original: str, redacted: str) -> tuple[list[tuple[str, str]], list[str]]:
@@ -298,15 +300,18 @@ def load_rows(path: Path, orig_col: str, red_col: str, id_col: str) -> list[dict
     return [r for r in rows if r.get(orig_col)]
 
 
-def compare(rows: list[dict], orig_col: str, red_col: str, id_col: str, section: str = "B5") -> list[RowResult]:
+def compare(rows: list[dict], orig_col: str, red_col: str, id_col: str, section: str = "B5",
+            fix_spelling: bool = True) -> list[RowResult]:
     out = []
     for r in rows:
         orig, human = str(r[orig_col]), str(r.get(red_col) or "")
         res = redact_section(section, orig)
         status, reason, ref, auto_only, human_only = _explain(orig, human, res.redacted, res.findings)
+        auto_text, fixes = fix_typos(res.redacted) if fix_spelling else (res.redacted, [])
         out.append(RowResult(str(r.get(id_col, "")), status, reason, ref, auto_only, human_only,
-                             orig, human, res.redacted,
-                             "; ".join(f"{f.rule}:{f.original!r}->{f.replacement!r}" for f in res.findings)))
+                             orig, human, auto_text,
+                             "; ".join(f"{f.rule}:{f.original!r}->{f.replacement!r}" for f in res.findings),
+                             "; ".join(f"{a}->{b}" for a, b in fixes)))
     return out
 
 
@@ -355,13 +360,43 @@ def _colour_diffs(ws, cols: list[str], results: list[RowResult]) -> None:
             continue
         spans = [(sp, RED) for sp in r.human_only.split(" | ")] + [(sp, BLUE) for sp in r.auto_only.split(" | ")]
         ws.cell(row=i, column=ci["original"]).value = _rich(r.original, spans)
-        if r.human_only:
+        if r.human_only and "human_only" in ci:
             ws.cell(row=i, column=ci["human_only"]).font = Font(bold=True, color=RED)
-        if r.auto_only:
+        if r.auto_only and "auto_only" in ci:
             ws.cell(row=i, column=ci["auto_only"]).font = Font(bold=True, color=BLUE)
         tokens = [(t, GREEN) for t in set(_TOKEN_RE.findall(r.human_redacted + " " + r.auto_redacted))]
         ws.cell(row=i, column=ci["human_redacted"]).value = _rich(r.human_redacted, tokens)
         ws.cell(row=i, column=ci["auto_redacted"]).value = _rich(r.auto_redacted, tokens)
+
+
+STATUSES = ("MATCH", "FORMAT_ONLY", "AUTO_MISSED", "AUTO_EXTRA", "BOTH", "HUMAN_INCONSISTENT")
+TAB_COLS = [("record_id", "RECORD_ID", 14), ("original", "ORIGINAL (COMPANY_NARRATIVE)", 60),
+            ("human_redacted", "EDITOR (REDACTED_NARRATIVE)", 60), ("auto_redacted", "AUTOMATION (REDACTED_NARRATIVE)", 60),
+            ("reason", "WHY THEY DIFFER", 60), ("sop_reference", "SOP REFERENCE", 70), ("spelling_fixes", "SPELLING FIXES", 30)]
+
+
+def _status_tabs(wb, results: list[RowResult], fills: dict[str, str]) -> None:
+    """One worksheet per status with the reviewer-facing columns, same red/blue/green word colouring."""
+    from openpyxl.styles import Alignment, Font, PatternFill
+    for status in STATUSES:
+        rows = [r for r in results if r.status == status]
+        ws = wb.create_sheet(status)
+        ws.append([h for _, h, _ in TAB_COLS])
+        for i, (_, _, w) in enumerate(TAB_COLS, 1):
+            c = ws.cell(row=1, column=i)
+            c.font = Font(bold=True)
+            c.fill = PatternFill("solid", fgColor=fills[status])
+            ws.column_dimensions[c.column_letter].width = w
+        for r in rows:
+            d = asdict(r)
+            ws.append([d[k] for k, _, _ in TAB_COLS])
+        for row in ws.iter_rows(min_row=2):
+            for cell in row:
+                cell.alignment = Alignment(wrap_text=True, vertical="top")
+        _colour_diffs(ws, [k for k, _, _ in TAB_COLS], rows)
+        ws.freeze_panes = "B2"
+        if rows:
+            ws.auto_filter.ref = ws.dimensions
 
 
 def write_xlsx(results: list[RowResult], path: Path) -> None:
@@ -377,7 +412,8 @@ def write_xlsx(results: list[RowResult], path: Path) -> None:
     fills = {"MATCH": "C6EFCE", "FORMAT_ONLY": "E2EFDA", "AUTO_MISSED": "F8CBAD",
              "AUTO_EXTRA": "FFE699", "BOTH": "F4B084", "HUMAN_INCONSISTENT": "D9D2E9"}
     widths = {"record_id": 14, "status": 18, "reason": 60, "sop_reference": 70, "auto_only": 25,
-              "human_only": 25, "original": 60, "human_redacted": 60, "auto_redacted": 60, "findings": 40}
+              "human_only": 25, "original": 60, "human_redacted": 60, "auto_redacted": 60, "findings": 40,
+              "spelling_fixes": 30}
     for i, c in enumerate(cols, 1):
         ws.cell(row=1, column=i).font = Font(bold=True)
         ws.column_dimensions[ws.cell(row=1, column=i).column_letter].width = widths.get(c, 20)
@@ -416,6 +452,8 @@ def write_xlsx(results: list[RowResult], path: Path) -> None:
     ws2.cell(row=ws2.max_row, column=1).font = Font(bold=True, color=GREEN)
     ws2.column_dimensions["A"].width = 22
     ws2.column_dimensions["B"].width = 90
+
+    _status_tabs(wb, results, fills)
 
     ws3 = wb.create_sheet("sop_references")
     ws3.append(["key", "SOP reference (MEDICAL DEVICE REPORTING REDACTION PROCEDURES v4.0, 02/01/2025)"])
