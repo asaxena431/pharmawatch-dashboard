@@ -46,7 +46,9 @@ tr:hover td{background:#f0f4fa}
 .box{background:#fff;border:1px solid #e3e6ea;border-radius:6px;padding:12px}
 .box p.t{white-space:pre-wrap;font-family:ui-monospace,monospace;font-size:13px;line-height:1.5}
 .tok{color:#b00020;font-weight:600}
-.hum{background:#ffd6d6}.aut{background:#fff2b2}.ed{background:#dbe9ff}
+.hum{background:#ffd6d6}.aut{background:#fff2b2}.both{background:#d4f5d4}.ed{background:#dbe9ff}
+mark{padding:0 2px;border-radius:3px;font-weight:600}
+.legend mark{margin-right:8px}
 .ref{background:#fffbe6;border-left:4px solid #e0b400;padding:8px 12px;white-space:pre-wrap;font-size:13px}
 button{padding:6px 12px;border:0;border-radius:4px;cursor:pointer;font-weight:600;background:#1f3a5f;color:#fff}
 small{color:#555}
@@ -70,32 +72,67 @@ def _mark_tokens(t: str) -> str:
     return t
 
 
+def _norm(ws: list[str]) -> list[str]:
+    return [w.lower().strip(".,;:") for w in ws]
+
+
+def _changed_orig_idx(original: str, redacted: str) -> set[int]:
+    """Indices of ORIGINAL words that the redacted text replaced or deleted."""
+    sm = difflib.SequenceMatcher(None, _norm(original.split()), _norm(redacted.split()), autojunk=False)
+    idx: set[int] = set()
+    for op, i1, i2, _j1, _j2 in sm.get_opcodes():
+        if op != "equal":
+            idx.update(range(i1, i2))
+    return idx
+
+
+def _mark(words: list[str], cls_of) -> str:
+    """Join words, wrapping each run of marked words in <mark class=...>&#9654;...</mark>."""
+    out, run, run_cls = [], [], None
+    def flush():
+        if run:
+            out.append(f"<mark class='{run_cls}'>&#9654;{_e(' '.join(run))}</mark>" if run_cls else _e(" ".join(run)))
+    for i, w in enumerate(words):
+        c = cls_of(i)
+        if c != run_cls:
+            flush()
+            run, run_cls = [], c
+        run.append(w)
+    flush()
+    return _mark_tokens(" ".join(out))
+
+
 def _diff_html(original: str, redacted: str, cls: str) -> str:
-    """Redacted text with the words that differ from the original highlighted."""
-    def norm(ws: list[str]) -> list[str]:
-        return [w.lower().strip(".,;:") for w in ws]
+    """Redacted text with the words that differ from the original marked."""
     words = redacted.split()
-    sm = difflib.SequenceMatcher(None, norm(original.split()), norm(words), autojunk=False)
-    out = []
+    sm = difflib.SequenceMatcher(None, _norm(original.split()), _norm(words), autojunk=False)
+    changed: set[int] = set()
     for op, _i1, _i2, j1, j2 in sm.get_opcodes():
-        chunk = _e(" ".join(words[j1:j2]))
-        out.append(chunk if op == "equal" else f"<span class='{cls}'>{chunk}</span>")
-    return _mark_tokens(" ".join(x for x in out if x))
+        if op != "equal":
+            changed.update(range(j1, j2))
+    return _mark(words, lambda i: cls if i in changed else None)
 
 
 def _orig_html(r: RowResult) -> str:
-    t = _e(r.original)
-    for span in filter(None, (r.human_only + " | " + r.auto_only).split(" | ")):
-        low = t.lower()
-        i = low.find(span.strip())
-        if i >= 0:
-            cls = "hum" if span in r.human_only else "aut"
-            t = t[:i] + f"<span class='{cls}'>" + t[i:i + len(span)] + "</span>" + t[i + len(span):]
-    return t
+    """Original text with the words changed by the editor (red), by automation (yellow) or by both (green) marked."""
+    words = r.original.split()
+    hum = _changed_orig_idx(r.original, r.human_redacted)
+    aut = _changed_orig_idx(r.original, r.auto_redacted)
+    return _mark(words, lambda i: "both" if i in hum and i in aut else "hum" if i in hum else "aut" if i in aut else None)
+
+
+def _pinned() -> list[str]:
+    return STATE["verdicts"].setdefault("_pinned", [])
+
+
+def _save_state() -> None:
+    with open(STATE["verdicts_path"], "w", encoding="utf-8") as fh:
+        json.dump(STATE["verdicts"], fh, indent=2)
 
 
 def _verdict(rid: str) -> str:
-    return STATE["verdicts"].get(rid, {}).get("verdict", "")
+    v = STATE["verdicts"].get(rid, {})
+    return v.get("verdict", "") if isinstance(v, dict) else ""
 
 
 # ------------------------------------------------------------ routes ---------
@@ -104,6 +141,8 @@ def index():
     flt = request.args.get("status", "DIFF")
     rows = STATE["rows"]
     shown = [r for r in rows if flt == "ALL" or r.status == flt or (flt == "DIFF" and r.status not in ("MATCH", "FORMAT_ONLY"))]
+    pins = _pinned()
+    shown.sort(key=lambda r: (r.record_id not in pins, pins.index(r.record_id) if r.record_id in pins else 0))
     counts = {s: sum(1 for r in rows if r.status == s) for s in STATUSES}
     filters = " ".join(
         f"<a href='?status={s}'><span class='tag {s}'>{s} {counts[s]}</span></a>" for s in STATUSES
@@ -112,7 +151,7 @@ def index():
     for r in shown:
         trs.append(
             f"<tr><td><span class='tag {r.status}'>{r.status}</span></td>"
-            f"<td><a href='{url_for('row', rid=r.record_id)}'>{_e(r.record_id)}</a></td>"
+            f"<td>{'&#128204; ' if r.record_id in pins else ''}<a href='{url_for('row', rid=r.record_id)}'>{_e(r.record_id)}</a></td>"
             f"<td>{_e(r.reason)[:300]}</td><td>{_e(r.human_only)}</td><td>{_e(r.auto_only)}</td>"
             f"<td><span class='tag {_verdict(r.record_id)}'>{_verdict(r.record_id)}</span></td></tr>"
         )
@@ -144,7 +183,10 @@ def row(rid: str):
     next_a = f"<a href='{url_for('row', rid=next_id)}'>next &rarr;</a>" if next_id else ""
     body = (
         f"<p>{prev_a} &middot; <a href='{url_for('index')}'>list</a> &middot; {next_a} &middot; "
-        f"<span class='tag {r.status}'>{r.status}</span></p>"
+        f"<span class='tag {r.status}'>{r.status}</span> &middot; "
+        f"<a href='{url_for('pin', rid=rid)}'>{'unpin' if rid in _pinned() else '&#128204; pin to top'}</a></p>"
+        "<p class='legend'><small>&#9654; marks changed words: <mark class='hum'>editor changed</mark>"
+        "<mark class='aut'>automation changed</mark><mark class='both'>both changed</mark></small></p>"
         "<div class='grid'>"
         f"<div class='box'><small>ORIGINAL (COMPANY_NARRATIVE)</small><p class='t'>{_orig_html(r)}</p></div>"
         f"<div class='box'><small>EDITOR (REDACTED_NARRATIVE)</small>"
@@ -162,6 +204,17 @@ def row(rid: str):
     return _page(rid, body)
 
 
+@app.get("/row/<rid>/pin")
+def pin(rid: str):
+    pins = _pinned()
+    if rid in pins:
+        pins.remove(rid)
+    else:
+        pins.insert(0, rid)
+    _save_state()
+    return redirect(url_for("index"))
+
+
 @app.post("/row/<rid>/save")
 def save(rid: str):
     STATE["verdicts"][rid] = {
@@ -169,8 +222,7 @@ def save(rid: str):
         "note": request.form.get("note", ""),
         "reviewed_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
     }
-    with open(STATE["verdicts_path"], "w", encoding="utf-8") as fh:
-        json.dump(STATE["verdicts"], fh, indent=2)
+    _save_state()
     ids = [x.record_id for x in STATE["rows"] if x.status not in ("MATCH", "FORMAT_ONLY")]
     later = [x for x in ids if x > rid] if rid in ids else ids
     nxt = next((x for x in later if not _verdict(x)), None)
