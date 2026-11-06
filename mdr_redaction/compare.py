@@ -277,6 +277,14 @@ def _explain(original: str, human: str, auto: str, findings) -> tuple[str, str, 
 _X000D = re.compile(r"_x000d_", re.I)   # Excel escape for a carriage return inside a cell
 
 
+# normalised header name -> alternative normalised names seen in other exports
+COLUMN_ALIASES = {
+    "companynarrative": ("fullnarrative", "narrative", "originalnarrative", "b5narrative", "eventdescription"),
+    "redactednarrative": ("readactednarrative", "redactednarrativ", "redacted", "editornarrative"),
+    "recordid": ("safetyid", "reportid", "mdrreportkey", "reportnumber", "id"),
+}
+
+
 def load_rows(path: Path, orig_col: str, red_col: str, id_col: str) -> list[dict]:
     if path.suffix.lower() in (".xlsx", ".xlsm"):
         import openpyxl
@@ -288,11 +296,12 @@ def load_rows(path: Path, orig_col: str, red_col: str, id_col: str) -> list[dict
         with open(path, newline="", encoding="utf-8") as fh:
             rows = list(csv.DictReader(fh))
     if rows:
-        # tolerate header variants (REDACTED_NARRATIVES, lower case, spaces)
+        # tolerate header variants (REDACTED_NARRATIVES, lower case, spaces) and known alternative names
         norm = {re.sub(r"[^a-z0-9]", "", k.lower()).rstrip("s"): k for k in rows[0]}
         for c in (orig_col, red_col, id_col):
             if c not in rows[0]:
-                actual = norm.get(re.sub(r"[^a-z0-9]", "", c.lower()).rstrip("s"))
+                key = re.sub(r"[^a-z0-9]", "", c.lower()).rstrip("s")
+                actual = next((norm[a] for a in (key, *COLUMN_ALIASES.get(key, ())) if a in norm), None)
                 if actual is None:
                     sys.exit(f"column {c!r} not found; have {list(rows[0])}")
                 for r in rows:

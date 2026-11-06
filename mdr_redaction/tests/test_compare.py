@@ -223,3 +223,20 @@ class SpellingAndStatusTabs(unittest.TestCase):
                              "SOP REFERENCE"])
             self.assertEqual(ws.cell(row=2, column=1).value, "2")
             self.assertEqual(wb["MATCH"].cell(row=2, column=1).value, "1")
+
+
+class ColumnAliases(unittest.TestCase):
+    def test_safety_id_full_narrative_readacted(self):
+        import tempfile
+        import openpyxl
+        from mdr_redaction.compare import load_rows
+        wb = openpyxl.Workbook()
+        wb.active.append(["SAFETY_ID", "FULL_NARRATIVE", "READACTED_NARRATIVE"])
+        wb.active.append(["S1", "Seen on June 07, 2015.", "Seen on (b)(6) 2015."])
+        with tempfile.TemporaryDirectory() as d:
+            p = Path(d) / "in.xlsx"
+            wb.save(p)
+            rows = load_rows(p, "COMPANY_NARRATIVE", "REDACTED_NARRATIVE", "RECORD_ID")
+        self.assertEqual(rows[0]["RECORD_ID"], "S1")
+        self.assertEqual(rows[0]["COMPANY_NARRATIVE"], "Seen on June 07, 2015.")
+        self.assertEqual(rows[0]["REDACTED_NARRATIVE"], "Seen on (b)(6) 2015.")
