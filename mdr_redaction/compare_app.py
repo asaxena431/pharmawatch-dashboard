@@ -260,9 +260,14 @@ def main(argv=None) -> int:
     ap.add_argument("--id-col", default="RECORD_ID")
     ap.add_argument("--section", default="B5")
     ap.add_argument("--port", type=int, default=5052)
+    ap.add_argument(
+        "--host",
+        default="127.0.0.1",
+        help="0.0.0.0 lets other machines on your network open the UI (no login - use only on a trusted network)",
+    )
     a = ap.parse_args(argv)
     load(a.input, a.orig_col, a.redacted_col, a.id_col, a.section)
-    app.run(host="127.0.0.1", port=a.port, debug=False)
+    app.run(host=a.host, port=a.port, debug=False)
     return 0
 
 
