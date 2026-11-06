@@ -75,3 +75,21 @@ def test_a_message_the_schemas_reject_is_an_error(tmp_path):
     with pytest.raises(SchemaError) as raised:
         validate_xml(broken)
     assert raised.value.complaints == found
+
+
+def test_label_use_follows_gl42_codes():
+    from cvm_aer.models import VeterinaryProduct, VeterinaryReport
+    from cvm_aer.vich_hl7 import to_xml_string
+
+    product = VeterinaryProduct(
+        used_according_to_label="No",
+        off_label_use={"Target species": "Yes", "Overdose": "No"},
+    )
+    xml = to_xml_string(VeterinaryReport(product=product))
+    label = xml.split('displayName="Use According to Label" />')[1].split("</observation>")[0]
+    assert 'value="false"' in label
+    explanation = xml.split('displayName="VICH Label Use" />')[1]
+    species = explanation.split('code="T95028"')[1].split("</observation>")[0]
+    assert 'value="true"' in species
+    overdose = explanation.split('code="T95030"')[1].split("</observation>")[0]
+    assert 'value="false"' in overdose

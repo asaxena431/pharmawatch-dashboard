@@ -617,25 +617,28 @@ def _product(parent: ET.Element, report: VeterinaryReport, product_id: str) -> N
     _off_label(administration, product)
 
 
-# B.2.5.1 the ways a treatment can depart from the label, in the message's order.
+# B.2.5.1 the ways a treatment can depart from the label, in GL42's order, keyed as the
+# form readers key product.off_label_use.
 OFF_LABEL_ISSUES = (
-    ("T95029", "Dose Off-Label", "dose"),
-    ("T95030", "Species Off-Label", "species"),
-    ("T95031", "Route Off-Label", "route"),
-    ("T95032", "Treatment regimen Off-Label", "regimen"),
-    ("T95033", "Indication Off-Label", "indication"),
-    ("T95034", "Storage condition Off-Label", "storage"),
-    ("T95035", "Product expired", "expired"),
-    ("T95036", "Other off label issue", "other"),
+    ("T95028", "Species Off-Label", "Target species"),
+    ("T95029", "Route Off-Label", "Route of exposure"),
+    ("T95030", "Overdosed", "Overdose"),
+    ("T95031", "Underdosed", "Underdose"),
+    ("T95032", "Treatment regimen Off-Label", "Treatment regime"),
+    ("T95033", "Indication Off-Label", "Indication"),
+    ("T95034", "Storage condition Off-Label", "Storage"),
+    ("T95035", "Product expired", "Expired product"),
+    ("T95036", "Other off label issue", "Other"),
 )
 
 
 def _off_label(administration: ET.Element, product) -> None:
-    """B.2.5 label conformity, each off-label issue hanging off the answer."""
-    observation = _observation(administration, "T95028", "Used According To Label", wrapper="outboundRelationship2")
+    """B.2.5 Use According to Label (T95015), then B.2.5.1 the off-label issues under T95016."""
+    observation = _observation(administration, "T95015", "Use According to Label", wrapper="outboundRelationship2")
     _boolean(observation, product.used_according_to_label)
+    explanation = _observation(administration, "T95016", "VICH Label Use", wrapper="outboundRelationship2")
     for code, display, key in OFF_LABEL_ISSUES:
-        issue = _observation(observation, code, display, wrapper="outboundRelationship2")
+        issue = _observation(explanation, code, display, wrapper="outboundRelationship2")
         _boolean(issue, product.off_label_use.get(key))
 
 
