@@ -253,3 +253,38 @@ class ColumnAliases(unittest.TestCase):
             wb.save(p)
             rows = load_rows(p, "COMPANY_NARRATIVE", "REDACTED_NARRATIVE", "SAFETY_ID")
         self.assertEqual(rows[0]["SAFETY_ID"], "R1")
+
+
+class LoaderRobustness(unittest.TestCase):
+    def test_header_on_second_sheet_and_not_first_row(self):
+        import tempfile
+        import openpyxl
+        from mdr_redaction.compare import load_rows
+        wb = openpyxl.Workbook()
+        wb.active.title = "Notes"
+        wb.active.append(["export generated 2026"])
+        ws = wb.create_sheet("Data")
+        ws.append(["Redaction export"])
+        ws.append([])
+        ws.append(["SAFETY_ID", "FULL_NARRATIVE", "READACTED_NARRATIVE"])
+        ws.append(["S1", "Seen on June 07, 2015.", "Seen on (b)(6) 2015."])
+        ws.append([None, None, None])
+        with tempfile.TemporaryDirectory() as d:
+            p = Path(d) / "in.xlsx"
+            wb.save(p)
+            rows = load_rows(p, "COMPANY_NARRATIVE", "REDACTED_NARRATIVE", "SAFETY_ID")
+        self.assertEqual(len(rows), 1)
+        self.assertEqual(rows[0]["SAFETY_ID"], "S1")
+
+    def test_empty_file_gives_clear_error(self):
+        import tempfile
+        import openpyxl
+        from mdr_redaction.compare import load_rows
+        wb = openpyxl.Workbook()
+        wb.active.append(["SAFETY_ID", "FULL_NARRATIVE", "READACTED_NARRATIVE"])
+        with tempfile.TemporaryDirectory() as d:
+            p = Path(d) / "in.xlsx"
+            wb.save(p)
+            with self.assertRaises(SystemExit) as cm:
+                load_rows(p, "COMPANY_NARRATIVE", "REDACTED_NARRATIVE", "SAFETY_ID")
+        self.assertIn("no data rows", str(cm.exception))

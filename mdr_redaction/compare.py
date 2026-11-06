@@ -289,10 +289,23 @@ COLUMN_ALIASES = {
 def load_rows(path: Path, orig_col: str, red_col: str, id_col: str) -> list[dict]:
     if path.suffix.lower() in (".xlsx", ".xlsm"):
         import openpyxl
-        ws = openpyxl.load_workbook(path, read_only=True).active
-        it = ws.iter_rows(values_only=True)
-        header = [str(h) for h in next(it)]
-        rows = [dict(zip(header, (_X000D.sub("\n", v) if isinstance(v, str) else v for v in r))) for r in it]
+        wb = openpyxl.load_workbook(path, read_only=True)
+        rows = []
+        for ws in wb.worksheets:   # use the first sheet that has a narrative column (header may not be on row 1)
+            it = ws.iter_rows(values_only=True)
+            header = None
+            for raw in it:
+                if any(isinstance(h, str) and "narrative" in h.lower() for h in raw):
+                    header = ["" if h is None else str(h).strip() for h in raw]
+                    break
+            if header is None:
+                continue
+            rows = [dict(zip(header, (_X000D.sub("\n", v) if isinstance(v, str) else v for v in r)))
+                    for r in it if any(v not in (None, "") for v in r)]
+            break
+        if not rows:
+            sys.exit(f"no data rows found in {path} (sheets: {wb.sheetnames}); "
+                     f"expected a header row containing {orig_col} / {red_col} / {id_col}")
     else:
         with open(path, newline="", encoding="utf-8") as fh:
             rows = list(csv.DictReader(fh))
@@ -307,7 +320,10 @@ def load_rows(path: Path, orig_col: str, red_col: str, id_col: str) -> list[dict
                     sys.exit(f"column {c!r} not found; have {list(rows[0])}")
                 for r in rows:
                     r[c] = r.pop(actual)
-    return [r for r in rows if r.get(orig_col)]
+    rows = [r for r in rows if r.get(orig_col)]
+    if not rows:
+        sys.exit(f"column {orig_col!r} found in {path} but every row is empty - nothing to compare")
+    return rows
 
 
 def compare(rows: list[dict], orig_col: str, red_col: str, id_col: str, section: str = "B5",
