@@ -158,7 +158,7 @@ def index():
     body = (f"<pre>{_e(summary(rows))}</pre>"
             f"<p class='filters'><a href='?status=DIFF'><b>differences only</b></a> <a href='?status=ALL'>all</a> {filters}"
             f" &middot; <a href='{url_for('export')}'>export verdicts.json</a></p>"
-            "<table><tr><th>Status</th><th>Record</th><th>Reason</th><th>Editor redacted, automation kept</th>"
+            "<table><tr><th>Status</th><th>SAFETY_ID</th><th>Reason</th><th>Editor redacted, automation kept</th>"
             "<th>Automation redacted, editor kept</th><th>Your verdict</th></tr>" + "".join(trs) + "</table>")
     return _page(f"{len(shown)} of {len(rows)} narratives", body)
 
@@ -259,7 +259,7 @@ def main(argv=None) -> int:
     ap.add_argument("input", help=".xlsx/.csv with original + editor-redacted columns")
     ap.add_argument("--orig-col", default="COMPANY_NARRATIVE")
     ap.add_argument("--redacted-col", default="REDACTED_NARRATIVE")
-    ap.add_argument("--id-col", default="RECORD_ID")
+    ap.add_argument("--id-col", default="SAFETY_ID")
     ap.add_argument("--section", default="B5")
     ap.add_argument("--port", type=int, default=5052)
     ap.add_argument(

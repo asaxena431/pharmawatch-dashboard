@@ -218,7 +218,7 @@ class SpellingAndStatusTabs(unittest.TestCase):
             for s in STATUSES:
                 self.assertIn(s, wb.sheetnames)
             ws = wb["AUTO_EXTRA"]
-            self.assertEqual([c.value for c in ws[1]][:6], ["RECORD_ID", "ORIGINAL (COMPANY_NARRATIVE)",
+            self.assertEqual([c.value for c in ws[1]][:6], ["SAFETY_ID", "ORIGINAL (COMPANY_NARRATIVE)",
                              "EDITOR (REDACTED_NARRATIVE)", "AUTOMATION (REDACTED_NARRATIVE)", "WHY THEY DIFFER",
                              "SOP REFERENCE"])
             self.assertEqual(ws.cell(row=2, column=1).value, "2")
@@ -240,3 +240,16 @@ class ColumnAliases(unittest.TestCase):
         self.assertEqual(rows[0]["RECORD_ID"], "S1")
         self.assertEqual(rows[0]["COMPANY_NARRATIVE"], "Seen on June 07, 2015.")
         self.assertEqual(rows[0]["REDACTED_NARRATIVE"], "Seen on (b)(6) 2015.")
+
+    def test_old_record_id_still_loads_with_safety_id_default(self):
+        import tempfile
+        import openpyxl
+        from mdr_redaction.compare import load_rows
+        wb = openpyxl.Workbook()
+        wb.active.append(["RECORD_ID", "COMPANY_NARRATIVE", "REDACTED_NARRATIVE"])
+        wb.active.append(["R1", "x", "x"])
+        with tempfile.TemporaryDirectory() as d:
+            p = Path(d) / "in.xlsx"
+            wb.save(p)
+            rows = load_rows(p, "COMPANY_NARRATIVE", "REDACTED_NARRATIVE", "SAFETY_ID")
+        self.assertEqual(rows[0]["SAFETY_ID"], "R1")

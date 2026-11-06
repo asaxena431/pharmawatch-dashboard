@@ -282,6 +282,7 @@ COLUMN_ALIASES = {
     "companynarrative": ("fullnarrative", "narrative", "originalnarrative", "b5narrative", "eventdescription"),
     "redactednarrative": ("readactednarrative", "redactednarrativ", "redacted", "editornarrative"),
     "recordid": ("safetyid", "reportid", "mdrreportkey", "reportnumber", "id"),
+    "safetyid": ("recordid", "reportid", "mdrreportkey", "reportnumber", "id"),
 }
 
 
@@ -379,7 +380,7 @@ def _colour_diffs(ws, cols: list[str], results: list[RowResult]) -> None:
 
 
 STATUSES = ("MATCH", "FORMAT_ONLY", "AUTO_MISSED", "AUTO_EXTRA", "BOTH", "HUMAN_INCONSISTENT")
-TAB_COLS = [("record_id", "RECORD_ID", 14), ("original", "ORIGINAL (COMPANY_NARRATIVE)", 60),
+TAB_COLS = [("record_id", "SAFETY_ID", 14), ("original", "ORIGINAL (COMPANY_NARRATIVE)", 60),
             ("human_redacted", "EDITOR (REDACTED_NARRATIVE)", 60), ("auto_redacted", "AUTOMATION (REDACTED_NARRATIVE)", 60),
             ("reason", "WHY THEY DIFFER", 60), ("sop_reference", "SOP REFERENCE", 70), ("spelling_fixes", "SPELLING FIXES", 30)]
 
@@ -414,7 +415,7 @@ def write_xlsx(results: list[RowResult], path: Path) -> None:
     ws = wb.active
     ws.title = "comparison"
     cols = list(RowResult.__dataclass_fields__)
-    ws.append(cols)
+    ws.append(["SAFETY_ID" if c == "record_id" else c for c in cols])
     for r in results:
         ws.append([asdict(r)[c] for c in cols])
     from openpyxl.styles import Alignment, Font, PatternFill
@@ -481,7 +482,7 @@ def main(argv=None):
     ap.add_argument("-o", "--output", type=Path, default=Path("compare_out.xlsx"))
     ap.add_argument("--orig-col", default="COMPANY_NARRATIVE")
     ap.add_argument("--redacted-col", default="REDACTED_NARRATIVE")
-    ap.add_argument("--id-col", default="RECORD_ID")
+    ap.add_argument("--id-col", default="SAFETY_ID")
     ap.add_argument("--section", default="B5")
     a = ap.parse_args(argv)
     results = compare(load_rows(a.input, a.orig_col, a.redacted_col, a.id_col), a.orig_col, a.redacted_col, a.id_col, a.section)
