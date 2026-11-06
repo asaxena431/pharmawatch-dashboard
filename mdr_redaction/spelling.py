@@ -49,7 +49,7 @@ KNOWN_TYPOS: dict[str, str] = {
     "intermittant": "intermittent", "consistant": "consistent", "persistant": "persistent", "resistent": "resistant",
     "assesment": "assessment", "assessement": "assessment", "diagnoised": "diagnosed", "diagnosied": "diagnosed",
     "complaing": "complaining", "complane": "complain", "loosing": "losing", "leeking": "leaking",
-    "dislodgement": "dislodgment", "dammage": "damage", "damge": "damage", "damged": "damaged",
+    "dammage": "damage", "damge": "damage", "damged": "damaged",
     "preformed": "performed", "perfomed": "performed", "performend": "performed", "recieving": "receiving",
 }
 
