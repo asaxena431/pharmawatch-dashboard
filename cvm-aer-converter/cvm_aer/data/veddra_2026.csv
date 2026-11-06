@@ -1,0 +1,3007 @@
+llt,llt_key
+Application site alopecia,2
+Application site hair loss,3
+Application site blister,4
+Application site erythema,5
+Application site rubra,6
+Application site granuloma,7
+Application site bruising,8
+Application site petechiae,9
+Application site haematoma,10
+Application site haemorrhage,11
+Application site bleeding,12
+Application site inflammation,13
+Application site lesion,14
+Application site scab,15
+Application site crust,16
+Application site mucopurulent discharge,17
+Application site necrosis,18
+Application site oedema,19
+Application site swelling,20
+Application site lump,21
+Application site pain,22
+Application site itching,23
+Application site irritation,24
+Application site pruritus,25
+Application site scratching,26
+Application site pustule,27
+Application site pyoderma,28
+Application site reaction NOS,29
+Application site sarcoma,30
+Application site self trauma,31
+Application site weeping (see also Skin),32
+Application site serosanguineous discharge,33
+Application site serous discharge,34
+Application site ulcer,35
+Implant site abscess,36
+Implant site alopecia,37
+Implant site hair loss,38
+Implant site blister,39
+Implant site rubra,40
+Implant site erythema,41
+Implant site granuloma,42
+Implant site bruising,43
+Implant site haematoma,44
+Implant site petechiae,45
+Implant site haemorrhage,46
+Implant site bleeding,47
+Implant site inflammation,48
+Implant site scab,49
+Implant site lesion,50
+Implant site crust,51
+Implant site mucopurulent discharge,52
+Implant site necrosis,53
+Implant site lump,54
+Implant site oedema,55
+Implant site swelling,56
+Implant site pain,57
+Implant site irritation,58
+Implant site itching,59
+Implant site scratching,60
+Implant site pruritus,61
+Implant site pustule,62
+Implant site pyoderma,63
+Implant site reaction NOS,64
+Implant site sarcoma,65
+Implant site self trauma,66
+Implant site weeping (see also Skin),67
+Implant site serosanguineous discharge,68
+Implant site serous discharge,69
+Implant site ulcer,70
+Movement of implant,71
+Injection site abscess,72
+Injection site alopecia,73
+Injection site hair loss,74
+Injection site blister,75
+Injection site rubra,76
+Injection site erythema,77
+Injection site granuloma,78
+Injection site bruising,79
+Injection site haematoma,80
+Injection site petechiae,81
+Injection site haemorrhage,82
+Injection site bleeding,83
+Injection site inflammation,84
+Injection site scab,85
+Injection site lesion,86
+Injection site crust,87
+Injection site mucopurulent discharge,88
+Injection site necrosis,89
+Injection site oedema,90
+Injection site swelling,91
+Injection site lump,92
+Injection site pain,93
+Injection site irritation,94
+Injection site itching,95
+Injection site scratching,96
+Injection site pruritus,97
+Injection site pustules,98
+Injection site pyoderma,99
+Injection site reaction NOS,100
+Injection site sarcoma,101
+Injection site self trauma,102
+Injection site weeping (see also Skin),103
+Injection site serosanguineous discharge,104
+Injection site serous discharge,105
+Injection site ulcer,106
+Abnormal swimming in fish,107
+Leaping behaviour in fish,108
+Miscellaneous eating disorder NOS,109
+Somnolence,110
+Sedation,111
+Biting -aggression (see also Skin and appendages disorders),112
+Aggression,113
+Distress,114
+Anxiety,115
+Behavioural disorder NOS,116
+Hallucination,117
+Hyperactivity,118
+Restlessness,119
+Excitation,120
+Agitation,121
+Hyperexcitation,122
+Inappropriate defecation,123
+Inappropriate urination,124
+Self trauma,125
+Dullness,126
+Sleepiness - neurological disorder,127
+Teeth grinding,128
+Vocalisation,129
+Crying,130
+Mewing,131
+Barking,132
+Coprophagia,133
+Pica NOS,134
+Excessive appetite,136
+Polyphagia,137
+Sexual disorder NOS (see Reproductive for named sexual disorders),138
+Not sleeping,140
+Sleep disturbance NOS,141
+Anaemia NOS,142
+Iron deficiency anaemia,144
+Non-regenerative anaemia,145
+Aplastic anaemia,146
+Haemolytic anaemia,147
+Blood and lymphatic system disorder NOS,148
+Bone marrow aplasia,149
+Bone marrow suppression,150
+Prolonged bleeding NOS,151
+Other coagulation investigation abnormality,152
+Blood clot,153
+Disseminated intravascular coagulation,154
+Thromboemboli,155
+Thrombosis,156
+Congenital coagulopathy NOS,157
+Congenital haematological disorder NOS,158
+Haemophilia,159
+Thrombocytopenia,160
+Low platelet count,161
+Eosinophilia,162
+Leukocytosis NOS,163
+Leukopenia NOS,164
+Lymphocytosis,165
+Lymphopenia,166
+Neutropenia,167
+Neutrophilia,168
+Panleukopenia,169
+Haemopoietic neoplasm NOS,170
+Leukaemia,171
+Lymphosarcoma,172
+Lymphadenitis,173
+Lymphadenopathy,174
+Lymphangitis,175
+Lymphoma,176
+Haemorrhage NOS,177
+Profuse bleeding,178
+Red blood cell disorder,181
+Spleen and reticulo-endothelial system disorder NOS,182
+Spleen rupture,183
+Splenitis,184
+Splenomegaly,185
+Arrhythmia,186
+Atrial fibrillation,187
+Bradycardia,188
+Decreased heart rate,189
+Slow heart rate,190
+Heart block NOS,191
+Tachycardia,192
+Increased heart rate,193
+Cardiac arrest,195
+Cardiac failure,196
+Heart failure,197
+Heart disorder aggravated,199
+Heart insufficiency,200
+Heart valve opening,201
+Cardiac disorder NOS,202
+Right ventricular dilatation,203
+Cardiac enlargement,204
+Cardiomyopathy,205
+Carditis,206
+Embolism,208
+Endocardial fibroelastosis,209
+Endocarditis,210
+Infarction,211
+Cardiac murmur,212
+Heart murmur,213
+Murmur,214
+Myocarditis,215
+Pericarditis,216
+Valvular disorder,217
+Valvular insufficiency,218
+Cardiorespiratory arrest,219
+Shock,220
+Circulatory shock,221
+Pale mucous membrane,222
+Circulatory collapse (see also Neurological and Systemic disorders),223
+Hypertension,224
+High blood pressure,225
+Syncope,226
+Fainting,227
+Hypotension,228
+Low blood pressure,229
+Ischaemia NOS,230
+Aortic stenosis,231
+Congenital cardiovascular disorder NOS,232
+Ductus botalli persistence,233
+Pulmonary stenosis,234
+Ventricular septal defect,235
+Cardiac tamponade,236
+Pericardial effusion,237
+Pericardial haemorrhage,238
+Aortic degeneration,239
+Arteritis,240
+Phlebitis,241
+Vascular dilation and/or rupture,242
+Aneurism,243
+Aortic rupture,244
+Mouth irritation,245
+Vascular disorder NOS (see also endocarditis),246
+Vasculitis,247
+Perivascular necrosis,248
+Vascular spasm,249
+Vascular inflammation,250
+Abdominal cavity disorder NOS,251
+Abdominal cavity hernia,252
+Peritonitis,253
+Omentum inflammation,254
+Perineal fistula,255
+Anal prolapse,256
+Rectal prolapse,257
+Absence of anus,258
+Atresia ani,259
+Congenital digestive tract disorder NOS,260
+Swim bladder disorder,261
+Abdominal cramp,262
+Abdominal pain,263
+Colic,264
+Colitis,265
+Faecal impaction,266
+Constipation,267
+Diverticular disorder,268
+Flatulence,269
+Involuntary defecation,270
+Rectal haemorrhage,271
+Rectal bleeding,272
+Tenesmus,273
+Megaoesophagus,274
+Oesophageal paralysis,275
+Oesophagitis,276
+Oesophagus obstruction,277
+Oesophagus perforation,278
+Pharyngeal disorder,279
+Pharyngitis,280
+Pharyngeal ulceration,281
+Discoloured teeth,282
+Dental discolouration,283
+Impaired swallowing,284
+Dysphagia,285
+Gingivitis,286
+Pyorrhoea,287
+Tongue inflammation,288
+Glossitis,289
+Tongue ulceration,290
+Halitosis,291
+Drooling,292
+Hypersalivation,293
+Oral dryness,294
+Dry mouth,295
+Oral haemorrhage,296
+Oral bleeding,297
+Buccal ulceration,298
+Buccal irritation,299
+Stomatitis,300
+Oral ulceration,301
+Diarrhoea,302
+Scour,303
+Loose stool,304
+Digestive tract disorder NOS,305
+Digestive tract haemorrhage NOS,306
+Digestive tract neoplasm NOS,307
+Digestive tract stasis,308
+Ruminal stasis,309
+Digestive tract stenosis and obstruction NOS,310
+Digestive tract tympany,311
+Distension of abdomen,312
+Gastroenteritis,313
+Haemorrhagic diarrhoea,314
+Bloody diarrhoea,315
+Haemorrhagic gastroenteritis,316
+Melaena,317
+Tarry or black stool (see also haemorrhagic diarrhoea),318
+Abomasitis,319
+Ruminal bloat,320
+Reticulitis,321
+Rumenitis,322
+Displaced abomasum,323
+Digestive tract malabsorption disorder NOS,324
+Duodenitis,325
+Intestinal congestion,326
+Enteritis,327
+Ileitis,328
+Intussusception,329
+Pancreas disorder,330
+Acute haemorrhagic pancreatitis,331
+Labyrinthitis,332
+Meniere's Disease,333
+Vomiting,334
+Emesis,335
+Eructation,336
+Belching,337
+Gastric torsion,338
+Gastric volvulus,339
+Gastric ulcer,340
+Gastritis,341
+Haematemesis,342
+Blood in vomit,343
+Gagging,344
+Retching,345
+Congenital ear disorder NOS,346
+Ear pain,347
+Otorrhoea,348
+Ear discharge,349
+Aural haematoma,350
+Otic haematoma,351
+Ear flap haemorrhage,352
+Aural neoplasia NOS,353
+External ear disorder NOS,354
+Droopy ear,355
+Otitis externa,356
+Pinnal cyanosis,357
+Blue ear(s),358
+Pinnal haemorrhage,359
+Pinnal reddening,360
+Pinnal irritation,361
+Pinnal necrosis,362
+Pinnal oedema,363
+Ear flap oedema,364
+Deafness,365
+Hearing affected,366
+Partial deafness,367
+Internal ear disorder,369
+Tumbling circling disease (see also Ataxia at Neurological),370
+Equilibrium disorder,371
+Balance problem,372
+Vestibular disorder NOS,373
+Head tilt - ear disorder,374
+Head shake - ear disorder,375
+Otitis interna,376
+Otitis media,377
+Adrenal gland disorder NOS,378
+Hyperadrenocorticism,379
+Cushings disease NOS,380
+Cushings disease - pituitary dependent,381
+Cushings disease - adrenal dependent,382
+Hypoadrenocorticism,383
+Addison's disease,384
+Congenital endocrine disorder,385
+Endocrine neoplasm NOS,386
+Diabetes,387
+Uncontrolled diabetes,388
+Diabetes mellitus,389
+Diabetic coma,391
+Glucose intolerance,392
+Complication of diabetes,393
+Pancreas endocrine disorder NOS,396
+Hyperparathyroidism,397
+Hypoparathyroidism,398
+Parathyroid disorder NOS,399
+Acromegaly,400
+Diabetes insipidus,401
+Pituitary disorder NOS,402
+Hyperthyroidism,403
+Hypothyroidism,404
+Thyroid gland disorder NOS,405
+Blindness,406
+Impaired vision,407
+Sight affected,408
+Partial blindness,409
+Amaurosis (see also PT Impaired vision),410
+Congenital eye disorder,411
+Corneal disorder NOS,412
+Corneal oedema,413
+Blue eye,414
+Corneal ulcer,415
+Keratitis,416
+Glaucoma,417
+Hyphaemia,418
+Hypopyon,419
+Palpebral oedema,420
+Blepharitis,421
+Eyelid inflammation,422
+Blepharospasm,423
+Ectropion,424
+Entropion,425
+Palpebral disorder NOS,426
+Ciliary body and choroid disorder NOS,427
+Iris disorder,428
+Iris tear,429
+Iris prolapse,430
+Fixed pupil,431
+Pupil disorder,432
+Anterior uveitis,433
+Posterior uveitis,434
+Uveitis,435
+Epiphora,436
+Tear flow increased,437
+Excess tear flow,438
+Lacrimation,439
+Tear flow due to blocked or infected tear ducts,440
+Lacrimal disorder NOS,441
+Lacrimation decreased,442
+Lens opacity,443
+Cataract,444
+"Cloudy eye (for Miosis, Mydriasis, Anisocoria, Nystagmus - see Neurological)",445
+Lens disorder NOS,446
+Lens luxation,447
+Protrusion membrana nictitans,448
+Third eyelid extrusion,449
+Optic nerve disorder,450
+Exophthalmia,451
+Eye disorder NOS (for Photophobia see neurological),452
+Eye irritation,453
+Eye paralysis (for Miosis etc see Neurological),454
+Ophthalmoplegia,455
+Eyeball protrusion,456
+Eye redness,457
+Generalised inflammation of eye,459
+Periorbital oedema (see also Immune system disorders),460
+Swelling around eye (see also Immune system disorders),461
+Retinal atrophy,462
+Retinal degeneration,463
+Taurine-deficient retinopathy,464
+Retinal detachment,465
+Retinal disorder NOS,466
+Retinal haemorrhage,467
+Ocular discharge,468
+Conjunctivitis,469
+Keratoconjunctivitis,470
+Keratoconjunctivitis sicca,471
+Dry eye,472
+Scleritis,473
+Sclerotitis,474
+Inflammation of eye coat,475
+Cholangiohepatitis,476
+Cholangitis,477
+Gall bladder inflammation,478
+Cholecystitis,479
+Gall bladder & bile duct disorder NOS,480
+Fatty liver,483
+Hepatic abscess,484
+Liver abscess,485
+Hepatic encephalopathy,486
+Cirrhosis,487
+Hepatic fibrosis,488
+Hepatic cirrhosis,489
+Liver fibrosis,490
+Hepatic necrosis,491
+Hepatic toxicosis,492
+Hepatitis,493
+Hepatomegaly,494
+Enlarged liver,495
+Hepatopathy,496
+Hepatic failure,497
+Hepatic insufficiency,498
+Icterus,499
+Yellow mucous membranes,500
+Jaundice,501
+Hepatic vascular disorder,502
+Congenital hepato-biliary disorder,503
+Portacaval shunt,504
+Liver tumour,505
+Hepatic tumour,506
+Hepatic neoplasm,507
+Autoimmune disorder NOS,508
+Pemphigus,509
+Bursa of Fabricius degeneration,510
+Bursa of Fabricius inflammation,511
+Anaphylaxis,512
+Atopic allergy NOS (see also Skin),513
+Hypersensitivity NOS,514
+Allergic oedema,515
+Angioedema,516
+Facial swelling (see also Skin),517
+Oedema of the extremities (see also other SOCs for most applicable oedema),518
+Nettle rash (see also Skin),519
+Wheal,520
+Urticaria,521
+Other immune system disorder NOS,522
+Sarcoidosis,523
+Erythema of the teat,524
+Acute mastitis,525
+Chronic mastitis,526
+Mammary gland disorder NOS,527
+Mammary gland oedema,528
+Mammary gland neoplasm NOS,529
+Mammary hyperplasia,530
+Agalactia,531
+Alteration of milk quality,533
+Milk drop,534
+Milk production decrease,535
+Milk production increase,536
+External teat disorder,537
+Teat canal disorder,538
+Congenital metabolic disorder,539
+Acid-base disorder,540
+Not drinking,541
+Adipsia,542
+Polydipsia,543
+Excessive thirst,544
+Drinking a lot,545
+Food intolerance syndrome,547
+Food allergy diarrhoea and/or constipation,548
+Trace element disorder,549
+Selenium deficiency syndrome,550
+Vitamin disorder,551
+Vitamin deficiency,552
+Hypercalcaemia,553
+Copper toxicity signs,554
+Eclampsia,558
+Milk fever,559
+Hypocalcaemic condition,560
+Copper deficiency signs,561
+Staggers (grass),563
+Hypomagnesaemic condition,564
+Acetonaemia,566
+Ketosis,567
+Joint swelling,568
+Arthritis,569
+Joint effusion,570
+Joint inflammation,571
+Joint oedema,572
+Joint stiffness,573
+Polyarthritis,574
+Arthrosis,575
+Polyarthrosis,576
+Bone and joint disorder NOS,577
+Knuckling,578
+Cartilage degeneration,579
+Crystal arthropathy,580
+Gout,581
+Malunion,582
+Delayed fracture union,583
+Pseudoarthrosis,584
+Fracture,585
+Joint pain NOS,586
+Joint ache,587
+Joint pain,588
+Metaphyseal osteopathy,589
+Osteochondritis,590
+Osteochondritis dissecans,591
+Osteomyelitis,592
+Subchondrial bone cyst,593
+Torticollis,594
+Wry neck,595
+Lateral neck deviation,596
+Congenital musculo-skeletal disorder,597
+Connective tissue disorder NOS,598
+Discus prolapse,599
+Jaw disorder,600
+Osteodystrophy,601
+Rubber beak/jaw,602
+Osteomalacia,603
+Equine myoglobinuria,604
+Azoturia,605
+Muscle anaemia,606
+Muscle ischaemia,607
+Muscle pain,608
+Muscle stiffness,609
+Myopathy,610
+Muscle wasting,611
+Myositis,612
+Muscle inflammation,613
+Hyperextension,614
+Lameness,615
+Founder,616
+Laminitis,617
+Chondrosarcoma,618
+Osteosarcoma,619
+Rhabdomyosarcoma,620
+Bursitis,621
+Windgall,622
+Synovitis,623
+Windpuff,624
+Tendinitis,625
+Tendon injury,626
+Tendon rupture,627
+Central nervous system depression,628
+Brain damage NOS,629
+Neurological signs NOS,630
+Central nervous system disorder NOS,631
+Central nervous system infection and inflammation,632
+Encephalitis,633
+Increased intracranial pressure,634
+Cerebral oedema,635
+Head pressing,636
+Meningitis,637
+Cerebral vascular accident,638
+Stroke,639
+Congenital neurological disorder NOS,640
+Hydrocephalus,641
+Convulsion,642
+Fit,643
+Opisthotonus,644
+Seizure NOS,645
+Tonic-clonic seizure,646
+Epilepsy,647
+Epileptic seizure,648
+Myoclonus,650
+Falling,651
+Circling - neurological disorder (see also Behavioural disorders),652
+Unable to stand,653
+Ataxia,654
+Staggering,655
+Lack of coordination (see also Ear - vestibular disorder),656
+Stumbling gait,657
+Recumbency,658
+Confusion,659
+Disorientation,660
+High leg gait,661
+Hypermetria,662
+Goose stepping,663
+Coma,664
+Vegetative state,665
+Encephalopathy NOS,666
+Loss of consciousness,667
+Collapse (see also Cardio-vascular and Systemic disorders),668
+Nervous system neoplasm,669
+Anisocoria,670
+Unequal pupils,671
+Organophosphate toxicity NOS,672
+Cholinergic disorder,673
+Slow reflexes,674
+Dull reflexes,675
+Reduced reflexes,676
+Depressed reflexes,677
+Hyperreflexia,678
+Constricted pupils,679
+Miosis,680
+Spasm,681
+Muscle spasm NOS,682
+Chorea,683
+Muscle tremor,684
+Tic(s),685
+Twitching,686
+Trembling,687
+Fasciculation,688
+Enlarged pupils,689
+Mydriasis,690
+Nystagmus,691
+Paraplegia,692
+Hemiplegia,693
+Quadriplegia,694
+Flaccid paralysis,695
+Paralysis,696
+Hemiparesis (weakness L or R side),697
+Paresis,698
+Paraparesis,699
+Quadriparesis,700
+Spasticity,701
+Horner's syndrome,702
+Hypersensitivity to pain,703
+Photophobia,704
+Hypersensitivity to light,705
+Hyperaesthesia,706
+Hypersensitivity to movement,707
+Cervical spondylopathy,708
+Wobbler,709
+Congenital renal and urinary tract disorder NOS,710
+Oliguria,711
+Anuria,712
+Glomerulonephritis,713
+Nephritis,714
+Interstitial nephritis,715
+Pyelonephritis,716
+Nephropathy,717
+Polyuria,718
+Renal disorder NOS,719
+Renal failure,720
+Renal insufficiency,721
+Uraemia,722
+Renal vascular disorder,723
+Ureteric disorder,724
+Cystitis,725
+Urinary tenesmus,726
+Dysuria,727
+Haemorrhagic bladder,730
+Urinary bladder disorder NOS,732
+Frequent urination,733
+Frequent micturition,734
+Urinary incontinence,735
+Uncontrolled micturition,736
+Urinary retention,737
+Stranguria,738
+Urinary tract disorder NOS,739
+Urolithiasis,740
+Calculi,741
+Urinary tract neoplasm NOS,742
+Egg drop,743
+Loss of egg quality,744
+Loss of egg quantity,745
+Reduced hatchability,746
+Egg drop syndrome,747
+Egg peritonitis,748
+Abnormal cervix,749
+Failure to dilate,750
+Cervix disorder,751
+Freemartin,752
+Congenital reproductive tract disorder NOS,753
+Cryptorchidism,754
+Cryptorchidy,755
+Anoestrus,756
+Lack of heat,757
+Polyoestrus,758
+Continuous heat,759
+Suboestrus,760
+Quiet heat,761
+Female reproductive tract neoplasm NOS,762
+Abnormal spermatozoa NOS,763
+Infertility NOS,764
+Nymphomania,765
+Pseudopregnancy,766
+Male reproductive tract disorder NOS,767
+Male reproductive tract neoplasm NOS,768
+Female reproductive tract disorder NOS,769
+Luteolysis,770
+Ovarian cyst,771
+Impaction of oviduct,772
+Oviduct cyst,773
+Salpingitis,774
+Abortion,775
+Birth defect,776
+Dystocia,777
+Foetal maceration,778
+Foetal mummification,779
+Return to oestrus,780
+Foetal resorption,781
+Feeling restless,782
+Placental abnormality,784
+Pregnancy,785
+Premature birth,786
+Premature parturition,787
+Retained placenta,788
+Retained foetal membrane,789
+Runt,790
+Stillbirth,791
+Intrauterine death,792
+Prostate hyperplasia,793
+Prostatic tumour,794
+Balanoposthitis,795
+Penile disorder NOS,796
+Paraphimosis,797
+Phimosis,798
+Preputial discharge,799
+Preputial prolapse,800
+Priapism,801
+Scrotal disorder NOS,802
+Scrotitis,803
+Scrotal oedema,804
+Epididymitis,805
+Orchitis,806
+Metritis,807
+Endometritis,808
+Mucometra,809
+Stump pyometra,810
+Delayed uterine involution,811
+Pyometra,812
+Uterine haemorrhage,813
+Uterine prolapse,814
+Uterine rupture,815
+Uterine torsion,816
+Vaginal haemorrhage,817
+Vaginal hyperplasia,818
+Vaginal prolapse,819
+Vaginal tear,820
+Vaginal vesicle,821
+Vaginitis,822
+Vulvitis,823
+Vulvovaginitis,824
+Swollen vulva,825
+Vaginal oedema,826
+Vaginal swelling,827
+Airsacculitis,828
+Anoxia,829
+Apnoea,830
+Respiratory arrest,831
+Asthma,832
+Bradypnoea,833
+Decreased respiratory rate,834
+Bronchitis,835
+Wheezing,836
+Abnormal breathing,837
+Irregular breathing,838
+Dyspnoea,839
+Respiratory distress,840
+Cheyne-Stokes respiration,841
+Pneumonia,842
+Pulmonary congestion,843
+Pulmonary disorder NOS,844
+Pulmonary emphysema,845
+Haemoptysis,846
+Pulmonary haemorrhage,847
+Pulmonary oedema,848
+Lung oedema,849
+Bronchial oedema,850
+Pulmonary thromboembolism,851
+Rale,852
+Rattling chest,853
+Tachypnoea,854
+Panting,855
+Increased respiratory rate,856
+Polypnoea,857
+Congenital respiratory tract disorder NOS,858
+Hypoplastic trachea,859
+Fish asphyxia,860
+Fish gasping,861
+Inflammation of gill,862
+Nasal bleeding,863
+Epistaxis,864
+Nasal cavity and sinus disorder NOS,865
+Purulent rhinitis,866
+Snuffle,867
+Rhinitis NOS,868
+Rhinitis,869
+Sniffing,870
+Nasal discharge,871
+Sinusitis,872
+Sneezing,873
+Neonatal respiratory disorder,874
+Foam in the trachea,875
+Laryngitis,876
+Tracheal bleeding,877
+Blood in trachea,878
+Tracheal collapse,879
+Tracheal obstruction,880
+Mucus in trachea,881
+Tracheitis,882
+Obstructive airway cough,883
+Cough,884
+Gynaecomastia,885
+Respiratory tract neoplasm NOS,888
+Haemothorax,889
+Hydrothorax,890
+Pleural inflammation,891
+Pleuritis,892
+Pyothorax,893
+Congenital skin disorder NOS,894
+Cornification and elastic tissue disorder NOS,895
+Hyperkeratosis,896
+Fish skin disorder,897
+Alopecia general,898
+Alopecia local,900
+Folliculitis,904
+Acne,905
+Malodour,908
+Hair standing on end,909
+Piloerection,910
+Seborrhoea,911
+Greasy skin,912
+Hyperpigmentation,913
+Melanosis,914
+Hypopigmentation,915
+Skin fibrosarcoma,916
+Histiocytoma,917
+Melanoma,918
+Myofibrosarcoma,919
+Papilloma,920
+Skin sarcoma NOS,921
+Skin and/or appendage neoplasm NOS,922
+Skin tumour NOS,923
+Spindle cell tumour,924
+Bullae,925
+Burn,926
+Heavy menstrual bleeding,927
+Chemical burn,928
+Dermal cyst(s),929
+Dermal thickening,930
+Moist eczema,931
+Dermatitis,932
+Eczema,934
+Pimples,935
+Ulcerative dermatitis,936
+Moist dermatitis,937
+Pustules,938
+Rash,939
+Dermatomycosis,940
+Dermatosis NOS,941
+Desquamation,942
+Generalised skin slough,943
+Peeling skin,944
+Erosion,945
+Reddening of the skin,946
+Rubra,947
+Erythema (for urticaria see Immune SOC),948
+Skin hyperaemia,949
+Granuloma,950
+Panniculitis,951
+Papillomatosis,952
+Papule,953
+Photosensitivity,955
+Photosensitization,956
+Sunburn,957
+Itching,958
+Scratching,959
+Pruritus,960
+Pyoderma,961
+Skin sore,962
+Seroma,963
+Skin lesion NOS,966
+Skin necrosis,967
+Skin oedema,968
+Skin swelling,969
+Cellulitis,970
+Skin vascular disorder NOS,973
+Increased sweating,974
+Hyperhidrosis,975
+Unable to fly,976
+Avian general disorder NOS,977
+Avian systemic disorder NOS,978
+Dropped wings,979
+Ruffled feathers,980
+Death by euthanasia,981
+Sudden death,982
+Found dead,983
+Death,984
+Unexplained death,985
+Dwarfism,986
+Fish body deformity,987
+Fish malformation,988
+Fish acquired dwarfism,989
+Fish pinhead,990
+Fish colour change,991
+Fish chromatophage disorder,992
+Fish discolouration,993
+"Sinking, fish",994
+"Torpor, fish",995
+Anorexia,996
+Appetite loss,997
+Decreased appetite,998
+Inappetence,999
+Collapse NOS (see also Cardio-vascular and Neurological disorders),1001
+Congestion of mucous membrane,1002
+Red mucosae,1003
+Inflamed mucosae,1004
+Hyperaemic mucosae,1005
+Hyperaemic mucous membrane,1006
+Congested mucous membrane,1007
+Hyperaemia,1008
+Cyanosis,1009
+Emphysema NOS (see Respiratory for pulmonary emphysema),1010
+General pain (see other SOCs for specific pain),1011
+Pain NOS,1012
+Malignant hyperthermia,1013
+Hyperthermia,1014
+Hypothermia,1015
+Decreased body temperature,1016
+Prostration,1017
+Lethargy (see also Central nervous system depression in Neurological),1018
+Stupor,1019
+Lack of awareness,1020
+Reduced responses,1021
+Listless,1022
+Weakness,1023
+Depression,1024
+Reluctant to move,1025
+Localised pain NOS (see other SOCs for specific pain),1026
+Malaise,1027
+Off colour,1028
+Oedema NOS (see other SOCs for specific oedemas),1029
+Ascites,1030
+Pyrexia,1031
+Fever,1032
+Elevated temperature,1033
+Febrile,1034
+Septicaemia,1035
+Steatitis,1036
+Necrotising steatitis,1037
+Ulceration NOS,1038
+Lack of efficacy - NOS,1039
+Moribund,1040
+Multi-organ failure NOS,1041
+Exercise intolerance,1042
+Weight loss,1043
+Loss of condition,1044
+Loss of condition score,1045
+Devitalisation,1046
+Poor feed conversion,1047
+Low weight gain,1048
+Increased weight,1049
+Weight gain,1050
+Cachexia,1051
+Systemic disorder NOS,1052
+Injection site panniculitis,1053
+Apprehension,1055
+Regenerative anaemia,1056
+Coagulopathy,1057
+Blood dyscrasia NOS,1058
+Spleen hypertrophy,1059
+Cardiac depression,1060
+Cardiopathy,1061
+Jugular distension,1062
+Abdominal oedema,1063
+Dropsy,1064
+Rumen atony,1065
+Intestinal stasis,1066
+Intestinal torsion,1067
+Bowel torsion,1068
+Faecal incontinence,1069
+Loss of bowel control,1070
+Large intestine ulcer,1071
+Chattering of teeth,1072
+Foaming at the mouth,1074
+Ptyalism,1075
+Hyposalivation,1076
+Tongue oedema,1077
+Tongue protrusion,1078
+Mucous stool,1080
+Blood in faeces,1081
+Intestinal perforation,1082
+Intestinal haemorrhage,1083
+Abomasal ulcer,1084
+Paralytic ileus,1085
+Ileus,1086
+Small intestine ulcer,1087
+Duodenal ulcer,1088
+Jejunal ulcer,1089
+Gastric bloat,1090
+Gastric dilation,1091
+Gastric distension,1092
+Haemorrhagic gastritis,1093
+Earflap ptosis,1094
+Pinnal erythema,1095
+Abnormal menace reflex test,1096
+Abnormal pupil light reflex,1097
+Depressed ocular reflex,1098
+Eye haemorrhage,1099
+Eyelid oedema,1100
+Blinking,1101
+Low tear flow,1102
+Prolapse of the nictitating membrane,1103
+Third eyelid prolapse,1104
+Third eyelid protrusion,1105
+Ocular fundus vasoconstriction,1106
+Chemosis,1107
+Conjunctival oedema,1108
+Liver failure,1109
+Facial oedema,1110
+Quincke's oedema,1111
+Anaphylactic shock,1112
+Anaphylactoid reaction,1113
+Anaphylactic-type reaction,1114
+Teat discolouration,1116
+Teat nodules,1117
+Polyarthropathy NOS (see also PT Immune-mediated polyarthropathy),1118
+Muscle degeneration,1119
+Musculoskeletal disorder NOS,1120
+Limb weakness,1121
+Musculoskeletal neoplasm NOS,1122
+Myelitis,1123
+Transverse myelitis,1124
+Clonic seizure,1125
+Tonic seizure,1126
+Extensor rigidity,1127
+Muscular hypertonicity,1128
+Tetany,1130
+Abnormal movement NOS,1131
+Abnormal posture NOS,1132
+Drunken gait,1133
+Hind limb ataxia,1134
+Lateral recumbency,1135
+Sternoabdominal recumbency,1136
+Dysmetria,1137
+Ear twitching,1138
+Clonic muscle spasm,1139
+Tonic muscle spasm,1140
+Myasthenia gravis,1142
+Horizontal nystagmus,1143
+Facial paralysis,1144
+Itchy skin,1145
+Cranial nerve disorder,1147
+Facial nerve disorder,1148
+Trigeminus paralysis,1149
+Cranial nerve paralysis,1150
+Lip paralysis,1151
+Hind limb paresis,1153
+Unilateral paresis,1154
+Proprioception abnormality,1155
+Impaired proprioception,1156
+Proprioception deficit,1157
+Proprioception loss,1158
+Acute renal failure,1159
+Chronic renal failure,1160
+Urination,1161
+Abnormal oestrus NOS,1162
+Reduced conception rate,1163
+Malformation NOS,1164
+Prostatic disorder NOS,1165
+Vaginal discharge,1166
+Respiratory failure,1167
+Respiratory depression,1168
+Bronchial secretion,1169
+Breathing difficulty,1170
+Laboured breathing,1171
+Open mouth breathing,1172
+Paradoxical breathing,1173
+Bronchial rale,1174
+Lung sound,1175
+Respiratory sound,1176
+Hyperventilation,1177
+Foam in the nose,1178
+Respiratory tract disorder NOS,1180
+Respiratory signs,1181
+Respiratory tract infection NOS,1182
+Fluid in thorax,1183
+Pleural effusion,1184
+Claw / hoof / nail loss,1185
+Delayed cicatrisation,1186
+Hair coat discolouration,1187
+Pigmentation disorder,1188
+Crust,1189
+Eruption,1190
+Skin lump,1191
+Pododermatitis,1192
+Purulent lesion(s),1193
+Skin ulcer,1194
+Scale,1196
+Erythema multiforme,1197
+Excoriation,1198
+Wart,1199
+Hot spot (pyotraumatic dermatitis),1200
+Skin emphysema,1201
+Cutaneous emphysema,1202
+Cutaneous necrosis,1203
+Cutaneous oedema,1204
+Skin petechiae,1205
+Sudation,1206
+Not eating,1207
+Dehydration,1208
+Exsiccosis,1209
+Dry mucous membrane,1210
+Glazed eye,1211
+Apathy,1212
+Mucosa petechiae,1213
+Swelling NOS,1214
+Pallor,1215
+Uncoded sign,1216
+Impaired consciousness,1217
+Prolonged anaesthesia,1218
+Dry nose,1219
+Hyporeflexia,1220
+Other abnormal test result NOS,1221
+Self mutilation,1222
+Pharyngeal oedema,1224
+Pemphigus foliaceus,1225
+Paddling,1226
+Abnormal cycling,1227
+Foam in the mouth,1228
+Dependent oedema,1229
+Ruminant stomach disorder,1230
+Eyesight trouble,1231
+Closed eyelid,1233
+Eye numbness,1235
+Eye pricking,1237
+Eye smarting,1238
+Eye tingling,1239
+Ocular burn,1240
+Muscle necrosis,1245
+Locomotor disturbance,1248
+Tongue paraesthesia,1250
+Confused speech,1251
+Somnolent state,1252
+Papillary necrosis,1253
+Respiratory discomfort,1258
+Coughing blood,1259
+Chest discomfort NOS,1263
+Thoracic irritation,1264
+Thoracic pain,1265
+Aphonia,1266
+Loss of voice,1267
+Dysphonia,1268
+Voice alteration,1269
+Burning sensation of the throat,1270
+Throat tingling,1272
+Impetigo,1274
+Fungal paronychia,1275
+Asthenia,1277
+Hepatic jaundice,1278
+Haemolytic jaundice,1279
+Drowsiness - neurological disorder,1282
+Abnormal behaviour NOS,1291
+Abnormal dream,1292
+Abnormal vision (see also impaired vision),1293
+Abortion spontaneous,1294
+Absence seizure,1295
+Acute jaundice,1297
+Aggressive behaviour,1298
+Agitated state of mind,1299
+Agoraphobia,1300
+Akinesia,1301
+Alcohol intolerance,1302
+Allergic dermatitis,1303
+Allergic reaction,1304
+Allergic rhinitis,1305
+Allergic skin reaction,1306
+Allergy NOS,1307
+Allergy to food,1308
+Alopecia,1309
+Alopecia NOS,1310
+Amenorrhoea,1311
+Amnesia,1312
+Anger,1314
+Angina pectoris,1315
+Anhidrosis,1316
+Anosmia,1318
+Anxious state of mind,1319
+Aphasia,1321
+Appetite disorder NOS,1323
+Application site rash,1331
+Application site reddening,1332
+Arthropathy NOS,1335
+Bacterial skin infection NOS,1338
+Bad mood,1339
+Bad taste,1340
+Balance impaired,1341
+Bell's palsy,1343
+Bile duct inflammation,1344
+Blackout,1345
+Bladder incontinence,1346
+Blistering (see also Application site SOC),1347
+Blistering of mouth,1348
+Bloated,1349
+Bloated feeling,1350
+Bloated stomach,1351
+Blood loss NOS,1352
+Bloodshot eye,1353
+Blotchy rash,1354
+Boil,1355
+Brain disorder NOS,1356
+Breast disorder NOS,1357
+Breast enlargement (male),1358
+Bronchospasm,1359
+Bruising,1360
+Bullous dermatitis,1362
+Bullous disorder NOS,1363
+Bullous eruption,1364
+Burning mouth sensation,1366
+Burning sensation (skin),1367
+Burning sensation of eye,1368
+Carpal tunnel syndrome,1370
+Central nervous system infection NOS,1372
+Chapped skin,1374
+Chest tightness,1376
+Cholelithiasis,1377
+Chronic fatigue syndrome,1378
+Clamminess,1379
+Cluster headache,1380
+Cognitive and attention disorders NOS,1381
+Cognitive disorder NOS,1382
+Cognitive disturbance,1383
+Cognitive impairment,1384
+Cold and clammy skin,1385
+Cold feeling of extremity,1386
+Cold sore,1387
+Cold sweat,1388
+Collapse of leg,1389
+Communication disorder NOS,1391
+Concentration impaired,1392
+Confused,1393
+Conjunctival irritation,1394
+Contact dermatitis,1396
+Convulsive disorder NOS,1397
+Coronary artery disorder NOS,1398
+Delusion,1401
+Depressed mood disorder NOS,1402
+Depressed state,1403
+Feeling depressed,1404
+Dermatophytosis,1406
+Dermoid cyst,1407
+Deterioration of muscle function,1409
+Difficulty in micturition,1410
+Difficulty in thinking,1411
+Difficulty sleeping,1412
+Digit amputation,1413
+Dilated pupils,1414
+Diplopia,1415
+Disorder of red blood cell NOS,1416
+Disorders of menstrual cycle NOS,1417
+Disoriented state,1418
+Distressed state,1419
+Disturbance in attention,1420
+Disturbances in thinking/perception NOS,1421
+Dizziness,1422
+Dizzy on standing,1423
+Dizzy spell,1424
+Double vision,1425
+Dry lip,1426
+Skin dryness,1428
+Dry throat,1429
+Dysarthria,1431
+Dyskinesia,1432
+Dyslexia,1433
+Dyspepsia,1434
+Ear infection NOS,1435
+Ear irritation,1436
+Earache,1437
+Eating disorder NOS (see Systemic for anorexia etc),1438
+Emotional detachment,1441
+Epileptic fit,1443
+Erythemato-squamous condition,1448
+Erythematous rash,1449
+Exacerbated eczema,1450
+Excessive perspiration,1452
+Excessive sweating,1453
+Eye ache,1454
+Eye inflamed,1455
+Eye inflammation NOS,1456
+Eye itching,1457
+Eye pain,1458
+Eye sore and red,1459
+Eye stinging,1460
+Eyelid scaly,1461
+Face and neck swelling (see also Skin),1462
+Facial flushing,1463
+Facial palsy,1464
+Facial rash (For urticaria see Immune SOC),1465
+Fatigue,1467
+Feeling anxious,1468
+Feeling shell shocked,1469
+Feeling sick,1470
+Feeling stressed,1471
+Feelings of weakness,1472
+Felt giddy,1473
+Flaking skin,1474
+Flashing vision,1475
+"Flatulence, bloating and distension",1477
+Flushing,1478
+Focusing difficult,1479
+Food allergy,1481
+Forgetfulness,1482
+Fungal skin infection NOS,1484
+Furuncle,1485
+Furunculosis,1486
+Gall stone,1487
+Gastric irritation,1488
+General hair loss,1490
+Generalised flushing,1491
+Generalised itching,1492
+Generalised rash,1493
+Generalised red spot,1494
+Generalised skin reaction,1495
+Generalised weakness,1496
+Genital tract pruritus,1497
+Giddiness,1498
+Gum disorder NOS,1501
+Gum pain,1502
+Gut pain,1503
+Hair change,1506
+Hair loss NOS,1507
+Hair modification NOS,1508
+Hallucinations,1509
+Hand and arm swollen,1510
+Headache,1511
+Hearing decreased,1512
+Impaired hearing,1513
+Heart pounding,1514
+Heart valve disorder,1515
+Heartburn,1516
+Heat rash,1517
+Heavy periods,1518
+Heavy sweating,1519
+Hepatic disorder NOS,1520
+Hernia NOS,1521
+Herpes simplex,1522
+Herpes zoster,1523
+Hiatus hernia,1524
+Hives (see also Skin),1525
+Hyperactive,1527
+Hypersomnia,1528
+Hypertonia,1529
+Increased appetite,1530
+Increased menstrual bleeding,1531
+Increased reflexes,1532
+Increased salivation,1533
+Increased sensitivity to sound,1534
+Increased skin sensitivity,1535
+Indigestion,1536
+Infected eczema,1537
+Injection site complication NOS,1540
+Injection site infection,1542
+Injection site joint reaction,1543
+Injection site nerve damage,1545
+Injection site numbness,1546
+Injection site paraesthesia,1548
+Injection site reddening,1552
+Injection site stiffness,1553
+Injection site tingling,1555
+Injection site warmth,1556
+Insomnia,1557
+Involuntary movement,1558
+Irritability,1559
+Irritable bowel syndrome,1560
+Ischaemic necrosis,1561
+Itchy rash,1563
+Lack of spontaneous speech,1571
+Lacrimation increased,1572
+Laryngeal irritation,1573
+Laryngeal oedema,1574
+Light headedness,1576
+Lip oedema (see also Skin),1577
+Liver damage aggravated,1579
+Local swelling (not application site),1580
+Localised hair loss,1581
+Localised itching,1582
+Localised rash,1584
+Localised skin reaction,1585
+Localised oedema (not application site),1586
+Lockjaw,1587
+Loose bowel,1588
+Loss of concentration,1589
+Loss of hearing,1591
+Loss of smell,1592
+Loss of speech,1593
+Loss of strength,1594
+Loss of taste,1595
+Loss of vision,1596
+Loss of voluntary movement,1597
+Low vision,1598
+Macular rash,1599
+Maculo-papular rash,1600
+Memory impaired NOS,1602
+Memory loss,1603
+Menstrual cramp,1604
+Menstrual pain,1605
+Menstruation absent,1606
+Menstruation delayed,1607
+Menstruation irregular,1608
+Mental confusion,1609
+Mental disorder NOS,1610
+Mental function decreased,1611
+Mental impairment NOS,1612
+Metabolic bone disorder NOS,1613
+Migraine,1614
+Migraine-like headache,1615
+Miscarriage,1616
+Monoparesis (paralysis of limb),1617
+Mood depressions,1618
+Mood swing,1619
+Motor dysfunction NOS,1620
+Motor neurone disease,1621
+Mouth blister,1622
+Mouth pain,1623
+Mouth ulcer,1624
+Mucus in eye,1625
+Multiple sclerosis (MS),1626
+Multiple sclerosis (MS) aggravated,1627
+Muscle rigidity,1628
+Muscle weakness NOS,1629
+Myalgic encephalomyelitis (ME),1630
+Myoclonic jerk,1631
+Nail discolouration,1632
+Nasal cavity disorder NOS,1634
+Nasal congestion,1635
+Nasal dryness,1636
+Nasal irritation,1637
+Nausea,1638
+Nerve damage NOS,1639
+Nerve pain NOS,1640
+Nervous breakdown,1641
+Nervous system disorder NOS,1642
+Nervous tension,1643
+Nervousness,1644
+Nettle-like rash (see also Skin),1645
+Neuralgia,1646
+Neurological pain NOS,1647
+Neurological symptoms NOS,1648
+Neuromuscular disorder NOS,1649
+Neuropathy NOS,1650
+Night sweat,1651
+Nightmare,1652
+Oedematous erythema,1655
+Oral discomfort,1657
+Oral mucosal blistering,1659
+Oral pain,1660
+Orf,1661
+Orthostatic hypotension,1662
+Other blood disorder NOS,1666
+Other ear disorder NOS,1667
+Other metabolic disorder,1668
+Otitis media serous/glue ear,1669
+Palpitation,1670
+Panic attack,1671
+Papular rash,1673
+Paraesthesia,1674
+Paraesthesia generalised,1675
+Paraesthesia localised,1676
+Paralysis NOS,1677
+Paranoia,1679
+Parkinson's disease,1680
+Parkinsonism,1681
+Paronychia,1682
+Parosmia,1683
+Partial sight,1684
+Perinatal mortality,1686
+Period delayed,1687
+Peripheral ischaemia,1688
+Peripheral neuropathy,1689
+Peripheral vascular disorder,1690
+Peripheral vasoconstriction,1691
+Personality disorder NOS,1692
+Petit mal epilepsy,1694
+Increased sensitivity to light,1695
+Pimple,1696
+Pins and needles,1697
+Polymyalgia rheumatica,1700
+Poor concentration,1701
+Poor peripheral circulation,1702
+Poor sight,1703
+Poor sleep,1704
+Post viral fatigue syndrome,1705
+Pricking skin sensation,1707
+Prickly heat,1708
+Pruritic rash,1709
+Psoriasis,1710
+Psychiatric disorder NOS,1711
+Psychophysical malfunction,1712
+Psychotic disorder,1713
+Purpura,1714
+Pustular skin eruption,1715
+Pyloric ulcer,1717
+Rapid pulse rate,1719
+Red eye,1721
+Red face,1722
+Reduced level of consciousness,1724
+Renal colic,1727
+Respiratory tract irritation,1728
+Rhinorrhoea,1729
+Rigidity,1730
+Rigidity of limbs,1731
+Ringing in the ear,1732
+Ringworm,1733
+Scaly condition NOS,1735
+Screaming,1736
+Scrotal irritation NOS,1737
+Semi-conscious,1738
+Sensation loss,1739
+Sensory abnormality NOS,1740
+Sensory loss,1741
+Septic spot,1742
+Sexual arousal decreased,1743
+Sexual dysfunction/disorder NOS,1744
+Muscle shaking,1745
+Shingles,1746
+Short term memory loss,1747
+Sickness,1748
+Sinus congestion,1749
+Sinus disorder NOS,1750
+Sinus headache,1751
+Sinus pain,1752
+Skeletal muscle paralysis,1753
+Skin abscess,1754
+Skin and tissue infection NOS,1755
+Skin disorders NOS,1756
+Skin haematoma,1757
+Skin inflammation NOS,1759
+Skin irritation,1760
+Skin smarting,1764
+Sleep disorder NOS,1769
+Sleep dysfunction NOS,1770
+Sleep walking,1771
+Feeling sleepy,1772
+Sleeplessness,1773
+Slurred speech,1775
+Smell alteration,1776
+Smell disorder NOS,1777
+Smell perversion,1778
+Smelly breath,1779
+Snappy,1780
+Sore eye,1781
+Sore mouth,1782
+Sore tongue,1783
+Speech disorder NOS,1784
+Speech impairment NOS,1785
+Speech problem,1786
+Spondylosis,1788
+Stammering,1789
+Sterile,1790
+Sticky eye,1791
+Stiff knee,1792
+Stiffness limb,1793
+Stiffness NOS,1794
+Stinging sensation in eye,1795
+Stinging skin,1796
+Stomach cramp,1797
+Stomach inflammation,1798
+Stomach pain,1799
+Stomach upset,1800
+Stuttering,1802
+Suicidal behaviour NOS,1803
+Suicidal ideation,1804
+Suicidal tendency,1805
+Suicide attempt,1806
+Suicide completed,1807
+Swallowing difficult,1808
+Swallowing disorder NOS,1809
+Swollen eye (see also Immune system disorders),1810
+Swollen face (see also Skin),1811
+Swollen feet,1812
+Swollen furry tongue,1813
+Swollen gland,1814
+Swollen gum,1815
+Swollen joint,1816
+Swollen lip (see also Skin),1817
+Swollen lymph node,1818
+Swollen mouth,1819
+Swollen tongue,1820
+Swollen wrist,1821
+Symptom NOS involving neurological and muscular skeletal SOCs,1822
+Taste alteration,1823
+Taste disorder,1824
+Taste salty,1825
+Tearfulness,1827
+Temper tantrum,1828
+Temporary blindness,1829
+Testicular pain,1830
+Tetanus,1831
+Skin textural change,1832
+Thinking abnormal NOS,1833
+Thought block,1834
+Throat constriction,1835
+Throat irritation,1836
+Throat pain,1837
+Throat tightness,1838
+Thyroiditis,1839
+Tinea NOS,1840
+Tingling sensation,1841
+Tingling skin,1842
+Tinnitus,1843
+Tiredness,1844
+Tongue disorder NOS,1845
+Tooth disorder,1846
+Toothache,1847
+Stevens-Johnson-syndrome or Toxic epidermal necrolysis,1848
+Tracheal and laryngeal disorder NOS,1849
+Transient blindness,1850
+Transient memory loss,1851
+Tremor,1852
+Tremor of limb,1853
+Tremor/shaking of hand,1854
+Trismus,1855
+Unable to focus,1856
+Unconscious,1857
+Unsteady gait,1858
+Urticarial erythema,1859
+Urticarial rash,1860
+Uterine bleeding NOS (see also increased menstrual bleeding),1861
+Uterine spasm,1863
+Vertigo,1865
+Vesicle,1866
+Vesicular rash,1867
+Viral encephalitis,1868
+Viral skin infection NOS,1869
+Vision blurred,1870
+Visual field defect,1871
+Weeping,1874
+Welt,1875
+Wind,1876
+Writing impaired,1877
+Application site hair change,1878
+Injection site neoplasm NOS,1879
+Injection site seroma,1880
+Bone marrow disorder NOS,1882
+Hypoalbuminaemia,1883
+Branchial cyst,1884
+Gingival disorder,1885
+Gingival hyperplasia,1886
+Gum bruising,1887
+Regurgitation,1888
+Digestive tract hypermotility,1889
+Gut sounds increased,1890
+Pancreatitis NOS,1891
+Chronic pancreatitis,1892
+Necrotizing pancreatitis,1893
+Impaired gastric function,1894
+Strabismus,1895
+Immune mediated haemolytic anaemia,1896
+Persistent infection,1897
+Acidosis,1898
+Septic arthritis,1899
+Head tremor,1900
+Incoordination,1901
+Walking difficulty,1902
+Sedation prolonged,1903
+Recovery prolonged,1904
+Shivering,1905
+Peripheral nervous system disorder NOS,1906
+Abnormal birth weight,1911
+Abnormal number of offspring,1912
+Oestrus following foetal resorption,1913
+Preputial haemorrhage,1914
+Breathlessness,1915
+Asphyxia,1916
+Lung tumour,1917
+Pulmonary neoplasm,1918
+Claw / hoof / nail disorder NOS,1919
+Mucocutaneous ulcer,1920
+Hot flush,1924
+Suspected infectious agent transmission,1925
+Metastatic neoplasia,1926
+Metastatic tumour,1927
+Neoplasia NOS,1928
+Influenza-like symptoms,1930
+Trauma NOS,1932
+Unthrifty,1933
+Application site dermatitis,1934
+Impaired vocalisation,1935
+von Willebrands disease,1936
+Prolonged capillary refill time,1937
+Injection site dermatitis,1938
+Decreased bowel movements,1939
+Exocrine pancreatic insufficiency,1940
+Gastric perforation,1941
+Elevated liver enzymes NOS,1942
+Liver disorder NOS,1943
+Hyperkalaemia,1944
+Hyperglycaemia,1946
+Hypoglycaemia,1947
+Panosteitis,1948
+Jaw pain,1949
+Stiff gait,1950
+Acidic urine,1951
+Alkaline urine,1952
+Stridor (Upper respiratory; for lower respiratory see also Bronchial rale),1953
+Bullous emphysema,1954
+Paralytic colon,1955
+Blood in urine,1956
+Hypoaesthesia,1957
+Localised numbness (see also application site SOC),1958
+Urine abnormalities NOS,1959
+Glucosuria,1960
+Proteinuria,1961
+Increased urine concentration,1962
+Decreased urine concentration,1963
+Discoloured urine,1964
+Urinary tract bleeding,1965
+Abnormal urine odour,1966
+Haematuria,1967
+Hyposensitivity to pain,1968
+Coughing up blood,1970
+Hair shedding,1971
+Numbness,1972
+Licking at application site,1973
+"Excessive chewing, licking and/or grooming",1974
+Grooming disorder,1975
+Hypoproteinaemia,1976
+Splenic neoplasm NOS,1977
+Tense abdomen,1978
+Oesophageal ulcer,1979
+Tongue necrosis,1980
+Abnormal stool colouration,1981
+Haematochezia,1982
+Painful defecation,1983
+Otitis NOS,1984
+Pinnae disorder,1985
+Ear flapping/twitching,1986
+Eye neoplasm NOS,1987
+Mastitis NOS,1988
+Gait abnormality,1989
+Limping,1990
+Laryngeal paralysis,1991
+Elevated renal parameters,1992
+Dilated renal pelvis,1993
+Pollakiuria,1994
+Dry coat,1995
+Poor coat condition,1996
+Licking,1997
+Dry skin,1998
+Anal sac disorder,1999
+Palpable mass NOS,2000
+Partial lack of efficacy,2001
+Shaking,2002
+Application site fibrosis,2003
+Application site abscess,2004
+Application site infection,2005
+Implant site fibrosis,2006
+Implant site dermatitis,2007
+Injection site fibrosis,2008
+Immune mediated thrombocytopenia,2009
+Abdominal discomfort,2010
+Fluid in abdomen NOS,2011
+Oral abscess,2012
+Enterotoxaemia,2013
+Endocrine system disorder NOS,2014
+Panophthalmitis,2015
+Pink eye,2016
+Small liver,2017
+Hepato-biliary disorder NOS,2018
+Metabolism and nutrition disorder NOS,2019
+Selenium toxicity signs,2020
+Musculoskeletal pain,2021
+Head bobbing,2022
+Emprosthotonus,2023
+Decubitus,2024
+Hind limb paralysis,2025
+Urinary tract infection,2026
+Haemoglobinuria,2027
+Crystalluria,2028
+Reduced sexual interest (see Reproductive for named sexual disorders),2029
+Congenital disorder NOS,2030
+Penile prolapse,2031
+Testicular erythema,2032
+Reduced testicle size,2033
+Roaring,2034
+Pneumothorax,2035
+Lichenification,2037
+Ecchymosis,2038
+Decreased activity,2039
+Residues in eggs,2040
+Residues in honey,2041
+Residues in meat/offal,2042
+Residues in milk,2043
+Residues NOS,2044
+Unable to rise,2045
+Hyperphosphataemia,2046
+Elevated blood urea nitrogen (BUN),2047
+Elevated creatinine,2048
+Elevated aspartate aminotransferase (AST),2049
+Elevated alanine aminotransferase (ALT),2050
+Elevated bile acids,2051
+Elevated total bilirubin,2052
+Diabetic ketoacidosis,2053
+Diabetic ketonuria,2054
+Elevated serum alkaline phosphatase (ALP),2055
+Myoglobinuria,2056
+Application site greasy fur,2057
+Hypoventilation,2058
+Anal irritation,2059
+Lymph node abscess,2060
+Attractiveness to males,2061
+Lipoma,2062
+Application site burn,2063
+Application site eczema,2064
+Application site moist eczema,2065
+Hydronephrosis,2066
+Increased sexual interest,2067
+Increased testicle size,2068
+Abnormal ultrasound finding,2069
+Abnormal radiograph finding,2070
+General illness,2071
+Haemangiosarcoma,2072
+Abdominal cavity haemorrhage,2073
+Abscess NOS,2074
+Alkalosis,2075
+Allergic pruritus,2076
+Bladder rupture,2077
+Cleft palate,2078
+Cutaneous calcinosis,2079
+Dehiscence,2080
+Delayed healing,2081
+Emesis (multiple),2082
+Extrasystole,2083
+Eyes rolling back,2084
+Gangrene,2085
+Gaseous gangrene,2086
+Organ petechiae,2087
+Haematoma NOS,2088
+Hare lip,2089
+Hiccup,2090
+Increased borborygmus,2091
+Increased mortality rate,2092
+Injection site gangrene,2093
+Injection site gaseous gangrene,2094
+Intestinal occlusion,2095
+Lip licking,2096
+Multiple organ haemorrhage,2097
+Organ haemorrhage,2098
+Painful urination,2099
+Penile protrusion,2100
+Peritoneal haemorrhage,2101
+Polyneuritis,2102
+Polyradiculoneuritis,2103
+Prostate hypertrophy,2104
+Sore lip,2105
+Spleen torsion,2106
+Surgical site disorder,2107
+Tongue paralysis,2108
+Tumour lysis syndrome,2109
+Unrelated death,2110
+Uterine neoplasm,2111
+Application site paraesthesia,2112
+Injection site mass NOS,2113
+Pancytopenia,2114
+Petechiae NOS,2115
+Thrombocytosis,2116
+Inversion of albumin/globulin ratio,2117
+Lip smacking,2118
+Hepatic cytolysis,2119
+Liver degeneration,2120
+Vulvar oedema,2121
+Onset of lactation,2122
+Cervical ventroflexion,2123
+Hypertrophic osteodystrophy,2124
+Fanconi syndrome,2125
+Renal degeneration,2126
+Urine leakage,2127
+Decreased spermatozoa motility,2128
+Decreased number of spermatozoa,2129
+Decreased ejaculate volume,2130
+Pseudopregnancy behaviour,2131
+High oestrogen level,2132
+Uterine atony,2133
+Foetal death,2134
+Prostatitis,2135
+Penile erection,2136
+Cystic endometrial hyperplasia,2137
+Hyperpnoea,2138
+Bronchopneumonia,2139
+Crackles on auscultation,2140
+Pleurisy,2141
+Necropsy performed,2142
+Abomasal perforation,2143
+Electrolyte disorder,2144
+Renal tubular disorder,2145
+Uterine disorder NOS,2146
+Crepitation on auscultation,2147
+Application site leukotrichia,2148
+Injection site hair change,2149
+Injection site leukotrichia,2150
+Implant site hair change,2151
+Implant site leukotrichia,2152
+Injection site vaccine leakage,2153
+Hyperalbuminaemia,2154
+Hyperproteinaemia,2155
+Haemolysis NOS,2156
+Decreased red blood cell count,2157
+Abnormal electrocardiogram (ECG),2158
+Taurine-deficient cardiomyopathy,2159
+Cardiac insufficiency,2160
+Circulatory disorder NOS,2161
+Gut sounds decreased,2162
+Digestive tract hypomotility,2163
+Abdominal effusion,2164
+Adhesion in fish,2165
+Melanin accumulation in fish,2166
+Visible vaccine in fish,2167
+Elevated lipase,2168
+Rumen acidosis,2169
+Tail paralysis,2170
+Tail paresis,2171
+Downer animal,2172
+Myelopathy,2173
+Nephrotic syndrome,2174
+Bilirubinuria,2175
+Ovarian neoplasm,2176
+Depigmentation of nasal plane,2177
+Reverse sneezing,2178
+Skin scab,2179
+Hypertrichosis,2180
+Skin thinning,2181
+Azotaemia,2182
+Brood removal,2183
+Bees absconding,2184
+Bee systemic disorder NOS,2185
+Hypoxia,2186
+Weak pulse,2187
+Reduced growth rate,2188
+Environmental incident,2189
+Unclassifiable adverse event,2190
+Application site residue,2191
+Application site numbness,2192
+Application site tingling,2193
+Application site excoriation,2194
+Application site papule,2195
+Application site twitching,2196
+Application site skin discolouration,2197
+Application site skin scaling,2198
+Application site skin squamosis,2199
+Application site skin change NOS,2200
+Implant site infection,2201
+Injection site skin discolouration,2202
+Injection site skin scaling,2203
+Injection site skin squamosis,2204
+Injection site skin change NOS,2205
+Acting tense,2206
+Hiding,2207
+Pacing,2208
+Increased coagulation time,2209
+Prolonged activated partial thrombin time (APTT),2210
+Prolonged one stage prothrombin time (OSPT),2211
+Decreased percentage of reticulocytes,2212
+Increased percentage reticulocytes,2213
+Decreased haemoglobin,2214
+Decreased packed cell volume (PCV),2215
+Heinz body anaemia,2216
+Abnormal red blood cell,2217
+Methaemoglobinaemia,2218
+Basophilia,2219
+Abnormal serum protein NOS,2220
+Supraventricular and nodal arrhythmia,2221
+Ventricular arrhythmia,2222
+Visceral ischaemia,2223
+Scooting,2224
+Periodontal disorder,2225
+Dental calculus,2226
+Dental disease,2227
+Dental plaque,2228
+Oral cavity disorder NOS,2229
+Oral mass,2230
+Increased bowel movements (frequency),2231
+Elevated amylase,2232
+Immune mediated hypothyroidism,2233
+Increased intra-ocular pressure,2234
+Squinting,2235
+Drooping eyelid,2236
+Optic disc oedema,2237
+Elevated gamma-glutamyl transferase (GGT),2238
+Anal oedema,2239
+Rectal oedema,2240
+Hypersensitivity reaction,2241
+Hypophosphataemia,2242
+Joint cartilage disorder NOS,2243
+Spondylitis,2244
+Elevated creatine-kinase (CK),2245
+Star-gazing,2246
+Unresponsive to stimuli,2247
+Tense muscles,2248
+Intention tremor,2249
+Flaccid muscles,2250
+Hypotonia,2251
+Limpness,2252
+Enlarged kidney(s),2253
+Isosthenuria,2254
+Pyuria,2255
+Uric acid crystals,2256
+Uterine contraction,2257
+Pneumonitis,2258
+Pulmonary fibrosis,2259
+"Cough, productive",2260
+Miliary dermatitis,2261
+Dermal mass,2262
+Epidermal collarette,2263
+Lick granuloma,2264
+Decreased cholesterol (total),2265
+Elevated cholesterol (total),2266
+Elevated C-reactive protein,2267
+Elevated fibrinogen level,2268
+Elevated lactic acid dehydrogenase (LDH),2269
+Low fibrinogen level,2270
+Dysorexia,2271
+Haemoconcentration,2272
+Sunken eyes,2273
+Dull,2274
+Arched back,2275
+Submandibular oedema,2276
+Abdominal mass,2277
+Premature anaesthesia recovery,2278
+Secondary malignancy,2279
+Surgical site haemorrhage,2280
+Suspect counterfeit product,2281
+Medication error NOS,2282
+Product defect NOS,2283
+Mesothelioma (peritoneal tumour),2284
+Caseous peritonitis (tuberculosis),2285
+Fibrinous peritonitis,2286
+Granulomatous peritonitis,2287
+Suppurative peritonitis,2288
+Caseous/granulomatous pneumonia (tuberculosis),2290
+Embolic pneumonia,2291
+Pulmonary parasitic nodules,2292
+Emphysematous pneumonia,2293
+Bronchopulmonary inflammation,2294
+Acute (interstitial) pneumonia/pleuropneumonia,2295
+Chronic (broncho)pneumonia/pleuropneumonia,2296
+Chronic (interstitial) pneumonia/pleuropneumonia,2297
+Fibrinous (broncho) pneumonia/fibrinous pleuropneumonia,2298
+Granulomatous pneumonia/pleuropneumonia,2299
+Suppurative (broncho) pneumonia/pleuropneumonia,2300
+Hypertrophic concentric cardiomyopathy,2301
+Hypertrophic dilated cardiomyopathy,2302
+Valvular endocarditis,2303
+Myocardial infarct,2304
+Necrotic myocarditis,2305
+Non suppurative myocarditis,2306
+Suppurative myocarditis,2307
+Endocardiosis,2308
+Cardiac neoplasm NOS,2309
+Auricular haemangiosarcoma,2310
+Chemodectoma,2311
+Mesothelioma (pericardial tumour),2312
+Meckel's diverticulum,2313
+Hepatic biliary cysts,2314
+Congenital hydronephrosis,2315
+Chronic cholangitis,2316
+Suppurative cholangitis,2317
+Lymphoedema,2319
+Polyserositis,2320
+Hepatic lipidosis (steatosis),2321
+Glisson's capsule fibrosis,2322
+Caseous/granulomatous hepatitis (tuberculosis),2323
+Cirrhosis (micronodular or macronodular) chronic active hepatitis,2324
+Granulomatous hepatitis,2325
+Necrotic hepatitis,2326
+Suppurative hepatitis,2327
+Liver amyloidosis,2328
+Granulomatous colitis,2330
+Ulcerative colitis,2331
+Luminal enteropathy,2332
+Catarrhal enteritis,2333
+Eosinophilic enteritis,2334
+Fibrinonecrotic enteritis,2335
+Granulomatous enteritis,2336
+Haemorrhagic enteritis,2337
+Histiocytic enteritis,2338
+Lymphoplasmacytic enteritis,2339
+Necrohaemorrhagic enteritis,2340
+Proliferative enteritis,2341
+Caseous lymphadenitis (tuberculosis),2344
+Fibrinous lymphadenitis,2345
+Granulomatous lymphadenitis,2346
+Purulent lymphadenitis,2347
+Lymphangiectasia,2348
+Adenocarcinoma NOS,2352
+Digestive tract adenoma,2353
+Gastro intestinal stromal tumour (gist),2355
+Fibrinous pericarditis,2357
+Suppurative pericarditis,2358
+Acute glomerulonephritis,2359
+Chronic interstitial nephritis,2360
+Glomerulosclerosis,2361
+Granulomatous nephritis,2362
+Proliferative glomerulonephritis,2363
+Renal tubulonephrosis,2364
+Suppurative glomerulonephritis,2365
+Renal infarcts,2366
+Pulmonary mineralisation (chronic renal failure),2367
+Pulmonary metastases,2369
+Mesothelioma (pleural tumour),2370
+Pleural mineralisation,2371
+Thoracic cavity disorder NOS,2372
+Pelvic lithiasis,2374
+Renal lymphoma,2375
+Aortic aneurysm,2376
+Aortic mineralisation,2377
+Cardiac embolism,2378
+Spondylopathy,2379
+Bulging eye,2380
+Vagal shock,2381
+Comedo/blackhead,2382
+Salivary gland disorder,2383
+Ranula,2384
+Bone marrow hypoplasia,2385
+Tympanic rupture,2386
+Eardrum rupture,2387
+Destructive behaviour,2388
+Walking on tiptoes,2389
+Lumbar pain,2390
+Rolling,2391
+Eyelid ptosis - neurologic (see also Drooping eyelid NOS),2392
+Groaning,2393
+Unable to jump,2394
+Abnormal posture,2395
+Self auscultation position,2396
+Head down,2397
+Skin warmth,2398
+Male infertility NOS,2399
+Extrapyramidal syndrome,2400
+Food refusal,2401
+Swollen limb,2402
+Bumping into walls,2403
+Rolling skin syndrome,2404
+Enlarged lymph node (localised),2405
+Application site warmth,2406
+Application site hot spot,2407
+Immediate pain upon application,2408
+Implant site warmth,2409
+Immediate pain upon injection,2410
+Less social,2411
+Head shake - behavioural disorder,2412
+Head shy,2413
+Mothering disorder,2414
+Poor mothering behaviour,2415
+Maternal neglect of offspring,2416
+Maternal aggression to offspring,2417
+Hypokalaemia,2418
+Increased packed cell volume (PCV),2419
+Monocytosis,2420
+Lipaemia,2421
+Platelet disorder NOS,2423
+Giant platelets,2424
+Large platelets,2425
+Enlarged lymph nodes (generalised),2426
+Ventricular fibrillation,2427
+Chordae tendonae rupture,2428
+Congestive heart failure,2429
+Lack of efficacy (endoparasite) - heartworm,2430
+Heart block 1st degree,2431
+Heart block 2nd degree,2432
+Heart block 3rd degree,2433
+Premature ventricular contractions,2434
+Unusual stool colour,2435
+Lack of efficacy (endoparasite) - NOS,2436
+Suckling disorder NOS,2437
+Pasty stool,2438
+Jejunitis,2439
+Intestinal disorder NOS,2440
+Gingival swelling,2441
+Gingival erythema,2442
+Oral oedema,2443
+Oral swelling,2444
+Oral erythema,2445
+Lip disorder NOS,2446
+Lip erythema,2447
+Tooth loss,2448
+Chewing disorder,2449
+Difficulty chewing,2450
+Unable to chew,2451
+Tonsillitis,2452
+Straining to defecate,2453
+Droopy lower lip,2454
+Temporary deafness,2455
+Thickened ear canal(s),2456
+Peripheral vestibular disorder,2457
+Idiopathic vestibular disease,2458
+Conjunctival haemorrhage,2459
+Eyelid erythema,2460
+Eyelid lump,2461
+Injected sclera,2462
+Decreased intra-ocular pressure,2463
+Galactorrhoea,2464
+Joint ligament disorder NOS,2465
+Clumsy,2466
+Fasciitis,2467
+Muscle contracture,2468
+Fly biting behaviour,2469
+Muscle atrophy (see also Muscle wasting),2470
+Central vestibular disorder,2471
+Paradoxical vestibular syndrome,2472
+Status epilepticus,2473
+Hyposthenuria,2475
+Hypersthenuria,2477
+Genital tract licking,2478
+Foetal malpresentation,2479
+Uterine cyst,2480
+Shallow breathing,2481
+Fluid from nose,2482
+Lung collapse,2483
+Epistaxis (bilateral),2484
+Epistaxis (unilateral),2485
+Decreased pulse oxygenation,2486
+Harsh lung sounds,2487
+Increased lung sounds,2488
+Tracheal rales,2489
+Guttural pouch empyema,2490
+Juvenile cellulitis (puppy strangles),2491
+Lack of efficacy (ectoparasite) - NOS,2492
+Hygroma,2493
+Suppurative dermatitis,2494
+Perivascular dermatitis,2495
+Rubbing,2496
+Cyanotic spots/blotchy skin,2497
+Discomfort NOS,2498
+Uncomfortable,2499
+Decreased drinking,2500
+Increased yawning,2501
+Dummy foal syndrome,2502
+Rough recovery,2503
+Heat stroke,2504
+Vocalizing while sleeping,2505
+Snoring,2506
+Sick euthyroid syndrome,2507
+Elevated triglyceride,2508
+Laceration,2509
+Lack of response to owner,2510
+Hypernatraemia,2511
+Hyponatremia,2512
+Increased culls,2513
+Application site dry skin,2514
+Application site thickening,2515
+Application site hyperkeratosis,2516
+Application site pigmentation disorders,2517
+Application site scar,2518
+Application site hair coat discolouration,2519
+Not urinating,2520
+Polycythaemia NOS,2521
+Bounding pulse,2522
+Head tilt - neurological disorder (see also Head tilt - ear disorder),2523
+Eye dryness (sensation),2524
+Elevated sorbitol dehydrogenase (SDH),2525
+Gangrenous mastitis,2526
+Haemarthrosis,2527
+Increased seizure frequency,2528
+Sleepiness - systemic disorder,2529
+Drowsiness - systemic disorder,2530
+Dysphoria,2531
+Flehmen response,2532
+Elevated protein:creatinine ratio,2533
+Barren,2534
+Preputial swelling,2535
+Preputial oedema,2536
+Bloody foam in mouth and nose,2537
+Laryngeal spasm,2538
+Gill disorder NOS,2539
+Gill discolouration,2540
+Creased skin,2541
+Salivary staining,2542
+Follicular casts,2543
+Scar,2544
+Elevated insulin,2545
+Neck writhing,2546
+Feet shifting,2547
+Not sucking (see also Digestive),2548
+Decreased skin turgor,2549
+Systemic fungal infection,2550
+Lack of efficacy (virus) - distemper virus,2551
+Lack of efficacy (virus) - parvovirus (including feline panleukopenia),2552
+Lack of efficacy (virus) - calicivirus (rabbit haemorrhagic disease (RHD)),2553
+Lack of efficacy (virus) - myxomatosis,2554
+Application site burning sensation,2555
+Elevated globulins,2556
+Reduced globulins,2557
+Irregular pulse,2558
+Pulmonary hypertension,2559
+Anal and rectal disorder NOS,2560
+Perineal hernia,2561
+Gastrointestinal foreign body NOS,2562
+Disorder of gastrointestinal flora,2563
+Enteric pathogen NOS,2564
+Small intestinal bacterial overgrowth,2565
+Ear canal erythema,2566
+Ear canal disorder,2567
+Ear canal inflammation,2568
+Ear canal oedema,2569
+Stenotic ear canal,2570
+Swollen ear canal,2571
+Itchy ears,2572
+Ear pruritus,2573
+Hepato-biliary neoplasm,2574
+Biliary neoplasm,2576
+Hyperchloraemia,2577
+Hypochloraemia,2578
+Intervertebral disc disease,2579
+Ligament rupture,2580
+Torn ligament,2581
+Diaphragmatic flutter,2582
+Elevated symmetrical dimethylarginine (SDMA),2583
+Choke,2584
+Positive tracheal pinch,2585
+Lack of hair regrowth,2586
+Demodicosis,2587
+Abnormal cytology,2588
+Stress leukogram,2589
+Partial adipsia,2590
+Partial anorexia,2591
+Pawing,2592
+Wound,2593
+Abrasion,2594
+Endotoxaemia,2595
+Weight fluctuation,2596
+Infectious disease NOS,2597
+Omphalitis,2598
+Omphalophlebitis,2599
+Navel disease,2600
+Navel ill,2601
+Application site sore,2602
+Application site feather change,2603
+Application site feather loss,2604
+Injection site nodule,2605
+Injection site feather change,2606
+Injection site feather loss,2607
+Biting - pruritus (see also Behavioural disorders),2608
+Attention-seeking behaviour,2609
+Panic,2610
+Circling - behavioural disorder (see also Neurological disorders),2611
+Spherocytosis,2612
+Increased red blood cell count,2613
+Hypovolaemia,2614
+Praying position,2615
+Abdominal exudate,2616
+Abdominal transudate,2617
+Chewing - pruritus,2618
+Decreased ruminal activity,2619
+Pinnal ulcer,2620
+Tympanic alteration,2621
+Tympanic discoloration,2622
+Tympanic opacity,2623
+Hypercortisolaemia,2624
+Hypocortisolaemia,2625
+Biliary sludge,2626
+Gall bladder mucocele,2627
+Teat ulcer,2628
+High sodium-potassium ratio (Na:K ratio),2629
+Low sodium-potassium ratio (Na:K ratio),2630
+Polymyositis,2631
+Plantigrade posture,2632
+Wide-base stance,2633
+Cerebellar ataxia,2634
+Staring,2635
+Vacant,2636
+Rotatory nystagmus,2637
+Vertical nystagmus,2638
+Bladder distension,2639
+Sheath oedema,2640
+Orthopnoea,2641
+Thoracic exudate,2642
+Thoracic transudate,2643
+Tracheal oedema,2644
+Quiet,2645
+Subdued,2646
+Suspected reversal to virulence,2647
+Lack of efficacy (bacteria) - NOS,2648
+Lack of efficacy (ectoparasite) - flea,2649
+Lack of efficacy (ectoparasite) - fly,2650
+Lack of efficacy (ectoparasite) - lice,2651
+Lack of efficacy (ectoparasite) - mite NOS,2652
+Lack of efficacy (ectoparasite) - mosquito,2653
+Lack of efficacy (mycoplasma) - NOS,2654
+Lack of efficacy (protozoa) - NOS,2655
+Lack of efficacy (endoparasite) - roundworm NOS,2656
+Lack of efficacy (endoparasite) - tapeworm,2657
+Lack of efficacy (ectoparasite) - tick NOS,2658
+Lack of efficacy (endoparasite) - trematode,2659
+Lack of efficacy (virus) - NOS,2660
+Elevated pancreatic enzymes,2661
+Abnormal dexamethasone suppression test,2662
+Abnormal adrenocorticotropic hormone (ACTH) stimulation test,2663
+Elevated parathyroid (PTH) concentration,2664
+Low parathyroid (PTH) concentration,2665
+Abnormal Schirmer tear test,2666
+Elevated serum lipids,2667
+Abnormal thyroid stimulating hormone (TSH) level,2668
+Elevated thyroxine (T4),2669
+Low thyroxine (T4),2670
+Application site vasoconstriction,2671
+Needlestick injury,2672
+Unsettled,2673
+Inappropriate elimination NOS,2674
+Hypovolaemic shock,2675
+Thrombophlebitis,2676
+Hard stool,2677
+Reduced faecal output,2678
+Enlarged thyroid gland,2679
+Goitre,2680
+Immune-mediated polyarthritis,2681
+Immune-mediated polyarthropathy,2682
+Abnormal rectal palpation,2683
+"High ionized calcium (Ca; Hypercalcemia, ionized)",2684
+Hypocalcaemia,2685
+"Low ionized calcium (Ca; Hypocalcaemia, ionized)",2686
+Hypercalcaemic condition,2687
+Low alanine aminotransferase (ALT),2688
+Low liver enzymes NOS,2689
+Low serum alkaline phosphatase (ALP),2690
+Increased skin temperature,2691
+High pancreatic-specific lipase,2692
+High trypsin-like immunoreactivity (TLI),2693
+Low pancreatic enzymes,2694
+Low trypsin-like immunoreactivity (TLI),2695
+"Agglutination test, positive",2696
+"Direct Coombs test, positive",2697
+"Saline slide agglutination test, positive",2698
+Active urine sediment,2699
+Low blood urea nitrogen (BUN),2700
+Low creatinine,2701
+Decreased blood urea nitrogen (BUN) or creatinine,2702
+High thyroid stimulating hormone (TSH),2703
+High free thyroxine (FT4),2704
+Low free thyroxine (FT4),2705
+Abnormal thyroglobulin autoantibodies (TgAA),2706
+Abnormal tri-iodothyronine autoantibodies (T3AA),2707
+Abnormal thyroxine autoantibodies (T4AA),2708
+High free tri-iodothyronine (FT3),2709
+High tri-iodothyronine (T3),2710
+Low free tri-iodothyronine (FT3),2711
+Low tri-iodothyronine (T3),2712
+"Peritoneal fluid, high protein level",2713
+"Peritoneal fluid, high white blood cell count",2714
+"Peritoneal fluid, abnormal NOS",2715
+High adrenocorticotropic (ACTH) hormone,2716
+"Pleural fluid, high protein level",2717
+"Pleural fluid, high red blood cell count",2718
+"Pleural fluid, high white blood cell count",2719
+"Pleural fluid, abnormal NOS",2720
+"Synovial fluid, abnormal NOS",2721
+"Synovial fluid, high protein level",2722
+"Synovial fluid, high red blood cell count",2723
+"Synovial fluid, high white blood cell count",2724
+Hip dysplasia,2725
+Difficulty to rise,2726
+Grand mal seizure,2727
+Neurological disorder NOS,2728
+Mast cell tumour,2729
+Decreased egg-laying (bees),2730
+Bee brood death,2731
+Bee brood mortality,2732
+Bee colony death,2733
+Bee wing deformation,2734
+Hive weakness,2735
+Loss of egg quantity (bees),2736
+Queen bee death,2737
+Queen bee loss,2738
+Queen bee rejection,2739
+Off food,2740
+Cold feeling to the touch,2741
+Warm feeling to the touch,2742
+Lying down,2743
+Low skin temperature,2744
+Lactation change NOS,2745
+Miliaria,2746
+Peripheral nerve injury,2747
+Skin haemorrhage NOS,2748
+Atelectasis,2749
+Application site stickiness,2750
+Injection site tenderness,2751
+Licking at injection site,2752
+Not himself/herself,2753
+Hissing,2754
+Growling,2755
+Whining,2756
+Unkempt hair coat,2757
+Vomiting bile,2758
+Excessive ear wax,2759
+Aqueous flare,2760
+Enophthalmos (see also Sunken eyes in Systemic disorders),2761
+Congenital liver shunt NOS,2762
+Chronic hepatitis,2763
+Liver shunt NOS,2764
+"Liver shunt, acquired",2765
+Swollen eyelid (see also Eyelid disorders in Eye disorders),2766
+Localised allergic oedema NOS,2767
+Limb non-weight bearing,2768
+Cervical pain,2769
+Focal seizure,2770
+Defecation related to convulsion,2771
+Urination related to convulsion,2772
+Increased urine volume,2773
+Prolonged pregnancy,2774
+Snorting,2775
+Heavy breathing,2776
+Agonal breathing,2777
+Aspiration pneumonia,2778
+Interdigital oedema,2779
+Dermal nodule,2780
+Dermal plaque,2781
+Mopey,2782
+Reduced food intake,2783
+Lack of efficacy (bacteria) - Borrelia,2784
+Lack of efficacy (bacteria) - Chlamydia,2785
+Lack of efficacy (bacteria) - E.coli,2786
+Lack of efficacy (bacteria) - Leptospira,2787
+Lack of efficacy (bacteria) - Salmonella,2788
+Lack of efficacy (ectoparasite) - Demodex,2789
+Lack of efficacy (ectoparasite) - Dermanyssus,2790
+Lack of efficacy (ectoparasite) - ear mite,2791
+Lack of efficacy (ectoparasite) - fly strike,2792
+Lack of efficacy (ectoparasite) - Sarcoptes,2793
+Lack of efficacy (endoparasite) - Trichostrongylus,2794
+Lack of efficacy (endoparasite) - Cooperia,2795
+Lack of efficacy (endoparasite) - Cyathostominae,2796
+Lack of efficacy (endoparasite) - Haemonchus,2797
+Lack of efficacy (endoparasite) - hookworm,2798
+Lack of efficacy (endoparasite) - Ostertagia/Teladorsagia,2799
+Lack of efficacy (endoparasite) - Parascaris,2800
+Lack of efficacy (endoparasite) - whipworm,2801
+Lack of efficacy (fungi) - NOS,2802
+Lack of efficacy (protozoa) - Coccidia,2803
+Lack of efficacy (fungi) - Cryptococci,2804
+Lack of efficacy (bacteria) - Ehrlichia,2805
+Lack of efficacy (protozoa) - Giardia,2806
+Lack of efficacy (mycoplasma) - Haemobartonella,2807
+Lack of efficacy (protozoa) - Leishmania,2808
+Lack of efficacy (protozoa) - Piroplasma,2809
+Lack of efficacy (protozoa) - Toxoplasma,2810
+Lack of efficacy (virus) - adenovirus NOS,2811
+Lack of efficacy (virus) - bovine viral diarrhoea virus,2812
+Lack of efficacy (virus) - calicivirus - NOS,2813
+Lack of efficacy (virus) - coronavirus - NOS,2814
+Lack of efficacy (virus) - coronavirus (Infectious Bronchitis Virus),2815
+Lack of efficacy (virus) - feline immunodeficiency/feline AIDS,2816
+Lack of efficacy (virus) - feline infectious peritonitis,2817
+Lack of efficacy (virus) - feline leukaemia (FELV),2818
+Lack of efficacy (virus) - herpesvirus (Marek's disease),2819
+Lack of efficacy (virus) - herpesvirus NOS,2820
+Lack of efficacy (virus) - Infectious Bursal Disease (Gumboro),2821
+Lack of efficacy (virus) - parainfluenza,2822
+Lack of efficacy (virus) - rabies,2823
+Lack of efficacy (virus) - rotavirus,2824
+Lack of efficacy (endoparasite) - strongylids,2825
+Lack of efficacy (endoparasite) - Toxocara/Toxascaris,2826
+Renal amyloidosis,2827
+Buphthalmia (see also Bulging eye),2828
+Eyelid mass NOS,2829
+Conjunctival reddening,2830
+Scleral haemorrhage,2831
+Application site mass NOS,2832
+Implant site mass NOS,2833
+Injection site tenosynovitis,2834
+Injection site phlegmon,2835
+Injection site induration,2836
+Excessive defensive behaviour,2837
+Barbering,2838
+Lack of heart sounds on auscultation,2839
+Asystole,2840
+Cramp NOS,2841
+Rectal mass,2842
+Inflammatory bowel disorder,2843
+Oral obstruction,2844
+Verruciform lesion,2845
+Enamel disorder,2846
+Difficulty eating NOS,2847
+Ruminal tympany,2848
+Opportunistic infection NOS,2849
+Abnormal echocardiogram,2850
+Hypoprothrombinaemia,2851
+Elevated lactate,2852
+Decreased haematocrit,2853
+Elevated mean corpuscular volume (MCV),2854
+Decreased mean corpuscular volume (MCV),2855
+Elevated haematocrit,2856
+Elevated red cell distribution width (RDW),2857
+Decreased red cell distribution width (RDW),2858
+Increased band neutrophilia,2859
+Monocytopenia,2860
+White blood cell disorder NOS,2861
+Eosinopenia,2862
+Abnormal spermatozoa morphology,2863
+Abnormal histology NOS,2864
+Congenital umbilical hernia,2865
+Neurogenic keratoconjunctivitis sicca (KCS),2866
+Abnormal digital pulse,2867
+Difficulty standing,2868
+Difficulty going up/down stairs,2869
+Difficulty getting in car,2870
+Wobbliness,2871
+Neck pain - neurological,2872
+Syringomyelia,2873
+Urinary tract obstruction/blockage,2874
+Persistent cough,2875
+Skin reaction NOS,2876
+Facial pruritus,2877
+Polyp,2878
+Myxomatosis,2879
+Footpad disorder NOS,2880
+Skin discolouration NOS,2881
+Loss of appendage,2882
+Unwell,2883
+Cyst NOS,2884
+Cyst rupture NOS,2885
+Mass NOS,2886
+Pitting oedema,2887
+Foreign body (not GI),2888
+Necrosis NOS,2889
+Necrotic wound,2890
+"Lack of efficacy (neoplasia, no remission)",2891
+"Lack of efficacy (neoplasia, partial remission)",2892
+"Lack of efficacy (neoplasia, relapse)",2893
+Lack of efficacy (protozoa) - Cryptosporidium,2894
+Limb amputation,2896
+Tail amputation,2897
+Injection site thickening,2898
+Spleen nodules,2900
+Intestinal impaction,2901
+Intestinal oedema,2902
+Liver nodules,2904
+Swollen muzzle,2905
+Diagnostic cull,2908
+Ketonuria,2910
+Luxation/subluxation,2912
+Heart base tumour NOS,2916
+Fibrosarcoma,2918
+Digestive tract adenocarcinoma,2923
+Digestive tract carcinoma,2924
+Adrenal gland tumour,2927
+Insulinoma,2932
+Thyroid adenoma,2933
+Thyroid adenocarcinoma,2934
+Thyroid carcinoma,2935
+Thyroid tumour NOS,2936
+Pancreatic adenocarcinoma,2941
+Pancreatic adenoma,2942
+Pancreatic tumour NOS,2943
+Haemangioma,2947
+Multiple myeloma,2950
+Myeloma,2951
+Cutaneous plasmacytoma,2952
+Extramedullary plasmacytoma,2953
+Plasmacytoma,2954
+Cutaneous haemangiosarcoma,2955
+Splenic haemangiosarcoma,2956
+Biliary cyst adenoma,2959
+Hepatic adenoma,2960
+Hepato-biliary adenoma,2961
+Cholangiocarcinoma,2962
+Hepato-biliary carcinoma,2963
+Hepatocellular carcinoma,2964
+Mesothelioma,2969
+Carcinoma NOS,2971
+Sarcoma NOS,2973
+Anal sac adenocarcinoma,2977
+Apocrine gland adenocarcinoma,2978
+Apocrine gland tumour,2979
+Intracranial bleeding,2982
+Kidney atrophy,2984
+Nasal ulceration,2985
+Skin hyperplasia,2986
+Bumps on skin,2987
+Cyanotic mucous membranes,2988
+Lack of efficacy (bacteria) - Anaplasma,2990
+Lack of efficacy (bacteria) - Histophilus somni,2993
+Lack of efficacy (bacteria) - Lawsonia intracellularis,2994
+Lack of efficacy (bacteria) - Mannheimia haemolytica,2995
+Lack of efficacy (bacteria) - Mannheimia NOS,2996
+Lack of efficacy (bacteria) - Pasteurella multocida,2997
+Lack of efficacy (bacteria) - Pasteurella NOS,2998
+Lack of efficacy (bacteria) - Streptococcus equi,2999
+Lack of efficacy (ectoparasite) - biting lice,3000
+Lack of efficacy (ectoparasite) - sucking lice,3001
+Lack of efficacy (endoparasite) - lungworm,3002
+Lack of efficacy (virus) - bovine respiratory syncytial virus,3003
+Lack of efficacy (virus) - circovirus,3004
+Lack of efficacy (virus) - Eastern encephalomyelitis,3005
+Lack of efficacy (virus) - Equine herpes virus,3006
+Lack of efficacy (virus) - Equine influenza,3007
+Lack of efficacy (virus) - influenza NOS,3008
+Lack of efficacy (virus) - orf,3009
+Lack of efficacy (virus) - Arterivirus (including Porcine Reproductive and Respiratory Syndrome (PRRS)),3010
+Lack of efficacy (virus) - West Nile Virus,3011
+Lack of efficacy (virus) - Western encephalomyelitis,3012
+Lack of efficacy (bacteria) - Bordetella,3013
+Lack of efficacy (virus) - respiratory syncitial virus,3014
+Mass eruption NOS,3015
+Nose swelling,3016
+Unable to walk,3017
+Accidental exposure,3034
+Administration error,3035
+Device use issues NOS,3038
+Intentional misuse,3039
+Prescribing error,3040
+Confirmed counterfeit product,3043
+Application site skin slough,3046
+Application site purulent discharge,3048
+Application site pus,3049
+Application site discharge NOS,3051
+Biting at injection site,3052
+Chewing at injection site,3053
+Injection site discharge NOS,3056
+Injection site cyst,3057
+Pecking,3060
+Easily startled,3061
+Fear/fearful,3062
+Nervous,3063
+Disinterested,3064
+Telangiectasia,3065
+Not defecating,3066
+Aerophagia,3068
+Soft stool,3069
+Gastrointestinal irritation,3070
+Bloody stool,3071
+Acute pancreatitis,3072
+Vomiting foam,3073
+Dry heaving,3074
+Addisonian crisis,3075
+Adrenal necrosis,3077
+Immune mediated encephalitis,3079
+Immune mediated meningitis,3081
+Immune mediated myelitis,3083
+Immune mediated polymyositis,3085
+Bursa of Fabricius lymphocyte depletion,3087
+Elevated haemoglobin,3089
+Decreased mean corpuscular haemoglobin concentration (MCHC),3090
+Elevated mean corpuscular haemoglobin concentration (MCHC),3091
+Porphyrinuria,3093
+Abnormal urine cortisol:creatinine ratio (UCCR),3094
+Mammary hypertrophy,3096
+Mammary gland enlargement,3097
+High somatic cell count,3099
+Accidental device injury,3100
+Clenched jaw,3101
+Osteoporosis,3103
+Spinal pain NOS,3104
+Brain tumour,3105
+Post ictal state,3106
+Abnormal tail posture,3107
+Obtunded,3108
+Dazed,3109
+Head twitching,3110
+Parent-offspring event,3112
+Father and offspring event,3113
+Mother and offspring event,3114
+Offspring only event,3115
+Involuntary urination,3116
+Stertor,3118
+Upper respiratory sounds,3119
+Bronchiectasis,3120
+Lung nodule NOS,3122
+"Cough, hacking",3123
+Feather loss,3126
+Skin induration,3127
+Local skin slough,3128
+Local erythema,3129
+Increased drinking,3130
+Lack of efficacy (bacteria) - Actinobacillus pleuropneumoniae (APP),3131
+Lack of efficacy (bacteria) - Erysipelothrix rhusiopathiae,3132
+Lack of efficacy (bacteria) - Rickettsia,3133
+Lack of efficacy (protozoa) - Cytauxzoon feli,3134
+Lack of efficacy (virus) - rabies (low titre),3135
+Generalised congestion NOS,3137
+Organ atrophy NOS,3139
+Application site moisture,3140
+Injection site fistula,3141
+Injection site burning sensation,3142
+More social,3143
+Nesting - behavioural disorder (see also Reproductive system disorders),3144
+Euphoria,3146
+Excessive riding behaviour,3148
+Bulling,3149
+Cannibalism,3151
+Faint heart sound,3153
+Abnormal heart sound,3154
+Increased cardiac troponin,3156
+Perianal inflammation,3157
+Intestinal lesion NOS,3158
+Intestinal thickening,3159
+Gingival haemorrhage,3160
+Epulis,3161
+Watery diarrhoea,3162
+Acid reflux,3164
+Gastroesophageal reflux disease (GERD),3165
+Occult gastrointestinal bleeding,3168
+Ceruminous otitis,3169
+Corneal opacity,3171
+Corneal perforation,3173
+Deep corneal ulcer,3174
+Descemetocele,3175
+Melting corneal ulcer,3176
+Superficial corneal ulcer,3177
+Elevated serum amyloid A (SAA),3179
+Abnormal MDR-1 Test result,3186
+Abnormal cobalamin test (vitamin B12),3187
+Abnormal folate test (vitamin B9),3188
+Decreased bilirubin,3189
+Decreased glutamate dehydrogenase,3190
+Increased glutamate dehydrogenase,3191
+Elevated fructosamine,3192
+Elevated betahydroxybutyrate (BHBA),3193
+Low amylase,3194
+Elevated insulin-like grown factor (IGF),3196
+Leukocyturia,3197
+Low oestrogen level,3199
+Low progesterone level,3201
+High progesterone level,3203
+Mammary gland pain,3204
+Drug label confusion,3206
+Drug name confusion,3208
+Discoloured bones,3209
+Developmental bone and joint disorders NOS,3211
+Tumour pseudoprogression,3212
+Chronic kidney disease,3213
+Ascending testicle,3214
+Early onset of oestrus,3215
+Persisting ovarian follicle,3217
+Prostate atrophy,3219
+Prostate hypoplasia,3220
+Testicular asymmetry,3221
+Pulmonary hepatisation,3222
+Sneezing blood,3223
+Fistula,3225
+Exudative skin condition,3226
+Skin serosanguineous lesion(s),3227
+Walking slowly,3228
+Suspected transmission of a vaccine strain,3230
+Reduced sporting performance,3232
+Obesity/adipositas,3233
+Delayed growth plate closure,3234
+Suspected recombination of a vaccine strain,3236
+Suspected prolonged shedding of a vaccine strain,3238
+Implant site purulent discharge,3242
+Implant site pus,3243
+Injection site purulent discharge,3245
+Injection site pus,3246
+Backing away,3247
+Spitting,3248
+Haematological disorder,3249
+Increased bleeding tendency NOS,3250
+Reactive lymphadenopathy,3252
+Gastrointestinal disorder NOS,3255
+Gastrointestinal ulceration NOS,3257
+Caecum disorder NOS,3259
+Abnormal stool odour,3261
+Corneal sequestrum,3264
+Gritty sensation of eye,3265
+Retinitis,3267
+Immune mediated glomerulonephritis,3269
+Haemosiderosis,3271
+Abnormal CT finding,3273
+Abnormal MRI finding,3275
+Abnormal faecal analysis NOS,3276
+Hyperammonaemia,3278
+Heterozygous MDR-1,3279
+Homozygous MDR-1 mutant,3280
+Homozygous MDR-1 normal,3281
+Low fructosamine,3282
+Anisocytosis,3284
+Nucleated red blood cells,3291
+"Polycythaemia, absolute",3292
+"Polycythaemia, relative",3293
+Bacteriuria,3295
+Elevated cystatin B,3297
+Occult blood in urine,3298
+White blood cells in urine,3299
+Agranulocytosis,3300
+Device entrapment,3302
+Osteoarthritis,3303
+Bone lysis,3305
+Hind limb weakness,3306
+Elbow dysplasia,3307
+Shifting lameness,3308
+Palmigrade posture,3309
+Writhing,3311
+Increased sensitivity NOS,3312
+Literature report,3314
+Planned euthanasia,3316
+Urinary bladder atony,3318
+Delayed onset of lay,3319
+Prolonged oestrus,3320
+Uterine infection,3321
+Callus,3322
+Dandruff,3323
+Skin lesion discharge,3325
+Skin lesion weeping,3326
+"Shaking, shivering or trembling (non-neurological)",3329
+Lack of efficacy (bacteria) - Campylobacter,3330
+Lack of efficacy (bacteria) - Neorickettsia risticii,3331
+Lack of efficacy (ectoparasite) - Chorioptes,3332
+Lack of efficacy (endoparasite) - Dipylidium,3333
+Lack of efficacy (protozoa) - Babesia,3334
+Periocular oedema (see also Eye disorders),3337
+Gastric haemorrhage,3339
+Gastric bleeding,3340
+Osteoarthritis aggravated,3341
+Progressive osteoarthritis,3342
+Rapidly progressive osteoarthritis,3343
+Injection site scar,3344
+Injection site skin slough,3345
+Bee bearding behaviour,3346
+Scratching -aggression,3347
+Hairball regurgitation,3348
+Cardiovascular embolism,3349
+Aortic thromboembolism,3350
+Fibrocartilaginous embolism (FCE),3351
+Protein-losing enteropathy (PLE),3352
+Nuclear sclerosis,3353
+Infectious conjunctivitis,3354
+Blood gas abnormality,3357
+Hypercapnia,3358
+Hypocapnia,3359
+Gall bladder halo,3361
+Lupus erythematosus,3362
+Superficial necrolytic dermatitis (hepatocutaneous syndrome),3363
+Sterile neutrophilic dermatosis (Sweet-like syndrome),3364
+Blood count change NOS,3366
+Decreased ferritin,3368
+Elevated ferritin,3369
+Decreased reticulocyte haemoglobin,3371
+Impaired platelet aggregation,3372
+Dispensing error,3374
+Monitoring error,3376
+Acetone odour,3377
+Joint crepitus,3378
+Forelimb paralysis,3379
+Forelimb paresis,3380
+Unauthorised modification of finished product,3382
+Female subfertility,3383
+Scrotal lesion,3384
+Eosinophilic granuloma complex,3385
+Erythroderma,3387
+Head and neck pruritus,3388
+Self-inﬂicted alopecia/hypotrichosis,3389
+Raw skin,3390
+Circling NOS,3392
+Cyanotic tongue,3393
+Decreased body condition score (BCS),3394
+Increased body condition score (BCS),3395
+Inflammation NOS,3397
+Head shaking NOS,3398
+Thermoregulation disorder NOS,3400
+Lack of efficacy (bacteria) - Clostridia,3401
+Lack of efficacy (bacteria) - Staphylococcus aureus,3402
+Lack of efficacy (bacteria) - Staphylococcus spp,3403
+Lack of efficacy (ectoparasite) - New World screwworm,3404
+Abnormal image NOS,3405
