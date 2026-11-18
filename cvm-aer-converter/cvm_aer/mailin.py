@@ -447,7 +447,13 @@ def collect(config: ServiceConfig, source=None) -> List[Collected]:
             try:
                 archive = build_zip(mail, config.inbound, settings.ignore)
             except Rejected as exc:
-                LOGGER.error("e-mail %r from %s not taken in: %s", mail.subject, mail.sender, exc)
+                LOGGER.error(
+                    "e-mail %r from %s not taken in: %s (attachments: %s)",
+                    mail.subject,
+                    mail.sender,
+                    exc,
+                    ", ".join(name or "?" for name, _ in mail.attachments) or "none",
+                )
                 ledger.add(mail.key, "rejected")
                 _file(source, handle, False, mail)
                 _tell_rejected(config, mail, str(exc))
