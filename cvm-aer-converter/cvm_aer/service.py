@@ -52,12 +52,15 @@ TRANSPORT_OUTLOOK = "outlook"
 TRANSPORT_EML = "eml"
 TRANSPORTS = (TRANSPORT_SMTP, TRANSPORT_OUTLOOK, TRANSPORT_EML)
 
-# Where case e-mails are read from: the Outlook signed in on this PC, a mail
-# server over IMAP, or a folder of saved .eml files.
+# Where case e-mails are read from: a Microsoft 365 mailbox over Microsoft Graph,
+# the Outlook signed in on this PC, a mail server over IMAP, or a folder of saved .eml files.
+SOURCE_GRAPH = "graph"
 SOURCE_OUTLOOK = "outlook"
 SOURCE_IMAP = "imap"
 SOURCE_FOLDER = "folder"
-SOURCES = (SOURCE_OUTLOOK, SOURCE_IMAP, SOURCE_FOLDER)
+SOURCES = (SOURCE_GRAPH, SOURCE_OUTLOOK, SOURCE_IMAP, SOURCE_FOLDER)
+# graph: the app's client secret, when it is kept out of the ini.
+GRAPH_SECRET_ENV = "CVM_AER_GRAPH_CLIENT_SECRET"
 # Outlook puts signature and logo images in as attachments named like these.
 # Only e-mails whose subject holds this are case e-mails, unless the ini says otherwise.
 CASE_SUBJECT = "CVM-AER"
@@ -126,8 +129,13 @@ class IntakeSettings:
     """The mailbox case e-mails arrive in; switched off while ``source`` is empty."""
 
     source: Optional[str] = None
-    # outlook: the mailbox as Outlook lists it (a shared mailbox, say); the default one if unset
+    # outlook: the mailbox as Outlook lists it (a shared mailbox, say); the default one if unset.
+    # graph: the mailbox's address (required: an app signs in as no user).
     mailbox: Optional[str] = None
+    # graph: the Entra ID app registration (application permission Mail.ReadWrite)
+    tenant_id: Optional[str] = None
+    client_id: Optional[str] = None
+    client_secret: Optional[str] = None
     folder: str = "Inbox"
     processed_folder: str = "CVM-AER Processed"
     rejected_folder: str = "CVM-AER Rejected"
@@ -277,6 +285,9 @@ def _intake(section, folders, path: str) -> IntakeSettings:
         username=section.get("username") or None,
         password=section.get("password") or None,
         eml_dir=os.path.expanduser(section.get("eml_dir", "") or "") or None,
+        tenant_id=section.get("tenant_id") or None,
+        client_id=section.get("client_id") or None,
+        client_secret=section.get("client_secret") or os.environ.get(GRAPH_SECRET_ENV) or None,
         ledger=os.path.expanduser(section.get("ledger", "") or "") or os.path.join(
             os.path.dirname(os.path.abspath(os.path.expanduser(folders["inbound"]))), "cvm-aer-intake-ledger.txt"
         ),
@@ -286,7 +297,11 @@ def _intake(section, folders, path: str) -> IntakeSettings:
     words = [item.strip() for item in str(section.get("subject_contains", "") or "").split(",") if item.strip()]
     # Left empty it stays CVM-AER, so a blank line never opens up a whole Inbox; * takes every e-mail.
     settings.subject_contains = [] if words == ["*"] else (words or [CASE_SUBJECT])
-    needed = {SOURCE_IMAP: ("host", "username"), SOURCE_FOLDER: ("eml_dir",)}.get(source, ())
+    needed = {
+        SOURCE_GRAPH: ("tenant_id", "client_id", "client_secret", "mailbox"),
+        SOURCE_IMAP: ("host", "username"),
+        SOURCE_FOLDER: ("eml_dir",),
+    }.get(source, ())
     missing = [key for key in needed if not getattr(settings, key)]
     if missing:
         raise ConfigError(f"[{SECTION_INTAKE}] source = {source} in {path} needs: {', '.join(missing)}")

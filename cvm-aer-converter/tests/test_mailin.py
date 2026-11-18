@@ -482,3 +482,87 @@ def test_outlook_skips_an_item_that_vanished_while_reading(monkeypatch, tmp_path
     (entry,) = mailin.collect(_outlook_config(tmp_path))
 
     assert os.path.basename(entry.archive) == "a.zip"
+
+
+class _FakeGraph:
+    """Answers GraphSource._call for one mailbox: an Inbox with case e-mails in it."""
+
+    def __init__(self, messages, attachments):
+        self.folders = {"inbox-id": ("Inbox", None)}
+        self.messages = dict(messages)
+        self.attachments = attachments
+        self.calls = []
+
+    def __call__(self, method, path, body=None, raw=False):
+        self.calls.append((method, path.split("?")[0], body))
+        route = path.split("?")[0]
+        if route == "/mailFolders/inbox":
+            return {"id": "inbox-id"}
+        if route.endswith("/childFolders"):
+            parent = route.split("/")[2]
+            if method == "POST":
+                folder_id = f"{body['displayName']}-id"
+                self.folders[folder_id] = (body["displayName"], parent)
+                return {"id": folder_id}
+            children = [{"id": k, "displayName": n} for k, (n, p) in self.folders.items() if p == parent]
+            return {"value": children}
+        if route == "/mailFolders/inbox-id/messages":
+            return {"value": list(self.messages.values())}
+        if route.endswith("/attachments"):
+            return {"value": self.attachments[route.split("/")[2]]}
+        if route.endswith("/$value"):
+            message_id, attachment_id = route.split("/")[2], route.split("/")[4]
+            return next(a["_content"] for a in self.attachments[message_id] if a["id"] == attachment_id)
+        if method in ("PATCH", "POST"):
+            return {}
+        raise AssertionError(path)
+
+
+def _graph_config(tmp_path, **intake):
+    config = _config(tmp_path)
+    config.intake = service.IntakeSettings(
+        source=service.SOURCE_GRAPH, mailbox="cvm-aer@example.gov", tenant_id="t", client_id="c",
+        client_secret="s", ledger=str(tmp_path / "ledger.txt"), **intake)
+    return config
+
+
+def test_graph_mail_is_taken_and_moved_to_the_processed_subfolder(monkeypatch, tmp_path):
+    forwarded = open(_eml(tmp_path / "src", "inner.eml", "original", [("N141562.pdf", b"%PDF-1")]), "rb").read()
+    graph = _FakeGraph(
+        {
+            "m1": {"id": "m1", "subject": "Fw: CVM-AER case", "internetMessageId": "<m1@x>",
+                   "from": {"emailAddress": {"address": "naresh@example.gov"}},
+                   "receivedDateTime": "2026-11-17T17:58:45Z"},
+            "m2": {"id": "m2", "subject": "staff meeting", "internetMessageId": "<m2@x>"},
+        },
+        {
+            "m1": [
+                {"@odata.type": mailin.GRAPH_FILE, "id": "a1", "name": "lab.pdf", "_content": b"%PDF-2"},
+                {"@odata.type": mailin.GRAPH_ITEM, "id": "a2", "name": "original", "_content": forwarded},
+                {"@odata.type": "#microsoft.graph.referenceAttachment", "id": "a3", "name": "link"},
+            ],
+        },
+    )
+    monkeypatch.setattr(mailin.GraphSource, "_call", lambda self, *a, **k: graph(*a, **k))
+
+    (entry,) = mailin.collect(_graph_config(tmp_path))
+
+    assert entry.ok and entry.sender == "naresh@example.gov"
+    assert os.path.basename(entry.archive) == "lab.zip"  # named after the first file, as for any e-mail
+    assert _members(entry.archive) == ["N141562.pdf", "lab.pdf"]
+    assert ("POST", "/mailFolders/inbox-id/childFolders", {"displayName": "CVM-AER Processed"}) in graph.calls
+    assert ("PATCH", "/messages/m1", {"isRead": True}) in graph.calls
+    assert ("POST", "/messages/m1/move", {"destinationId": "CVM-AER Processed-id"}) in graph.calls
+    assert not any("/messages/m2" in path for _, path, _ in graph.calls)  # other subjects are never opened
+
+
+def test_graph_needs_tenant_client_secret_and_mailbox(tmp_path, monkeypatch):
+    monkeypatch.delenv(service.GRAPH_SECRET_ENV, raising=False)
+    ini = tmp_path / "cvm.ini"
+    ini.write_text("[folders]\ninbound = i\noutbound = o\nprocessed = p\nerror = e\n[intake]\nsource = graph\n"
+                   "tenant_id = t\nclient_id = c\n", encoding="utf-8")
+    with pytest.raises(service.ConfigError, match="client_secret, mailbox"):
+        service.load_config(str(ini))
+    monkeypatch.setenv(service.GRAPH_SECRET_ENV, "from-env")
+    ini.write_text(ini.read_text() + "mailbox = cvm-aer@example.gov\n", encoding="utf-8")
+    assert service.load_config(str(ini)).intake.client_secret == "from-env"

@@ -56,13 +56,23 @@ email =
 ; The service reads the mailbox on every sweep; "python -m cvm_aer intake" reads it once.
 ;
 ; Where the e-mails are read from - leave empty to switch e-mail intake off:
+;   graph   - a Microsoft 365 mailbox over Microsoft Graph: tenant_id, client_id,
+;             client_secret and mailbox below (no Outlook needed; works on Linux)
 ;   outlook - the Outlook signed in on this PC (Windows; pip install pywin32)
 ;   imap    - a mail server over IMAP: host, username, password below
 ;   folder  - .eml files saved in eml_dir (for testing without a mailbox)
 source =
-; outlook only: the mailbox as Outlook lists it in the folder pane (e.g. a shared mailbox,
+; graph: the mailbox's e-mail address (required).
+; outlook: the mailbox as Outlook lists it in the folder pane (e.g. a shared mailbox,
 ; or its e-mail address); empty = your own.  A wrong name is logged with the names Outlook has.
 mailbox =
+; graph only: the Entra ID app registration.  It needs the application permission
+; Mail.ReadWrite (admin consent); an Exchange application access policy can keep it to
+; this mailbox.  The secret may instead be set in the environment variable
+; CVM_AER_GRAPH_CLIENT_SECRET, which keeps it out of this file.
+tenant_id =
+client_id =
+client_secret =
 ; The folder that is watched, e.g. Inbox or Inbox/CVM-AER
 folder = Inbox
 ; Only e-mails whose subject contains this (any case, e.g. "Fwd: cvm-aer N141562")

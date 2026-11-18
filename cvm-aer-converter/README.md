@@ -183,7 +183,12 @@ How an e-mail is known to be done:
 - its Message-ID is written to the ledger (`cvm-aer-intake-ledger.txt` next to
   `inbound`), so it is never taken twice even if the move failed.
 
-Sources: `outlook` (the Outlook signed in on the PC; `pip install pywin32`),
+Sources: `graph` (a Microsoft 365 mailbox over Microsoft Graph, signed in as an
+Entra ID app: `tenant_id`, `client_id`, `client_secret` or the
+`CVM_AER_GRAPH_CLIENT_SECRET` environment variable, and `mailbox`; the app needs the
+application permission `Mail.ReadWrite` with admin consent. An e-mail forwarded as
+an attachment gives up the attachments inside it),
+`outlook` (the Outlook signed in on the PC; `pip install pywin32`),
 `imap` (host / username / password), `folder` (saved `.eml` files, for testing).
 
 ```bash

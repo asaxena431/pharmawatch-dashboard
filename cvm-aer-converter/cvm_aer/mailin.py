@@ -20,10 +20,15 @@ import email.policy
 import fnmatch
 import imaplib
 import io
+import json
 import logging
 import os
 import re
 import tempfile
+import time
+import urllib.error
+import urllib.parse
+import urllib.request
 import zipfile
 from dataclasses import dataclass
 from datetime import datetime
@@ -32,6 +37,7 @@ from typing import Any, Dict, Iterator, List, Optional, Sequence, Tuple
 
 from .service import (
     SOURCE_FOLDER,
+    SOURCE_GRAPH,
     SOURCE_IMAP,
     SOURCE_OUTLOOK,
     IntakeSettings,
@@ -402,7 +408,161 @@ class OutlookSource:
         pass
 
 
-SOURCE_CLASSES = {SOURCE_OUTLOOK: OutlookSource, SOURCE_IMAP: ImapSource, SOURCE_FOLDER: FolderSource}
+GRAPH_URL = "https://graph.microsoft.com/v1.0"
+GRAPH_LOGIN = "https://login.microsoftonline.com/{tenant}/oauth2/v2.0/token"
+GRAPH_SCOPE = "https://graph.microsoft.com/.default"
+GRAPH_FILE = "#microsoft.graph.fileAttachment"
+GRAPH_ITEM = "#microsoft.graph.itemAttachment"
+GRAPH_TRIES = 4
+
+
+class GraphSource:
+    """A Microsoft 365 mailbox over Microsoft Graph, signed in as the app (tenant, client ID, secret).
+
+    The app needs the application permission Mail.ReadWrite with admin consent; an
+    Exchange application access policy can keep it to the case mailbox.  E-mails are
+    moved to subfolders of the watched one, as with Outlook.  An e-mail forwarded as an
+    attachment gives up the attachments of the e-mail inside it.
+    """
+
+    def __init__(self, settings: IntakeSettings):
+        self.settings = settings
+        self.mailbox = urllib.parse.quote(settings.mailbox or "", safe="@")
+        self._access: Optional[str] = None
+        self._expires = 0.0
+        self.folder = self._folder_path(settings.folder)
+        self.processed = self._child(self.folder, settings.processed_folder, create=True)
+        self.rejected = self._child(self.folder, settings.rejected_folder, create=True)
+
+    def _token(self) -> str:
+        if self._access and time.time() < self._expires - 60:
+            return self._access
+        form = urllib.parse.urlencode({
+            "client_id": self.settings.client_id,
+            "client_secret": self.settings.client_secret,
+            "scope": GRAPH_SCOPE,
+            "grant_type": "client_credentials",
+        }).encode()
+        request = urllib.request.Request(GRAPH_LOGIN.format(tenant=self.settings.tenant_id), data=form, method="POST")
+        try:
+            with urllib.request.urlopen(request, timeout=60) as response:
+                answer = json.loads(response.read())
+        except urllib.error.HTTPError as exc:
+            detail = json.loads(exc.read() or b"{}").get("error_description", "") if exc.fp else ""
+            first = detail.splitlines()[0] if detail else ""
+            raise RuntimeError(f"Microsoft sign-in for the app failed (HTTP {exc.code}): {first}") from None
+        self._access = answer["access_token"]
+        self._expires = time.time() + float(answer.get("expires_in", 3600))
+        return self._access
+
+    def _call(self, method: str, path: str, body: Optional[dict] = None, raw: bool = False) -> Any:
+        url = path if path.startswith("https://") else f"{GRAPH_URL}/users/{self.mailbox}{path}"
+        data = json.dumps(body).encode() if body is not None else None
+        for attempt in range(GRAPH_TRIES):
+            request = urllib.request.Request(url, data=data, method=method)
+            request.add_header("Authorization", f"Bearer {self._token()}")
+            if data is not None:
+                request.add_header("Content-Type", "application/json")
+            try:
+                with urllib.request.urlopen(request, timeout=120) as response:
+                    content = response.read()
+                return content if raw else (json.loads(content) if content else {})
+            except urllib.error.HTTPError as exc:
+                if exc.code in (429, 503, 504) and attempt < GRAPH_TRIES - 1:
+                    time.sleep(float(exc.headers.get("Retry-After") or 2 ** attempt))
+                    continue
+                if exc.code == 404:
+                    raise LookupError(url) from None
+                detail = json.loads(exc.read() or b"{}").get("error", {}).get("message", "") if exc.fp else ""
+                raise RuntimeError(f"Microsoft Graph {method} {url} failed (HTTP {exc.code}): {detail}") from None
+        raise RuntimeError(f"Microsoft Graph {method} {url} kept failing")
+
+    def _pages(self, path: str) -> Iterator[dict]:
+        page = self._call("GET", path)
+        while True:
+            yield from page.get("value", [])
+            if not page.get("@odata.nextLink"):
+                return
+            page = self._call("GET", page["@odata.nextLink"])
+
+    def _child(self, parent: Optional[str], name: str, create: bool = False) -> str:
+        """The ID of folder ``name`` under ``parent`` (the mailbox's top when None), matched in any case."""
+        base = f"/mailFolders/{parent}/childFolders" if parent else "/mailFolders"
+        folders = list(self._pages(f"{base}?$select=id,displayName&$top=100&includeHiddenFolders=true"))
+        found = next((f["id"] for f in folders if (f.get("displayName") or "").lower() == name.lower()), None)
+        if found:
+            return found
+        if create:
+            return self._call("POST", base, {"displayName": name})["id"]
+        names = ", ".join(sorted(f.get("displayName") or "" for f in folders))
+        raise RuntimeError(f"the folder {name!r} is not in {self.settings.mailbox}; it has: {names}")
+
+    def _folder_path(self, path: str) -> str:
+        """``Inbox`` or ``Inbox/CVM-AER``: the first part may be a well-known name in any language."""
+        parts = [part for part in re.split(r"[\\/]", path or "Inbox") if part]
+        try:
+            folder = self._call("GET", f"/mailFolders/{urllib.parse.quote(parts[0].lower())}?$select=id")["id"]
+        except LookupError:
+            folder = self._child(None, parts[0])
+        for part in parts[1:]:
+            folder = self._child(folder, part)
+        return folder
+
+    def messages(self) -> Iterator[Tuple[Mail, Any]]:
+        fields = "id,subject,from,receivedDateTime,internetMessageId"
+        # Taken up front: moving a message would shift the pages still to come.
+        listed = list(self._pages(f"/mailFolders/{self.folder}/messages?$select={fields}&$top=50"))
+        for item in listed:
+            if not self.settings.wants(item.get("subject")):
+                continue  # other e-mails' attachments are never opened
+            try:
+                mail = self._mail(item)
+            except Exception as exc:  # left where it is, to be tried again next sweep
+                LOGGER.error("the e-mail %r could not be read: %s: %s", item.get("subject"), type(exc).__name__, exc)
+                continue
+            yield mail, item["id"]
+
+    def _mail(self, item: dict) -> Mail:
+        attachments: List[Tuple[str, bytes]] = []
+        for attachment in self._pages(f"/messages/{item['id']}/attachments?$select=id,name"):
+            kind = attachment.get("@odata.type")
+            content = f"/messages/{item['id']}/attachments/{attachment['id']}/$value"
+            if kind == GRAPH_FILE:
+                attachments.append((attachment.get("name") or "", self._call("GET", content, raw=True)))
+            elif kind == GRAPH_ITEM:
+                inner = parse_rfc822(self._call("GET", content, raw=True), attachment["id"])
+                attachments.extend(inner.attachments)
+            else:
+                LOGGER.warning("left out %s from %r: a %s is a link, not a file",
+                               attachment.get("name"), item.get("subject"), kind)
+        sender = ((item.get("from") or {}).get("emailAddress") or {}).get("address", "")
+        try:
+            received = datetime.fromisoformat((item.get("receivedDateTime") or "").replace("Z", "+00:00"))
+            received = received.astimezone().replace(tzinfo=None)
+        except ValueError:
+            received = datetime.now()
+        return Mail(
+            key=(item.get("internetMessageId") or "").strip() or f"graph:{item['id']}",
+            subject=str(item.get("subject") or ""),
+            sender=sender,
+            received=received,
+            attachments=attachments,
+        )
+
+    def file(self, message_id: str, ok: bool) -> None:
+        self._call("PATCH", f"/messages/{message_id}", {"isRead": True})
+        self._call("POST", f"/messages/{message_id}/move", {"destinationId": self.processed if ok else self.rejected})
+
+    def close(self) -> None:
+        pass
+
+
+SOURCE_CLASSES = {
+    SOURCE_GRAPH: GraphSource,
+    SOURCE_OUTLOOK: OutlookSource,
+    SOURCE_IMAP: ImapSource,
+    SOURCE_FOLDER: FolderSource,
+}
 
 
 def open_source(settings: IntakeSettings):
