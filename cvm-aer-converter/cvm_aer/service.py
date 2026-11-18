@@ -596,6 +596,18 @@ def run_forever(config: ServiceConfig) -> int:
         config.processed,
         config.error,
     )
+    intake = config.intake
+    if intake.enabled:
+        mailbox = intake.mailbox or intake.host or "default mailbox"
+        where = intake.eml_dir if intake.source == SOURCE_FOLDER else f"{mailbox} / {intake.folder}"
+        LOGGER.info(
+            "reading case e-mails (%s) from %s; subjects with %s",
+            intake.source,
+            where,
+            " or ".join(repr(word) for word in intake.subject_contains) or "anything",
+        )
+    else:
+        LOGGER.info("not reading e-mail: [intake] source is not set")
     while True:
         try:
             run_once(config)

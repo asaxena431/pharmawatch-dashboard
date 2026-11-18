@@ -412,3 +412,19 @@ def test_cvm_aer_config_names_the_ini_from_any_folder(tmp_path, monkeypatch):
     assert main(["--once"]) == 0
     monkeypatch.setenv("CVM_AER_CONFIG", str(tmp_path / "missing.ini"))
     assert main(["--once"]) == 2
+
+
+def test_the_service_says_at_start_whether_it_reads_email(tmp_path, monkeypatch, caplog):
+    def stop(_config):
+        raise KeyboardInterrupt
+
+    monkeypatch.setattr(service, "run_once", stop)
+    config = service.ServiceConfig(
+        inbound=str(tmp_path / "i"), outbound=str(tmp_path / "o"), processed=str(tmp_path / "p"), error=str(tmp_path / "e"))
+    with caplog.at_level("INFO"), pytest.raises(KeyboardInterrupt):
+        service.run_forever(config)
+    assert "not reading e-mail" in caplog.text
+    config.intake = service.IntakeSettings(source=service.SOURCE_GRAPH, mailbox="cvm-aer@example.gov")
+    with caplog.at_level("INFO"), pytest.raises(KeyboardInterrupt):
+        service.run_forever(config)
+    assert "reading case e-mails (graph) from cvm-aer@example.gov / Inbox; subjects with 'CVM-AER'" in caplog.text
